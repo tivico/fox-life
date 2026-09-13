@@ -1,0 +1,710 @@
+[
+  {
+    "label": "no-input-start",
+    "action": "Autonomous idle",
+    "at": 1789020232294,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "0.00 / 0.00",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Breathe",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "no-input-mid",
+    "action": "Autonomous idle",
+    "at": 1789020291001,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "1921 × 1080"
+  },
+  {
+    "label": "no-input-end",
+    "action": "Autonomous idle",
+    "at": 1789020312150,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "1921 × 1080"
+  },
+  {
+    "label": "cycle1-before-click",
+    "action": "Autonomous idle",
+    "at": 1789020331285,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "1921 × 1080"
+  },
+  {
+    "label": "cycle1-command",
+    "action": "Autonomous idle",
+    "at": 1789020331966,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "1921 × 1080"
+  },
+  {
+    "label": "after-viewport-reset",
+    "action": "Autonomous idle",
+    "at": 1789020354304,
+    "hidden": false,
+    "hits": "0",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle1-window-click",
+    "action": "Walk to window",
+    "at": 1789020364541,
+    "hidden": false,
+    "hits": "1",
+    "observe": "—",
+    "position": "1.08 / 0.89",
+    "source": "Player Command",
+    "state": "Walk",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle1-poll",
+    "samples": [
+      {
+        "action": "Walk to window",
+        "at": 1789020377369,
+        "observe": "—",
+        "position": "1.04 / 0.81",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020377907,
+        "observe": "—",
+        "position": "1.03 / 0.77",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020378439,
+        "observe": "—",
+        "position": "1.03 / 0.77",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020378968,
+        "observe": "—",
+        "position": "1.01 / 0.73",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020379508,
+        "observe": "—",
+        "position": "1.01 / 0.73",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020380045,
+        "observe": "—",
+        "position": "0.98 / 0.68",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020380571,
+        "observe": "—",
+        "position": "0.98 / 0.68",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020381107,
+        "observe": "—",
+        "position": "0.96 / 0.64",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020381632,
+        "observe": "—",
+        "position": "0.96 / 0.64",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020382165,
+        "observe": "—",
+        "position": "0.94 / 0.59",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020382706,
+        "observe": "—",
+        "position": "0.92 / 0.54",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020383236,
+        "observe": "—",
+        "position": "0.92 / 0.54",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020383775,
+        "observe": "—",
+        "position": "0.90 / 0.50",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020384300,
+        "observe": "—",
+        "position": "0.90 / 0.50",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020384837,
+        "observe": "—",
+        "position": "0.87 / 0.45",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020385365,
+        "observe": "—",
+        "position": "0.87 / 0.45",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020385902,
+        "observe": "—",
+        "position": "0.85 / 0.40",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020386424,
+        "observe": "—",
+        "position": "0.85 / 0.40",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020386969,
+        "observe": "—",
+        "position": "0.83 / 0.36",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020387502,
+        "observe": "—",
+        "position": "0.83 / 0.36",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020388041,
+        "observe": "—",
+        "position": "0.81 / 0.31",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020388560,
+        "observe": "—",
+        "position": "0.81 / 0.31",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020389095,
+        "observe": "—",
+        "position": "0.79 / 0.26",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "action": "Walk to window",
+        "at": 1789020389623,
+        "observe": "—",
+        "position": "0.79 / 0.26",
+        "source": "Player Command",
+        "state": "Walk",
+        "target": "Window (0.00, -1.40)"
+      }
+    ]
+  },
+  {
+    "label": "cycle1-repeat-during-walk",
+    "action": "Observe environment",
+    "at": 1789020431910,
+    "hidden": false,
+    "hits": "3",
+    "observe": "0.10 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "observe-before-repeat",
+    "action": "Observe environment",
+    "at": 1789020456582,
+    "hidden": false,
+    "hits": "3",
+    "observe": "1.51 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "observe-after-repeat",
+    "action": "Observe environment",
+    "at": 1789020458327,
+    "hidden": false,
+    "hits": "3",
+    "observe": "1.61 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "background-attempt",
+    "action": "Observe environment",
+    "at": 1789020469608,
+    "hidden": false,
+    "hits": "3",
+    "observe": "2.17 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle1-return-check",
+    "action": "Observe environment",
+    "at": 1789020485146,
+    "hidden": false,
+    "hits": "3",
+    "observe": "2.97 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "observe-valid-repeats",
+    "action": "Observe environment",
+    "at": 1789020497088,
+    "hidden": false,
+    "hits": "5",
+    "observe": "3.85 / 4.00",
+    "position": "0.01 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle1-complete",
+    "action": "Autonomous idle",
+    "at": 1789020523147,
+    "hidden": false,
+    "hits": "5",
+    "observe": "—",
+    "position": "0.01 / -1.37",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Breathe",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "orbit-side",
+    "action": "Autonomous idle",
+    "at": 1789020552899,
+    "hidden": false,
+    "hits": "5",
+    "observe": "—",
+    "position": "0.01 / -1.37",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Breathe",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "character-and-empty-clicks",
+    "action": "Autonomous walk",
+    "at": 1789020573734,
+    "hidden": false,
+    "hits": "5",
+    "observe": "—",
+    "position": "-1.24 / -0.51",
+    "source": "Autonomous",
+    "state": "Walk",
+    "target": "Room (0.42, -0.73)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "reset-camera",
+    "action": "Autonomous walk",
+    "at": 1789020601706,
+    "hidden": false,
+    "hits": "5",
+    "observe": "—",
+    "position": "-0.26 / 0.90",
+    "source": "Autonomous",
+    "state": "Walk",
+    "target": "Room (-0.02, -0.11)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-before",
+    "action": "Autonomous idle",
+    "at": 1789020628415,
+    "hidden": false,
+    "hits": "5",
+    "observe": "—",
+    "position": "-0.02 / -0.08",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-command",
+    "action": "Walk to window",
+    "at": 1789020629194,
+    "hidden": false,
+    "hits": "6",
+    "observe": "—",
+    "position": "-0.02 / -0.08",
+    "source": "Player Command",
+    "state": "Walk",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-repeat",
+    "action": "Walk to window",
+    "at": 1789020630224,
+    "hidden": false,
+    "hits": "7",
+    "observe": "—",
+    "position": "-0.02 / -0.10",
+    "source": "Player Command",
+    "state": "Walk",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-progress",
+    "action": "Walk to window",
+    "at": 1789020652923,
+    "hidden": false,
+    "hits": "7",
+    "observe": "—",
+    "position": "-0.00 / -1.30",
+    "source": "Player Command",
+    "state": "Walk",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-observe",
+    "action": "Observe environment",
+    "at": 1789020698911,
+    "hidden": false,
+    "hits": "7",
+    "observe": "2.10 / 4.00",
+    "position": "-0.00 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "756 × 762"
+  },
+  {
+    "label": "cycle2-followthrough",
+    "samples": [
+      {
+        "at": 1789020698925,
+        "observe": "2.10 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020699647,
+        "observe": "2.15 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020700371,
+        "observe": "2.20 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020701120,
+        "observe": "2.25 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020701864,
+        "observe": "2.25 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020702604,
+        "observe": "2.30 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020703332,
+        "observe": "2.35 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020704056,
+        "observe": "2.40 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020704797,
+        "observe": "2.40 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020705527,
+        "observe": "2.45 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020706259,
+        "observe": "2.50 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020706980,
+        "observe": "2.50 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020707707,
+        "observe": "2.55 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020708447,
+        "observe": "2.60 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020709181,
+        "observe": "2.65 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020709907,
+        "observe": "2.65 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020710652,
+        "observe": "2.70 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020711389,
+        "observe": "2.75 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020712121,
+        "observe": "2.80 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      },
+      {
+        "at": 1789020712862,
+        "observe": "2.80 / 4.00",
+        "position": "-0.00 / -1.37",
+        "source": "Player Command",
+        "state": "Observe",
+        "target": "Window (0.00, -1.40)"
+      }
+    ]
+  },
+  {
+    "label": "cycle2-complete-check",
+    "action": "Observe environment",
+    "at": 1789020753198,
+    "hidden": false,
+    "hits": "8",
+    "observe": "3.63 / 4.00",
+    "position": "0.02 / -1.37",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "1921 × 1080"
+  }
+]

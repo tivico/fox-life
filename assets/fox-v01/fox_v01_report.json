@@ -1,0 +1,14 @@
+{
+  "blender": "5.2.1 LTS",
+  "height_m": 1.3,
+  "head_units_excluding_ears": 2.46,
+  "mesh_objects": 6,
+  "triangles": 8840,
+  "body_connected_components": 1,
+  "body_manifold": true,
+  "rigged": false,
+  "external_textures": 0,
+  "glb_forward": "+Z",
+  "glb_up": "+Y",
+  "note": "Static concept mesh; retopology/rigging still needed for deformation."
+}

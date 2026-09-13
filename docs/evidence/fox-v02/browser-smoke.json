@@ -1,0 +1,23 @@
+{
+  "environment": "Codex In-app Browser; production preview; visual smoke only, not independent Chrome performance acceptance",
+  "url": "http://127.0.0.1:4182/?preview=fox-v02",
+  "views": [
+    {
+      "view": "front",
+      "state": "Browser tab: 2, Title: \"Fox Life · v02 色塊與服裝審核\", URL: \"http://127.0.0.1:4182/?preview=fox-v02\".\n0 AXWebArea Fox Life · v02 色塊與服裝審核, URL: 127.0.0.1:4182/?preview=fox-v02\n\t1 container app\n\t\t2 container\n\t\t\t3 text fox_v02_static · 視覺審核\n\t\t\t4 text v02 已載入 · 7 個純色材質 · 靜態\n\t\t\t5 container 比較視角\n\t\t\t\t6 checkbox 房間, Value: 0\n\t\t\t\t7 checkbox 正面, Value: 1\n\t\t\t\t8 checkbox 3/4, Value: 0\n\t\t\t\t9 checkbox 側面, Value: 0\n\t\t\t\t10 button 重設視角, ID: v02-reset\n\t\t\t\t11 link Description: 查看 v01, Value: 127.0.0.1:4182/?preview=fox\n\t\t\t12 text 左：目前程序模型　｜　右：v02 GLB　·　同尺寸基準、同光線、同步鏡頭；靜態，尚無動畫。\n\t\t13 container\n\t\t\t14 text 目前程序模型 fox_v02_static · 待 PO 核准\n\t\t\t15 image 並排狐狸比較：拖曳同步環繞、滾輪同步縮放\n\nThe focused UI element is 7 checkbox 正面, Value: 1"
+    },
+    {
+      "view": "three-quarter",
+      "state": "Browser tab: 2, Title: \"Fox Life · v02 色塊與服裝審核\", URL: \"http://127.0.0.1:4182/?preview=fox-v02\".\n0 AXWebArea Fox Life · v02 色塊與服裝審核, URL: 127.0.0.1:4182/?preview=fox-v02\n\t1 container app\n\t\t2 container\n\t\t\t3 text fox_v02_static · 視覺審核\n\t\t\t4 text v02 已載入 · 7 個純色材質 · 靜態\n\t\t\t5 container 比較視角\n\t\t\t\t6 checkbox 房間, Value: 0\n\t\t\t\t7 checkbox 正面, Value: 0\n\t\t\t\t8 checkbox 3/4, Value: 1\n\t\t\t\t9 checkbox 側面, Value: 0\n\t\t\t\t10 button 重設視角, ID: v02-reset\n\t\t\t\t11 link Description: 查看 v01, Value: 127.0.0.1:4182/?preview=fox\n\t\t\t12 text 左：目前程序模型　｜　右：v02 GLB　·　同尺寸基準、同光線、同步鏡頭；靜態，尚無動畫。\n\t\t13 container\n\t\t\t14 text 目前程序模型 fox_v02_static · 待 PO 核准\n\t\t\t15 image 並排狐狸比較：拖曳同步環繞、滾輪同步縮放\n\nThe focused UI element is 0 AXWebArea Fox Life · v02 色塊與服裝審核, URL: 127.0.0.1:4182/?preview=fox-v02"
+    },
+    {
+      "view": "side",
+      "state": "Browser tab: 2, Title: \"Fox Life · v02 色塊與服裝審核\", URL: \"http://127.0.0.1:4182/?preview=fox-v02\".\n0 AXWebArea Fox Life · v02 色塊與服裝審核, URL: 127.0.0.1:4182/?preview=fox-v02\n\t1 container app\n\t\t2 container\n\t\t\t3 text fox_v02_static · 視覺審核\n\t\t\t4 text v02 已載入 · 7 個純色材質 · 靜態\n\t\t\t5 container 比較視角\n\t\t\t\t6 checkbox 房間, Value: 0\n\t\t\t\t7 checkbox 正面, Value: 0\n\t\t\t\t8 checkbox 3/4, Value: 0\n\t\t\t\t9 checkbox 側面, Value: 1\n\t\t\t\t10 button 重設視角, ID: v02-reset\n\t\t\t\t11 link Description: 查看 v01, Value: 127.0.0.1:4182/?preview=fox\n\t\t\t12 text 左：目前程序模型　｜　右：v02 GLB　·　同尺寸基準、同光線、同步鏡頭；靜態，尚無動畫。\n\t\t13 container\n\t\t\t14 text 目前程序模型 fox_v02_static · 待 PO 核准\n\t\t\t15 image 並排狐狸比較：拖曳同步環繞、滾輪同步縮放\n\nThe focused UI element is 9 checkbox 側面, Value: 1"
+    },
+    {
+      "view": "room",
+      "state": "Browser tab: 2, Title: \"Fox Life · v02 色塊與服裝審核\", URL: \"http://127.0.0.1:4182/?preview=fox-v02\".\n0 AXWebArea Fox Life · v02 色塊與服裝審核, URL: 127.0.0.1:4182/?preview=fox-v02\n\t1 container app\n\t\t2 container\n\t\t\t3 text fox_v02_static · 視覺審核\n\t\t\t4 text v02 已載入 · 7 個純色材質 · 靜態\n\t\t\t5 container 比較視角\n\t\t\t\t6 checkbox 房間, Value: 1\n\t\t\t\t7 checkbox 正面, Value: 0\n\t\t\t\t8 checkbox 3/4, Value: 0\n\t\t\t\t9 checkbox 側面, Value: 0\n\t\t\t\t10 button 重設視角, ID: v02-reset\n\t\t\t\t11 link Description: 查看 v01, Value: 127.0.0.1:4182/?preview=fox\n\t\t\t12 text 左：目前程序模型　｜　右：v02 GLB　·　同尺寸基準、同光線、同步鏡頭；靜態，尚無動畫。\n\t\t13 container\n\t\t\t14 text 目前程序模型 fox_v02_static · 待 PO 核准\n\t\t\t15 image 並排狐狸比較：拖曳同步環繞、滾輪同步縮放\n\nThe focused UI element is 6 checkbox 房間, Value: 1"
+    }
+  ],
+  "productOwnerApproval": "pending"
+}

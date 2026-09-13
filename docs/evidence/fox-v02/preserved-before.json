@@ -1,0 +1,7 @@
+{
+  "assets/fox-v01/fox_v01.blend": "2c378da603fb12aaff18efbf4f4a48059872c6b938eb01764454b7220f1bb085",
+  "assets/fox-v01/fox_v01.glb": "d803b43b382c6e853d0b5a16caed4a7cabc9c70c38203a8f4620df3805119c28",
+  "tools/blender/generate_fox_v01.py": "9882d57a56fe05e8ccb65a3b56b076815c2762f9d5139ea7f2717b92c2c66075",
+  "src/createFoxVisual.ts": "5bc6d82a19cd4187afacfd8fb18089edd003b590b63df648d1b86b70035a9c18",
+  "src/Character.ts": "e2afeed1c09c391ad9ce3dfcfe93c7c1caa5ffb1a6e0c2877bf2ee9e636de689"
+}

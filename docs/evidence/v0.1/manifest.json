@@ -1,0 +1,120 @@
+{
+  "recordedAt": "2026-09-10T11:50:28.587Z",
+  "branch": "feature/v0.1-vertical-slice",
+  "baseCommit": "2be3e717b1d1828f75f8b9435ff218d93849e18f",
+  "node": "v25.9.0",
+  "npm": "11.12.1",
+  "note": "Working tree is uncommitted. Original evidence retained unchanged; hashes recorded at closeout, not at original capture. dist is local ignored build output.",
+  "files": [
+    {
+      "path": "docs/evidence/v0.1/browser-events.json",
+      "bytes": 18190,
+      "sha256": "63bb1577a63fcc294b4c82820486e6c2e5163ffe1209fa3799f504a36ae4d322"
+    },
+    {
+      "path": "docs/evidence/v0.1/observe.jpg",
+      "bytes": 28346,
+      "sha256": "39575fe4b16e455a210911640e4c81b43d1cb2097cebf42edde0d3343a1d3b61"
+    },
+    {
+      "path": "docs/evidence/v0.1/observe-hidden-debug.jpg",
+      "bytes": 25181,
+      "sha256": "90002d674d91366d1b3f0eceadf73cfe2d8e4fbe9371637d40c27f29c0e19635"
+    },
+    {
+      "path": "docs/evidence/v0.1/performance-in-app.json",
+      "bytes": 823,
+      "sha256": "d97bd8e8ca87c957279e8696739976ea938351245a962acac5ec164ce505dcfa"
+    },
+    {
+      "path": "docs/evidence/v0.1/verification-rerun.json",
+      "bytes": 2359,
+      "sha256": "f68bcfa17d37bc36850955d8714c159dea551ffaa86b36978175da6a94d66910"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 445,
+      "sha256": "ac8a347e84bd0208b1c6943e01e7681f820c58623231146471a11a4fe7eaa56e"
+    },
+    {
+      "path": "dist/assets/index-CWaZ7Zxl.js",
+      "bytes": 567822,
+      "sha256": "d882afaec886978ab16d4fe6ef9608b78399193af1eddf44498b6b3bde83ca02"
+    },
+    {
+      "path": "dist/assets/index-BtoMTbOP.css",
+      "bytes": 1512,
+      "sha256": "61c6f5a7d3b1f5a212679da47137fe10c6c338645dc52e1bcebc535c8b3a4bf5"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 40462,
+      "sha256": "9763d0174b387495c7e116cc862ee7158e4660719ac868349f072fb20516c2e2"
+    },
+    {
+      "path": "src/Character.ts",
+      "bytes": 5138,
+      "sha256": "26e21e6e0d8ac30215dcbeb334f003443fd4c733233a88148f7735280d8861c4"
+    },
+    {
+      "path": "src/createFoxVisual.ts",
+      "bytes": 5803,
+      "sha256": "1788421c5a3fdf978403c8c5cc329bcedd2f7d0ca04ff38d59dcb2f1c7684d46"
+    },
+    {
+      "path": "src/DebugPanel.ts",
+      "bytes": 2981,
+      "sha256": "c955841178c34654cf23e34bdf0878f4bef6c43f88f6855362013f642bb57896"
+    },
+    {
+      "path": "src/FrameClock.ts",
+      "bytes": 416,
+      "sha256": "cc603b9505925016b4050eb9b3e8920a66e1a0a428997631da4b339fc37f8975"
+    },
+    {
+      "path": "src/main.ts",
+      "bytes": 3849,
+      "sha256": "ef433a317364433f2b48c6feed9846183b63f29b1befac3a825974e2332e5ee9"
+    },
+    {
+      "path": "src/PerformanceSample.ts",
+      "bytes": 2588,
+      "sha256": "bf0c67cbb14627d35aa86b834b85b70a36ba6b8902430bf2485a72e3d7053fcf"
+    },
+    {
+      "path": "src/scene.ts",
+      "bytes": 3008,
+      "sha256": "f1b5041f8ab9205c7b8b6052d7b11820f8611660ff2005c0c4f303e0500b27f3"
+    },
+    {
+      "path": "src/styles.css",
+      "bytes": 1778,
+      "sha256": "32e26dca815547bbffef5fd73a86eef9782f2faf8bec9d14dc28d03abd7c2375"
+    },
+    {
+      "path": "src/WindowInteraction.ts",
+      "bytes": 1971,
+      "sha256": "a1a48cb27616d23d276bc12cad6d557c0ada9e471febbbdc30bcb179a9511863"
+    },
+    {
+      "path": "package.json",
+      "bytes": 467,
+      "sha256": "d78f0cf8868d1d8c15e4d0754f1e380bf3a5b8bbbe024c4ad166d508995b0bfe"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 451,
+      "sha256": "2a36ef8d536e77edde9ad59aa0e017fbd7969e80315249a49b059ac425649529"
+    },
+    {
+      "path": "index.html",
+      "bytes": 346,
+      "sha256": "88fb029eef6e9ed837c9842ba85382eb33d3cfcf9dc37206c1dd65f1b71b2836"
+    },
+    {
+      "path": "tests/behavior.test.mjs",
+      "bytes": 9413,
+      "sha256": "cee2f99accd6f7ae392f8624c8788f2a7a8d658e8c9ede9fb795cf3cc0d97cf0"
+    }
+  ]
+}

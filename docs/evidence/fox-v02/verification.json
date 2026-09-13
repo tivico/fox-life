@@ -1,0 +1,20 @@
+[
+  {
+    "command": "npm run typecheck",
+    "startedAt": "2026-09-13T11:48:45.1857390+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 typecheck\r\n> tsc --noEmit\r\n\r\n"
+  },
+  {
+    "command": "npm run test",
+    "startedAt": "2026-09-13T11:48:45.6827838+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 test\r\n> node --test tests/*.test.mjs\r\n\r\n✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (23.9881ms)\r\n✔ window command interrupts autonomous Idle within 0.5 seconds (6.1844ms)\r\n✔ window command interrupts autonomous Walk within 0.5 seconds (5.0961ms)\r\n✔ three different starts complete approach, facing, full Observe, clear command, leave window (12.6495ms)\r\n✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (3.1293ms)\r\n✔ already at station turns in place, no detour or snap (2.763ms)\r\n✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (12.9858ms)\r\n✔ background/resume preserves approach and Observe; no accumulated hidden time (6.3579ms)\r\n✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.768ms)\r\n✔ arrival settle stays in Walk, accepts no duplicate, then preserves four full Observe seconds (2.9339ms)\r\n✔ turn easing and secondary motion stay finite across frame rates, with lag that settles (53.1364ms)\r\nℹ tests 11\r\nℹ suites 0\r\nℹ pass 11\r\nℹ fail 0\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 242.3899\r\n"
+  },
+  {
+    "command": "npm run build",
+    "startedAt": "2026-09-13T11:48:46.3275824+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 build\r\n> tsc --noEmit && vite build\r\n\r\nvite v8.2.2 building client environment for production...\r\ntransforming...\r\n✓ 27 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                             0.37 kB │ gzip:   0.26 kB\r\ndist/assets/fox_v01-D8rjlDI0.glb          253.75 kB\r\ndist/assets/fox_v02_static-xELw9o6D.glb   370.39 kB\r\ndist/assets/FoxAssetPreview-BfgQtnJf.css    0.40 kB │ gzip:   0.25 kB\r\ndist/assets/FoxV02Review-DOpSjT6h.css       1.02 kB │ gzip:   0.52 kB\r\ndist/assets/styles-BtoMTbOP.css             1.51 kB │ gzip:   0.78 kB\r\ndist/assets/index-CfrH3M8h.js               2.52 kB │ gzip:   1.21 kB\r\ndist/assets/FoxV02Review-B3b5Ir9d.js        3.57 kB │ gzip:   1.87 kB\r\ndist/assets/FoxAssetPreview-B4szYCqw.js     3.97 kB │ gzip:   1.97 kB\r\ndist/assets/main-QCRO27v6.js                9.20 kB │ gzip:   4.08 kB\r\ndist/assets/GLTFLoader-B4xq98Za.js         45.20 kB │ gzip:  13.42 kB\r\ndist/assets/styles-DMlq8MxA.js            626.38 kB │ gzip: 158.15 kB\r\n\r\n✓ built in 160ms\r\n[plugin builtin:vite-reporter] \r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\r\n"
+  }
+]

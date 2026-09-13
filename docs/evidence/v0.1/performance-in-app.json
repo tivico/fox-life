@@ -1,0 +1,32 @@
+{
+  "tool": "requestAnimationFrame intervals (not GPU profiler)",
+  "timestamp": "2026-09-10T06:15:07.906Z",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "devicePixelRatio": 0.9999999734530078,
+  "renderPixelRatio": 0.9999999734530078,
+  "drawingBuffer": [
+    1920,
+    1079
+  ],
+  "gpu": "ANGLE (Intel, Intel(R) UHD Graphics 770 (0x0000A780) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "warmupMs": 5000,
+  "elapsedMs": 60395.299999999996,
+  "frames": 72,
+  "averageFps": 1.1921457464405343,
+  "frameMs": {
+    "p50": 1000.3000000000029,
+    "p95": 1000.5,
+    "p99": 1000.5,
+    "max": 1000.5
+  },
+  "over33ms": 61,
+  "over50ms": 61,
+  "states": [
+    "Idle"
+  ],
+  "restartedAfterBackground": false
+}

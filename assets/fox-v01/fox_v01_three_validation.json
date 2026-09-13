@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "loader": "Three.js 186 GLTFLoader.parseAsync",
+  "sha256": "d803b43b382c6e853d0b5a16caed4a7cabc9c70c38203a8f4620df3805119c28",
+  "bytes": 253756,
+  "sizeXYZ": [
+    0.7935004532337189,
+    1.3000000715255737,
+    1.1956078112125397
+  ],
+  "meshes": [
+    {
+      "name": "Bib_Button",
+      "vertices": 115,
+      "triangles": 168,
+      "vertexColors": false
+    },
+    {
+      "name": "Bib_Button001",
+      "vertices": 115,
+      "triangles": 168,
+      "vertexColors": false
+    },
+    {
+      "name": "Eye_L",
+      "vertices": 115,
+      "triangles": 168,
+      "vertexColors": false
+    },
+    {
+      "name": "Eye_R",
+      "vertices": 115,
+      "triangles": 168,
+      "vertexColors": false
+    },
+    {
+      "name": "Fox_Body_Continuous",
+      "vertices": 4002,
+      "triangles": 8000,
+      "vertexColors": true
+    },
+    {
+      "name": "Nose",
+      "vertices": 115,
+      "triangles": 168,
+      "vertexColors": false
+    }
+  ],
+  "triangles": 8840,
+  "externalImages": 0,
+  "animations": 0,
+  "materials": [
+    "Overall_Buttons",
+    "Fox_Eyes_Nose",
+    "Fox_Matte_VertexPalette"
+  ]
+}

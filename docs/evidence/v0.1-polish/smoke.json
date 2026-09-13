@@ -1,0 +1,34 @@
+{
+  "browser": "Codex In-app Browser",
+  "url": "http://127.0.0.1:4178/",
+  "build": "index-XemZZTn5.js",
+  "events": [
+    {
+      "at": "2026-09-10T12:14:01.602Z",
+      "stage": "autonomous",
+      "dom": "- main:\n  - generic \"3D 房間：拖曳環繞、滾輪縮放、點擊窗戶\"\n  - complementary:\n    - paragraph: A LITTLE HOME · V0.1\n    - heading \"Fox Life\" [level=1]\n    - paragraph: 陪牠，看一會窗外。\n    - button \"隱藏 Debug\" [expanded] [active]\n    - term: Current State\n    - definition: Walk\n    - term: Current Action\n    - definition: Autonomous walk\n    - term: Current Target\n    - definition: Room (1.14, -0.80)\n    - term: Control Source\n    - definition: Autonomous\n    - term: Idle variation\n    - definition: —\n    - term: Observe seconds\n    - definition: —\n    - term: Position · X / Z\n    - definition: \"-1.14 / 0.61\"\n    - term: Window hits\n    - definition: \"0\"\n    - term: Viewport\n    - definition: 1280 × 720\n    - term: Renderer\n    - definition: WebGL · rendering\n    - button \"重設鏡頭\"\n    - paragraph:\n      - text: 拖曳環繞 · 滾輪縮放\n      - text: 點一下窗戶，讓牠看看外面。"
+    },
+    {
+      "at": "2026-09-10T12:14:01.815Z",
+      "stage": "command",
+      "dom": "- main:\n  - generic \"3D 房間：拖曳環繞、滾輪縮放、點擊窗戶\"\n  - complementary:\n    - paragraph: A LITTLE HOME · V0.1\n    - heading \"Fox Life\" [level=1]\n    - paragraph: 陪牠，看一會窗外。\n    - button \"隱藏 Debug\" [expanded]\n    - term: Current State\n    - definition: Walk\n    - term: Current Action\n    - definition: Walk to window\n    - term: Current Target\n    - definition: Window (0.00, -1.40)\n    - term: Control Source\n    - definition: Player Command\n    - term: Idle variation\n    - definition: —\n    - term: Observe seconds\n    - definition: —\n    - term: Position · X / Z\n    - definition: \"-1.14 / 0.61\"\n    - term: Window hits\n    - definition: \"1\"\n    - term: Viewport\n    - definition: 1280 × 720\n    - term: Renderer\n    - definition: WebGL · rendering\n    - button \"重設鏡頭\"\n    - paragraph:\n      - text: 拖曳環繞 · 滾輪縮放\n      - text: 點一下窗戶，讓牠看看外面。"
+    },
+    {
+      "at": "2026-09-10T12:14:11.304Z",
+      "stage": "approach-check",
+      "dom": "- main:\n  - generic \"3D 房間：拖曳環繞、滾輪縮放、點擊窗戶\"\n  - complementary:\n    - paragraph: A LITTLE HOME · V0.1\n    - heading \"Fox Life\" [level=1]\n    - paragraph: 陪牠，看一會窗外。\n    - button \"隱藏 Debug\" [expanded]\n    - term: Current State\n    - definition: Idle\n    - term: Current Action\n    - definition: Autonomous idle\n    - term: Current Target\n    - definition: None\n    - term: Control Source\n    - definition: Autonomous\n    - term: Idle variation\n    - definition: Look around\n    - term: Observe seconds\n    - definition: —\n    - term: Position · X / Z\n    - definition: \"-0.02 / -1.37\"\n    - term: Window hits\n    - definition: \"1\"\n    - term: Viewport\n    - definition: 1280 × 720\n    - term: Renderer\n    - definition: WebGL · rendering\n    - button \"重設鏡頭\"\n    - paragraph:\n      - text: 拖曳環繞 · 滾輪縮放\n      - text: 點一下窗戶，讓牠看看外面。"
+    },
+    {
+      "at": "2026-09-10T12:14:28.908Z",
+      "stage": "observe-entry",
+      "dom": "- main:\n  - generic \"3D 房間：拖曳環繞、滾輪縮放、點擊窗戶\"\n  - complementary:\n    - paragraph: A LITTLE HOME · V0.1\n    - heading \"Fox Life\" [level=1]\n    - paragraph: 陪牠，看一會窗外。\n    - button \"隱藏 Debug\" [expanded]\n    - term: Current State\n    - definition: Observe\n    - term: Current Action\n    - definition: Observe environment\n    - term: Current Target\n    - definition: Window (0.00, -1.40)\n    - term: Control Source\n    - definition: Player Command\n    - term: Idle variation\n    - definition: —\n    - term: Observe seconds\n    - definition: 0.03 / 4.00\n    - term: Position · X / Z\n    - definition: \"-0.02 / -1.37\"\n    - term: Window hits\n    - definition: \"2\"\n    - term: Viewport\n    - definition: 1280 × 720\n    - term: Renderer\n    - definition: WebGL · rendering\n    - button \"重設鏡頭\"\n    - paragraph:\n      - text: 拖曳環繞 · 滾輪縮放\n      - text: 點一下窗戶，讓牠看看外面。"
+    },
+    {
+      "at": "2026-09-10T12:14:41.928Z",
+      "stage": "return-autonomous",
+      "dom": "- main:\n  - generic \"3D 房間：拖曳環繞、滾輪縮放、點擊窗戶\"\n  - complementary:\n    - paragraph: A LITTLE HOME · V0.1\n    - heading \"Fox Life\" [level=1]\n    - paragraph: 陪牠，看一會窗外。\n    - button \"隱藏 Debug\" [expanded]\n    - term: Current State\n    - definition: Idle\n    - term: Current Action\n    - definition: Autonomous idle\n    - term: Current Target\n    - definition: None\n    - term: Control Source\n    - definition: Autonomous\n    - term: Idle variation\n    - definition: Look around\n    - term: Observe seconds\n    - definition: —\n    - term: Position · X / Z\n    - definition: 0.26 / 0.77\n    - term: Window hits\n    - definition: \"2\"\n    - term: Viewport\n    - definition: 1280 × 720\n    - term: Renderer\n    - definition: WebGL · rendering\n    - button \"重設鏡頭\"\n    - paragraph:\n      - text: 拖曳環繞 · 滾輪縮放\n      - text: 點一下窗戶，讓牠看看外面。"
+    }
+  ],
+  "consoleLogs": [],
+  "note": "First wait missed Observe; later attempt captured Observe. Screenshots do not prove perceived smoothness or independent Chrome acceptance."
+}

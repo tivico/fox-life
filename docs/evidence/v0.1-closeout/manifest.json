@@ -1,0 +1,82 @@
+{
+  "date": "2026-09-13T20:17:24.1525132+08:00",
+  "motionMatchesAcceptedTurnBaseline": true,
+  "files": [
+    {
+      "path": "src\\Character.ts",
+      "sha256": "35D6529B9465368AE00109B0C3D027B1CF6EA7AC0CE5D0807614B68C0714B7D1"
+    },
+    {
+      "path": "src\\createFoxVisual.ts",
+      "sha256": "0788043C282D64E13937415635674C89E03C5ADE2BCC919AE3E1FE0AF012A784"
+    },
+    {
+      "path": "tests\\behavior.test.mjs",
+      "sha256": "A9117E298CEB415139DB0FAEFC2F4EF4F860240FC5079EB8FCD981CF7C48C3F7"
+    },
+    {
+      "path": "assets\\fox-v01\\fox_v01.blend",
+      "sha256": "2C378DA603FB12AAFF18EFBF4F4A48059872C6B938EB01764454B7220F1BB085"
+    },
+    {
+      "path": "assets\\fox-v01\\fox_v01.glb",
+      "sha256": "D803B43B382C6E853D0B5A16CAED4A7CABC9C70C38203A8F4620DF3805119C28"
+    },
+    {
+      "path": "assets\\fox-v02\\fox_v02_static.blend",
+      "sha256": "B0ADEB0F2FF01FC6B5F619F8CE180749AEC98716CEB523F7B7D3C58B69CD7679"
+    },
+    {
+      "path": "assets\\fox-v02\\fox_v02_static.glb",
+      "sha256": "ABD0CF3F011C00704C7BA709A9B471CFDD34AF5212385F343775A42AA7BAA74D"
+    },
+    {
+      "path": "dist\\index.html",
+      "sha256": "6FCB301577EFB2F847A6C9C2C08B9FFA938C54E1E97971A8C75806F03F6EC9E2"
+    },
+    {
+      "path": "dist\\assets\\fox_v01-D8rjlDI0.glb",
+      "sha256": "D803B43B382C6E853D0B5A16CAED4A7CABC9C70C38203A8F4620DF3805119C28"
+    },
+    {
+      "path": "dist\\assets\\fox_v02_static-xELw9o6D.glb",
+      "sha256": "ABD0CF3F011C00704C7BA709A9B471CFDD34AF5212385F343775A42AA7BAA74D"
+    },
+    {
+      "path": "dist\\assets\\FoxAssetPreview-BcC54IN-.js",
+      "sha256": "56CF675CD4FE659CC266E9AE564ED49E6FDC8E29F77982B3AB9491B78EF12E98"
+    },
+    {
+      "path": "dist\\assets\\FoxAssetPreview-BfgQtnJf.css",
+      "sha256": "7A050F355EA435DB1EF7701C172C9AA489FFE7C3AD068CB5985481AFD4BBE52B"
+    },
+    {
+      "path": "dist\\assets\\FoxV02Review-BaOD77Bi.js",
+      "sha256": "E00363B47C4D537749317B5DB10CB8670BD1A15E2A4D5555FB29F6208D73C8D3"
+    },
+    {
+      "path": "dist\\assets\\FoxV02Review-DOpSjT6h.css",
+      "sha256": "B88F24209759E707F1730CB94550BADE5C009EC12CEAD175AC6B3DEF8903A2CA"
+    },
+    {
+      "path": "dist\\assets\\GLTFLoader-DIwL20yF.js",
+      "sha256": "02A188E8ABABA43AEB2CD8F89CB4269A9DB9D9935DD3D0ABBD1C8AAF5339A010"
+    },
+    {
+      "path": "dist\\assets\\index-CBXjWVFD.js",
+      "sha256": "3BFCA682DEBDACEE3AB0E8333E9605278BA1694E6C26562161D695A419FADB45"
+    },
+    {
+      "path": "dist\\assets\\main-D-BZiAU3.js",
+      "sha256": "4623C2731240E4883632AD07C1B388B3A895BE0F02DA9A795CE6DFCEAD365D3E"
+    },
+    {
+      "path": "dist\\assets\\styles-BtoMTbOP.css",
+      "sha256": "61C6F5A7D3B1F5A212679DA47137FE10C6C338645DC52E1BCEBC535C8B3A4BF5"
+    },
+    {
+      "path": "dist\\assets\\styles-MQMgju40.js",
+      "sha256": "B09DFBB01E3B02E09692762631C26CDA9D8FCFAE918B00A0C44E8767FFEE2562"
+    }
+  ]
+}

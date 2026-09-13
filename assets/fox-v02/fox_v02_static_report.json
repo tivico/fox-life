@@ -1,0 +1,51 @@
+{
+  "blender": "5.2.1 LTS",
+  "height_m": 1.3,
+  "rigged": false,
+  "materials": {
+    "Orange_Fur": "#BC713F",
+    "Cream_Fur": "#EEE1C5",
+    "Green_Overalls": "#647D57",
+    "Dark_Paws": "#493C32",
+    "Eyes": "#362E2B",
+    "Nose": "#40322A",
+    "Buttons": "#DFCEAA"
+  },
+  "vertex_colors": false,
+  "textures": 0,
+  "body_components": 1,
+  "body_manifold": true,
+  "meshes": [
+    {
+      "name": "Orange_Cream_Paws_Continuous_Body",
+      "triangles": 9228
+    },
+    {
+      "name": "Green_Overalls_Garment",
+      "triangles": 5520
+    },
+    {
+      "name": "Eye_L",
+      "triangles": 168
+    },
+    {
+      "name": "Eye_R",
+      "triangles": 168
+    },
+    {
+      "name": "Nose",
+      "triangles": 168
+    },
+    {
+      "name": "Bib_Button_L",
+      "triangles": 168
+    },
+    {
+      "name": "Bib_Button_R",
+      "triangles": 168
+    }
+  ],
+  "garment_thickness_local": 0.006,
+  "bib_offset_local": 0.013,
+  "triangles": 15588
+}

@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene } from './scene';
-import { Character } from './Character';
+import { createScene, characterLayout } from './scene';
+import { Character } from './Character.ts';
 import { bindWindowInteraction } from './WindowInteraction';
 import { createDebugPanel } from './DebugPanel';
+import { FrameClock } from './FrameClock.ts';
+import { createPerformanceSample } from './PerformanceSample';
 import './styles.css';
 
 const host = document.querySelector<HTMLElement>('#app')!;
@@ -21,7 +23,7 @@ function start() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點擊窗戶');
   host.append(renderer.domElement);
-  const { scene, camera, windowPane, windowParts } = createScene();
+  const { scene, camera, windowParts } = createScene();
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -32,12 +34,13 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character();
+  const character = new Character(characterLayout);
   scene.add(character.root);
   let windowHits = 0;
   const unbind = bindWindowInteraction(renderer.domElement, camera, scene, windowParts, () => {
     windowHits++;
-    windowPane.material.color.set(windowHits % 2 ? '#e8c779' : '#7bb4be');
+    character.requestWindowObserve();
+    debug.update(character, windowHits, width, height);
   });
   const debug = createDebugPanel(host, () => controls.reset());
   let width = 0;
@@ -53,24 +56,27 @@ function start() {
   const observer = new ResizeObserver(resize);
   observer.observe(host);
   resize();
-  let previous = performance.now();
-  let debugElapsed = 0;
+  const frameClock = new FrameClock();
+  const performanceSample = createPerformanceSample(host, renderer);
+  const visibilityChanged = () => {
+    frameClock.reset();
+    if (document.hidden) performanceSample?.frame(performance.now(), true, character.state);
+  };
+  document.addEventListener('visibilitychange', visibilityChanged);
   renderer.setAnimationLoop((now: number) => {
-    // Pause simulation while hidden; cap resume delta to prevent jumps.
-    const dt = document.hidden ? 0 : Math.min(Math.max((now - previous) / 1000, 0), 0.05);
-    previous = now;
+    const dt = frameClock.tick(now, document.hidden);
+    performanceSample?.frame(now, document.hidden, character.state);
+    if (document.hidden) return;
     character.update(dt);
     controls.update();
     renderer.render(scene, camera);
-    debugElapsed += dt;
-    if (debugElapsed >= 0.1) {
-      debug.update(character, windowHits, width, height);
-      debugElapsed = 0;
-    }
+    debug.update(character, windowHits, width, height);
   });
   import.meta.hot?.dispose(() => {
     renderer.setAnimationLoop(null);
     observer.disconnect();
+    document.removeEventListener('visibilitychange', visibilityChanged);
+    performanceSample?.dispose();
     unbind();
     controls.dispose();
     debug.dispose();

@@ -1,0 +1,20 @@
+[
+  {
+    "command": "npm run typecheck",
+    "date": "2026-09-13T20:14:51.7967943+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 typecheck\r\n> tsc --noEmit\r\n\r\n"
+  },
+  {
+    "command": "npm run test",
+    "date": "2026-09-13T20:14:52.8054479+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 test\r\n> node --test tests/*.test.mjs\r\n\r\n✔ 30/60/90/135/180 degree turns in both directions advance forward and arrive across frame rates (111.2006ms)\r\n✔ curved approaches from activity corners remain clear of room furniture (117.473ms)\r\n✔ small corrections do not march; large pivots alternate feet and settle without head displacement (15.4561ms)\r\n✔ gait cadence follows distance and pose changes stay bounded through start, stop and command interruption (19.8088ms)\r\n✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (7.2989ms)\r\n✔ window command interrupts autonomous Idle within 0.5 seconds (2.5985ms)\r\n✔ window command interrupts autonomous Walk within 0.5 seconds (2.2606ms)\r\n✔ three different starts complete approach, facing, full Observe, clear command, leave window (8.4906ms)\r\n✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (2.4875ms)\r\n✔ already at station turns in place, no detour or snap (2.2675ms)\r\n✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (5.4482ms)\r\n✔ background/resume preserves approach and Observe; no accumulated hidden time (5.0483ms)\r\n✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.6309ms)\r\n✔ arrival settle stays in Walk, accepts no duplicate, then preserves four full Observe seconds (2.1875ms)\r\n✔ turn easing and secondary motion stay finite across frame rates, with lag that settles (46.3105ms)\r\nℹ tests 15\r\nℹ suites 0\r\nℹ pass 15\r\nℹ fail 0\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 592.9502\r\n"
+  },
+  {
+    "command": "npm run build",
+    "date": "2026-09-13T20:14:54.2970843+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 build\r\n> tsc --noEmit && vite build\r\n\r\nvite v8.2.2 building client environment for production...\r\ntransforming...\r\n✓ 27 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                             0.37 kB │ gzip:   0.26 kB\r\ndist/assets/fox_v01-D8rjlDI0.glb          253.75 kB\r\ndist/assets/fox_v02_static-xELw9o6D.glb   370.39 kB\r\ndist/assets/FoxAssetPreview-BfgQtnJf.css    0.40 kB │ gzip:   0.25 kB\r\ndist/assets/FoxV02Review-DOpSjT6h.css       1.02 kB │ gzip:   0.52 kB\r\ndist/assets/styles-BtoMTbOP.css             1.51 kB │ gzip:   0.78 kB\r\ndist/assets/index-CBXjWVFD.js               2.52 kB │ gzip:   1.21 kB\r\ndist/assets/FoxV02Review-BaOD77Bi.js        3.57 kB │ gzip:   1.86 kB\r\ndist/assets/FoxAssetPreview-BcC54IN-.js     3.97 kB │ gzip:   1.97 kB\r\ndist/assets/main-D-BZiAU3.js                9.77 kB │ gzip:   4.22 kB\r\ndist/assets/GLTFLoader-DIwL20yF.js         45.20 kB │ gzip:  13.42 kB\r\ndist/assets/styles-MQMgju40.js            626.67 kB │ gzip: 158.29 kB\r\n\r\n✓ built in 279ms\r\n[plugin builtin:vite-reporter] \r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\r\n"
+  }
+]

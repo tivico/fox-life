@@ -1,0 +1,117 @@
+{
+  "result": "passed",
+  "date": "2026-09-13T03:54:09.744Z",
+  "loader": "Three.js 186 GLTFLoader",
+  "bytes": 370392,
+  "triangles": 15588,
+  "materials": [
+    {
+      "name": "Buttons",
+      "pbr": {
+        "baseColorFactor": [
+          0.7379103899002075,
+          0.6172065734863281,
+          0.4019777774810791,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    },
+    {
+      "name": "Eyes",
+      "pbr": {
+        "baseColorFactor": [
+          0.03688944876194,
+          0.027320891618728638,
+          0.024157632142305374,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    },
+    {
+      "name": "Green_Overalls",
+      "pbr": {
+        "baseColorFactor": [
+          0.12743768095970154,
+          0.20507873594760895,
+          0.09530746936798096,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.949999988079071
+      }
+    },
+    {
+      "name": "Nose",
+      "pbr": {
+        "baseColorFactor": [
+          0.05126945674419403,
+          0.03189603239297867,
+          0.023153366521000862,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    },
+    {
+      "name": "Orange_Fur",
+      "pbr": {
+        "baseColorFactor": [
+          0.5028864741325378,
+          0.16513219475746155,
+          0.04970656707882881,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    },
+    {
+      "name": "Cream_Fur",
+      "pbr": {
+        "baseColorFactor": [
+          0.8549926280975342,
+          0.7529422044754028,
+          0.5583403706550598,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    },
+    {
+      "name": "Dark_Paws",
+      "pbr": {
+        "baseColorFactor": [
+          0.0666259378194809,
+          0.045186202973127365,
+          0.03189603239297867,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.8999999761581421
+      }
+    }
+  ],
+  "vertexColors": false,
+  "textures": 0,
+  "rig": false,
+  "animations": 0,
+  "sizeXYZ": [
+    0.7935004532337189,
+    1.3000000715255737,
+    1.178896427154541
+  ],
+  "preserved": [
+    "assets/fox-v01/fox_v01.blend",
+    "assets/fox-v01/fox_v01.glb",
+    "tools/blender/generate_fox_v01.py",
+    "src/createFoxVisual.ts",
+    "src/Character.ts"
+  ],
+  "sha256": "abd0cf3f011c00704c7ba709a9b471cfdd34af5212385f343775a42aa7baa74d"
+}

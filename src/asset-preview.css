@@ -1,0 +1,7 @@
+.asset-review h1 { font-size: 24px; letter-spacing: 0; }
+.asset-review fieldset { border: 0; padding: 0; margin: 18px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.asset-review legend { font-size: 12px; margin-bottom: 8px; color: #66746a; }
+.asset-review button[aria-pressed="true"] { background: #d5e2d0; border-color: #648063; }
+.asset-review button:disabled { opacity: .5; cursor: wait; }
+.asset-review a { color: #426b53; font-size: 12px; }
+#asset-status { font-size: 12px; color: #426b53; }

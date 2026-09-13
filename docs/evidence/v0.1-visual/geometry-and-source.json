@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-10T11:57:47.797Z",
+  "before": [
+    1.0256372688862556,
+    1.8618975137219844,
+    1.91189085531202
+  ],
+  "after": [
+    0.7284652761948711,
+    1.2922497867917078,
+    1.4470399601364137
+  ],
+  "headUnitsExcludingEars": 2.4,
+  "bed": {
+    "length": 1.9,
+    "width": 0.85,
+    "mattressTop": 0.48
+  },
+  "room": [
+    8.4,
+    6.4
+  ],
+  "files": {
+    "src/createFoxVisual.ts": "099efba1e2f381f2689565f4717b56fc0932f9dddd517333c7d1c674a1cbf86f",
+    "src/Character.ts": "26e21e6e0d8ac30215dcbeb334f003443fd4c733233a88148f7735280d8861c4",
+    "src/scene.ts": "f1b5041f8ab9205c7b8b6052d7b11820f8611660ff2005c0c4f303e0500b27f3",
+    "src/main.ts": "ef433a317364433f2b48c6feed9846183b63f29b1befac3a825974e2332e5ee9",
+    "src/WindowInteraction.ts": "a1a48cb27616d23d276bc12cad6d557c0ada9e471febbbdc30bcb179a9511863",
+    "tests/behavior.test.mjs": "cee2f99accd6f7ae392f8624c8788f2a7a8d658e8c9ede9fb795cf3cc0d97cf0"
+  }
+}

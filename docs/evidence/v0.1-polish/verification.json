@@ -1,0 +1,20 @@
+[
+  {
+    "command": "npm run typecheck",
+    "startedAt": "2026-09-10T20:13:18.8457031+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 typecheck\r\n> tsc --noEmit\r\n\r\n"
+  },
+  {
+    "command": "npm run test",
+    "startedAt": "2026-09-10T20:13:19.3311524+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 test\r\n> node --test tests/*.test.mjs\r\n\r\n✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (24.7835ms)\r\n✔ window command interrupts autonomous Idle within 0.5 seconds (6.4732ms)\r\n✔ window command interrupts autonomous Walk within 0.5 seconds (4.4037ms)\r\n✔ three different starts complete approach, facing, full Observe, clear command, leave window (13.3379ms)\r\n✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (3.2873ms)\r\n✔ already at station turns in place, no detour or snap (3.2377ms)\r\n✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (13.9736ms)\r\n✔ background/resume preserves approach and Observe; no accumulated hidden time (6.7558ms)\r\n✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.8059ms)\r\n✔ arrival settle stays in Walk, accepts no duplicate, then preserves four full Observe seconds (2.8821ms)\r\n✔ turn easing and secondary motion stay finite across frame rates, with lag that settles (50.7232ms)\r\nℹ tests 11\r\nℹ suites 0\r\nℹ pass 11\r\nℹ fail 0\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 240.1518\r\n"
+  },
+  {
+    "command": "npm run build",
+    "startedAt": "2026-09-10T20:13:19.9684907+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 build\r\n> tsc --noEmit && vite build\r\n\r\nvite v8.2.2 building client environment for production...\r\ntransforming...\r\n✓ 16 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                   0.44 kB │ gzip:   0.29 kB\r\ndist/assets/index-BtoMTbOP.css    1.51 kB │ gzip:   0.78 kB\r\ndist/assets/index-XemZZTn5.js   600.00 kB │ gzip: 153.60 kB\r\n\r\n✓ built in 146ms\r\n[plugin builtin:vite-reporter] \r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\r\n"
+  }
+]

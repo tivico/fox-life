@@ -1,0 +1,20 @@
+[
+  {
+    "command": "npm run typecheck",
+    "startedAt": "2026-09-10T19:48:58.2416820+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 typecheck\r\n> tsc --noEmit\r\n\r\n"
+  },
+  {
+    "command": "npm run test",
+    "startedAt": "2026-09-10T19:49:04.9823586+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 test\r\n> node --test tests/*.test.mjs\r\n\r\n✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (9.3411ms)\r\n✔ window command interrupts autonomous Idle within 0.5 seconds (1.5705ms)\r\n✔ window command interrupts autonomous Walk within 0.5 seconds (0.837ms)\r\n✔ three different starts complete approach, facing, full Observe, clear command, leave window (4.549ms)\r\n✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (0.858ms)\r\n✔ already at station turns in place, no detour or snap (0.5003ms)\r\n✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (13.1442ms)\r\n✔ background/resume preserves approach and Observe; no accumulated hidden time (1.485ms)\r\n✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.9613ms)\r\nℹ tests 9\r\nℹ suites 0\r\nℹ pass 9\r\nℹ fail 0\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 255.0397\r\n"
+  },
+  {
+    "command": "npm run build",
+    "startedAt": "2026-09-10T19:49:05.6380990+08:00",
+    "exitCode": 0,
+    "output": "\r\n> fox-life-web@0.0.1 build\r\n> tsc --noEmit && vite build\r\n\r\nvite v8.2.2 building client environment for production...\r\ntransforming...\r\n✓ 15 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                   0.44 kB │ gzip:   0.29 kB\r\ndist/assets/index-BtoMTbOP.css    1.51 kB │ gzip:   0.78 kB\r\ndist/assets/index-CWaZ7Zxl.js   567.82 kB │ gzip: 143.29 kB\r\n\r\n✓ built in 2.10s\r\n[plugin builtin:vite-reporter] \r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\r\n"
+  }
+]

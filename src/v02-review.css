@@ -1,0 +1,13 @@
+#app.v02-review { display: flex; flex-direction: column; }
+.v02-toolbar { flex: none; padding: 14px 20px 12px; background: #faf8f0; border-bottom: 1px solid #d0d5c8; }
+.v02-toolbar strong { font-size: 17px; }
+#v02-status { margin-left: 16px; font-size: 12px; color: #52694d; }
+.v02-toolbar nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; align-items: center; }
+.v02-toolbar button[aria-pressed="true"] { background: #d5e2d0; border-color: #648063; }
+.v02-toolbar a { margin-left: 12px; font-size: 12px; color: #426b53; }
+.v02-toolbar small { font-size: 11px; color: #66746a; }
+.v02-stage { flex: 1; min-height: 0; position: relative; }
+.v02-labels { position: absolute; top: 12px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; text-align: center; font-size: 12px; z-index: 1; }
+.v02-labels span { justify-self: center; padding: 6px 12px; border-radius: 20px; background: #faf8f0df; }
+.v02-stage::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid #ccd0c5; pointer-events: none; }
+@media (max-width: 700px) { .v02-toolbar { padding: 10px; } #v02-status { display: block; margin: 5px 0 0; } }
