@@ -1,0 +1,37 @@
+- main:
+  - generic "3D 房間：拖曳環繞、滾輪縮放、點擊窗戶"
+  - complementary:
+    - paragraph: A LITTLE HOME · SLEEP
+    - heading "Fox Life" [level=1]
+    - paragraph: 陪牠，看一會窗外。
+    - button "隱藏 Debug" [expanded] [active]
+    - term: Current State
+    - definition: Idle
+    - term: Current Action
+    - definition: Autonomous idle
+    - term: Current Target
+    - definition: None
+    - term: Control Source
+    - definition: Autonomous
+    - term: Idle variation
+    - definition: Look around
+    - term: Observe seconds
+    - definition: —
+    - term: Position · X / Z
+    - definition: 1.14 / 0.20
+    - term: Window hits
+    - definition: "1"
+    - term: Bed hits
+    - definition: "5"
+    - term: Sleep phase / seconds
+    - definition: —
+    - term: Sleep cooldown
+    - definition: "28.6"
+    - term: Viewport
+    - definition: 802 × 673
+    - term: Renderer
+    - definition: WebGL · rendering
+    - button "重設鏡頭"
+    - paragraph:
+      - text: 拖曳環繞 · 滾輪縮放
+      - text: 點窗看風景，點床休息一會。

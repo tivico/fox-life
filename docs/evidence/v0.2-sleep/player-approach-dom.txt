@@ -1,0 +1,37 @@
+- main:
+  - generic "3D 房間：拖曳環繞、滾輪縮放、點擊窗戶"
+  - complementary:
+    - paragraph: A LITTLE HOME · SLEEP
+    - heading "Fox Life" [level=1]
+    - paragraph: 陪牠，看一會窗外。
+    - button "隱藏 Debug" [expanded] [active]
+    - term: Current State
+    - definition: Walk
+    - term: Current Action
+    - definition: Walk to bed
+    - term: Current Target
+    - definition: Bed (-3.15, 1.85)
+    - term: Control Source
+    - definition: Player Command
+    - term: Idle variation
+    - definition: —
+    - term: Observe seconds
+    - definition: —
+    - term: Position · X / Z
+    - definition: "-0.56 / -0.35"
+    - term: Window hits
+    - definition: "1"
+    - term: Bed hits
+    - definition: "5"
+    - term: Sleep phase / seconds
+    - definition: approach / 0.00
+    - term: Sleep cooldown
+    - definition: "21.5"
+    - term: Viewport
+    - definition: 802 × 673
+    - term: Renderer
+    - definition: WebGL · rendering
+    - button "重設鏡頭"
+    - paragraph:
+      - text: 拖曳環繞 · 滾輪縮放
+      - text: 點窗看風景，點床休息一會。

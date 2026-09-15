@@ -3,7 +3,7 @@ import type { Character } from './Character.ts';
 export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
   const panel = document.createElement('aside');
   panel.innerHTML = `
-    <p class="eyebrow">A LITTLE HOME · V0.1</p>
+    <p class="eyebrow">A LITTLE HOME · SLEEP</p>
     <h1>Fox Life</h1>
     <p class="intro">陪牠，看一會窗外。</p>
     <button id="debug-toggle" type="button" aria-expanded="false" aria-controls="debug-data">顯示 Debug</button>
@@ -16,11 +16,14 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
       <dt>Observe seconds</dt><dd id="observe-time">—</dd>
       <dt>Position · X / Z</dt><dd id="position">—</dd>
       <dt>Window hits</dt><dd id="hits">0</dd>
+      <dt>Bed hits</dt><dd id="bed-hits">0</dd>
+      <dt>Sleep phase / seconds</dt><dd id="sleep-phase">—</dd>
+      <dt>Sleep cooldown</dt><dd id="sleep-cooldown">0</dd>
       <dt>Viewport</dt><dd id="viewport">—</dd>
       <dt>Renderer</dt><dd id="renderer-status">Starting</dd>
     </dl>
     <button id="reset-camera" type="button">重設鏡頭</button>
-    <p class="hint">拖曳環繞 · 滾輪縮放<br>點一下窗戶，讓牠看看外面。</p>`;
+    <p class="hint">拖曳環繞 · 滾輪縮放<br>點窗看風景，點床休息一會。</p>`;
   host.append(panel);
   const reset = panel.querySelector<HTMLButtonElement>('#reset-camera')!;
   const toggle = panel.querySelector<HTMLButtonElement>('#debug-toggle')!;
@@ -38,16 +41,19 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
     if (node.textContent !== value) node.textContent = value;
   };
   return {
-    update(character: Character, count: number, width: number, height: number) {
+    update(character: Character, count: number, width: number, height: number, bedHits = 0) {
       const target = character.target;
       set('state', character.state);
       set('action', character.action);
-      set('target', target ? `${character.source === 'Player Command' ? 'Window' : 'Room'} (${target.x.toFixed(2)}, ${target.z.toFixed(2)})` : 'None');
+      set('target', target ? `${character.targetLabel} (${target.x.toFixed(2)}, ${target.z.toFixed(2)})` : 'None');
       set('source', character.source);
       set('variation', character.state === 'Idle' ? character.idleVariation : '—');
       set('observe-time', character.state === 'Observe' ? `${character.observeElapsed.toFixed(2)} / 4.00` : '—');
       set('position', `${character.root.position.x.toFixed(2)} / ${character.root.position.z.toFixed(2)}`);
       set('hits', String(count));
+      set('bed-hits', String(bedHits));
+      set('sleep-phase', character.sleepPhase ? `${character.sleepPhase} / ${character.sleepElapsed.toFixed(2)}` : '—');
+      set('sleep-cooldown', character.sleepCooldownRemaining.toFixed(1));
       set('viewport', `${width} × ${height}`);
       set('renderer-status', 'WebGL · rendering');
     },

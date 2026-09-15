@@ -7,6 +7,12 @@ export const characterLayout: CharacterLayout = {
   bounds: { minX: -1.65, maxX: 1.65, minZ: -1.15, maxZ: 1.35 },
 };
 
+export const sleepLayout: CharacterLayout = {
+  ...characterLayout,
+  bed: { position: new THREE.Vector3(-3.15, 0, 1.85), heading: Math.PI,
+    corner: new THREE.Vector3(-1.65, 0, 1.85) },
+};
+
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e9e6df');
@@ -42,10 +48,13 @@ export function createScene() {
   box(3.7, 0.008, 2.9, '#d4b29b', 0, -0.003, 0.35);
 
   // Decorative furniture only. Inner faces stay outside |x| = 2.9.
-  box(0.85, 0.26, 1.9, '#aeb998', -3.4, 0.13, 0.5);
-  box(0.76, 0.22, 1.75, '#e5dfc9', -3.4, 0.37, 0.5);
-  box(0.65, 0.15, 0.45, '#f2ebd6', -3.4, 0.55, -0.08);
-  box(0.85, 0.65, 0.12, '#aeb998', -3.4, 0.325, -0.52);
+  const bedParts = [
+    box(0.85, 0.26, 1.9, '#aeb998', -3.4, 0.13, 0.5),
+    box(0.76, 0.22, 1.75, '#e5dfc9', -3.4, 0.37, 0.5),
+    box(0.65, 0.15, 0.45, '#f2ebd6', -3.4, 0.55, -0.08),
+    box(0.85, 0.65, 0.12, '#aeb998', -3.4, 0.325, -0.52),
+  ];
+  bedParts.forEach((part, index) => { part.name = ['BedFrame', 'Mattress', 'Pillow', 'Headboard'][index]!; });
   box(0.7, 0.72, 1.25, '#b0bcaa', 3.5, 0.36, -0.3);
   box(0.79, 0.08, 1.35, '#eee5d2', 3.5, 0.76, -0.3);
   box(0.4, 0.06, 0.47, '#c99573', 3.48, 0.84, -0.52);
@@ -62,5 +71,5 @@ export function createScene() {
   windowParts.push(box(0.08, 1.6, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.2, 0.08, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.65, 0.12, 0.55, '#faf0dd', 0, 0.85, -2.95));
-  return { scene, camera, windowParts };
+  return { scene, camera, windowParts, bedParts };
 }

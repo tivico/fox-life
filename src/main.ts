@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, characterLayout } from './scene';
+import { createScene, sleepLayout } from './scene';
+import { bindBedInteraction } from './BedInteraction';
 import { Character } from './Character.ts';
 import { bindWindowInteraction } from './WindowInteraction';
 import { createDebugPanel } from './DebugPanel';
@@ -23,7 +24,7 @@ function start() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點擊窗戶');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts } = createScene();
+  const { scene, camera, windowParts, bedParts } = createScene();
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -34,13 +35,19 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(characterLayout);
+  const character = new Character(sleepLayout);
   scene.add(character.root);
   let windowHits = 0;
+  let bedHits = 0;
+  const unbindBed = bindBedInteraction(renderer.domElement, camera, scene, bedParts, () => {
+    bedHits++;
+    character.requestSleep();
+    debug.update(character, windowHits, width, height, bedHits);
+  });
   const unbind = bindWindowInteraction(renderer.domElement, camera, scene, windowParts, () => {
     windowHits++;
     character.requestWindowObserve();
-    debug.update(character, windowHits, width, height);
+    debug.update(character, windowHits, width, height, bedHits);
   });
   const debug = createDebugPanel(host, () => controls.reset());
   let width = 0;
@@ -70,7 +77,7 @@ function start() {
     character.update(dt);
     controls.update();
     renderer.render(scene, camera);
-    debug.update(character, windowHits, width, height);
+    debug.update(character, windowHits, width, height, bedHits);
   });
   import.meta.hot?.dispose(() => {
     renderer.setAnimationLoop(null);
@@ -78,6 +85,7 @@ function start() {
     document.removeEventListener('visibilitychange', visibilityChanged);
     performanceSample?.dispose();
     unbind();
+    unbindBed();
     controls.dispose();
     debug.dispose();
     const geometries = new Set<THREE.BufferGeometry>();

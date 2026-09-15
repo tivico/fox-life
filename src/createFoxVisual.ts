@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { CharacterState, IdleVariation } from './Character.ts';
+import type { SleepPhase } from './sleep.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
   const root = new THREE.Group();
+  root.name = 'FoxVisual';
   // Scale only the visual child: movement, targets and arrival tolerances stay in world units.
   root.scale.setScalar(0.76);
   const body = new THREE.Group();
@@ -15,6 +17,19 @@ export function createFoxVisual() {
   const dark = new THREE.MeshStandardMaterial({ color: '#493c32', roughness: 0.9 });
   const pink = new THREE.MeshStandardMaterial({ color: '#bf8a70', roughness: 1 });
   const sphere = new THREE.SphereGeometry(1, 24, 18);
+  const sleepBounds: Array<{ geometry: THREE.BufferGeometry; standing: THREE.Box3; sleeping: THREE.Box3 }> = [];
+  function sleepMorph(geometry: THREE.BufferGeometry, positions: THREE.BufferAttribute) {
+    const posed = geometry.clone();
+    posed.setAttribute('position', positions);
+    posed.computeVertexNormals();
+    geometry.morphAttributes.position = [positions];
+    geometry.morphAttributes.normal = [posed.getAttribute('normal').clone()];
+    const standing = new THREE.Box3().setFromBufferAttribute(geometry.getAttribute('position') as THREE.BufferAttribute);
+    const sleeping = new THREE.Box3().setFromBufferAttribute(positions);
+    geometry.boundingBox = standing.clone();
+    sleepBounds.push({ geometry, standing, sleeping });
+    posed.dispose();
+  }
   function ellipsoid(parent: THREE.Group, material: THREE.Material, scale: number[], position: number[]) {
     const mesh = new THREE.Mesh(sphere, material);
     mesh.scale.set(scale[0]!, scale[1]!, scale[2]!);
@@ -72,6 +87,7 @@ export function createFoxVisual() {
   head.add(new THREE.Mesh(headGeometry, painted));
   ellipsoid(head, dark, [0.038, 0.028, 0.024], [0, -0.075, 0.438]);
   const eyes = new THREE.Group();
+  eyes.name = 'FoxEyes';
   head.add(eyes);
   for (const x of [-0.145, 0.145]) {
     ellipsoid(eyes, dark, [0.025, 0.033, 0.009], [x, 0.037, 0.298]);
@@ -105,8 +121,10 @@ export function createFoxVisual() {
   }
   const arms: THREE.Group[] = [];
   const legs: THREE.Group[] = [];
+  const sleepingLegs: THREE.Mesh[] = [];
   for (const sign of [-1, 1]) {
     const arm = new THREE.Group();
+    arm.name = sign < 0 ? 'FoxArmL' : 'FoxArmR';
     arm.position.set(sign * 0.22, 0.82, 0);
     const armGeometry = sphere.clone();
     surfaceColors(armGeometry, (_x, y) => dark.color.clone().lerp(fur.color, THREE.MathUtils.smoothstep(y, -0.72, -0.32)));
@@ -131,7 +149,19 @@ export function createFoxVisual() {
     }
     legGeometry.computeVertexNormals();
     surfaceColors(legGeometry, (_x, y) => dark.color.clone().lerp(green.color, THREE.MathUtils.smoothstep(y, 0.14, 0.19)));
-    leg.add(new THREE.Mesh(legGeometry, painted));
+    // Bend the existing continuous leg surface into a curl, without adding joints
+    // or changing the standing mesh. The two feet have staggered curl amounts.
+    const curled = legPositions.clone();
+    for (let i = 0; i < curled.count; i++) {
+      const y = legPositions.getY(i), reach = Math.max(0, 0.49 - y);
+      const bend = (sign < 0 ? 0.55 : 0.43) * reach / 0.49;
+      curled.setY(i, 0.49 - reach * Math.cos(bend));
+      curled.setZ(i, legPositions.getZ(i) + reach * Math.sin(bend));
+    }
+    sleepMorph(legGeometry, curled);
+    const legMesh = new THREE.Mesh(legGeometry, painted);
+    leg.add(legMesh);
+    sleepingLegs.push(legMesh);
     root.add(leg);
     legs.push(leg);
   }
@@ -165,7 +195,23 @@ export function createFoxVisual() {
   const creamStart = 14 * sides * 6;
   tailGeometry.addGroup(0, creamStart, 0);
   tailGeometry.addGroup(creamStart, tailIndices.length - creamStart, 1);
-  tail.add(new THREE.Mesh(tailGeometry, [fur, cream]));
+  // A bed-only crescent rests behind the hips and wraps around the feet.
+  // Preserve the same topology and cream tip, instead of rotating the standing brush.
+  const restingTail = tailGeometry.getAttribute('position').clone();
+  for (let ring = 0; ring <= rings; ring++) {
+    const t = ring / rings;
+    const radius = ring === rings ? 0 : 0.14 * (1 - t) + 0.33 * Math.pow(Math.sin(Math.PI * t), 0.85);
+    for (let side = 0; side < sides; side++) {
+      const angle = side / sides * Math.PI * 2;
+      restingTail.setXYZ(ring * sides + side,
+        -0.04 + Math.cos(angle) * radius * 0.68,
+        -0.85 * t,
+        -0.10 * Math.sin(Math.PI * t) + 0.22 * t * t - Math.sin(angle) * radius * 0.60);
+    }
+  }
+  sleepMorph(tailGeometry, restingTail);
+  const tailMesh = new THREE.Mesh(tailGeometry, [fur, cream]);
+  tail.add(tailMesh);
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -193,11 +239,15 @@ export function createFoxVisual() {
   const tailYaw = secondary(7, 0.72);
   const tailPitch = secondary(8, 0.8);
   const earMotion = [secondary(12, 0.78), secondary(13, 0.8)];
+  const sleepRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0));
+  const neutralRotation = new THREE.Quaternion();
   return {
     root,
-    animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false }: {
+    animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false,
+      sleepPose = 0, sleepPhase = null, sleepTime = 0 }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
+      sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
@@ -248,6 +298,56 @@ export function createFoxVisual() {
         leg.rotation.y = damp(leg.rotation.y, Math.max(0, step) * Math.sign(turnRate) * 0.16 * turnBlend, 14);
         arms[index]!.rotation.x = damp(arms[index]!.rotation.x, -step * 0.23 * walkBlend - observeBlend * 0.08, 10);
       });
+      // Bed-only choreography: lift at the foot first, then roll onto the mattress.
+      // Reversing the same continuous path also handles interruption during settle.
+      const p = THREE.MathUtils.smootherstep(sleepPose, 0, 1);
+      sleepingLegs.forEach(mesh => { mesh.morphTargetInfluences![0] = p; });
+      tailMesh.morphTargetInfluences![0] = p;
+      // Three's default bounds union every morph, even when its weight is zero.
+      // Blend conservative endpoint bounds so standing queries retain standing extents.
+      sleepBounds.forEach(({ geometry, standing, sleeping }) => {
+        geometry.boundingBox!.min.copy(standing.min).lerp(sleeping.min, p);
+        geometry.boundingBox!.max.copy(standing.max).lerp(sleeping.max, p);
+      });
+      const roll = THREE.MathUtils.smootherstep(sleepPose, 0.5, 1);
+      root.quaternion.copy(neutralRotation).slerp(sleepRotation, roll);
+      root.position.set(0.25 * p, 0.71 * THREE.MathUtils.smootherstep(sleepPose, 0, 0.5) + 0.38 * Math.sin(Math.PI * p), 0.82 * p);
+      if (p > 0) {
+        const rest = Math.sin(time * 1.1) * 0.005;
+        body.scale.y = THREE.MathUtils.lerp(body.scale.y, 1 + rest, p);
+        body.position.y *= 1 - p;
+        body.rotation.x *= 1 - p;
+        body.rotation.z *= 1 - p;
+        // In the side-lying pose, local -X lifts away from the mattress.
+        // Support the head on the pillow and tuck the lower arm/tail above the bed.
+        head.position.x = -0.30 * p;
+        head.position.y = 1.14 - 0.035 * p;
+        head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, 0.10, p);
+        head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, 0.08, p);
+        eyes.scale.y = THREE.MathUtils.lerp(eyes.scale.y, 0.07, p);
+        if (sleepPhase === 'wake') head.rotation.z = -0.12 * Math.sin(Math.PI * Math.min(1, sleepTime / 0.75));
+        else head.rotation.z *= 1 - p;
+        tail.rotation.x *= 1 - p;
+        tail.rotation.y *= 1 - p;
+        tail.position.x = 0;
+        tail.position.z = -0.10 - 0.10 * p;
+        ears.forEach((ear, index) => {
+          ear.rotation.x = THREE.MathUtils.lerp(ear.rotation.x, -0.35, p);
+          ear.rotation.z = THREE.MathUtils.lerp(index === 0 ? 0.15 : -0.15, index === 0 ? 0.50 : 1.10, p);
+        });
+        legs.forEach((leg, index) => {
+          leg.position.y *= 1 - p;
+          leg.position.z *= 1 - p;
+          leg.rotation.y *= 1 - p;
+          arms[index]!.rotation.x = THREE.MathUtils.lerp(arms[index]!.rotation.x, index === 0 ? -0.95 : -0.65, p);
+          arms[index]!.position.x = (index === 0 ? -0.22 : 0.22 - 0.13 * p);
+          arms[index]!.position.z = (index === 0 ? 0.12 : 0.08) * p;
+        });
+      } else {
+        head.position.x = 0; head.position.y = 1.14; head.rotation.z = 0; tail.position.x = 0; tail.position.z = -0.10;
+        ears.forEach((ear, index) => { ear.rotation.z = index === 0 ? 0.15 : -0.15; });
+        arms.forEach((arm, index) => { arm.position.x = index === 0 ? -0.22 : 0.22; arm.position.z = 0; });
+      }
     },
   };
 }

@@ -1,0 +1,16 @@
+2026-09-14 — feature/v0.2-sleep — baseline 5ddd49c
+Execution summary transcribed from terminal tool results (not a raw shell transcript).
+npm run typecheck: tsc --noEmit, success.
+npm test: 22 tests, 22 pass, 0 fail, 0 skipped; duration 3040.4527 ms.
+Original behavior.test.mjs: all 15 tests unchanged and passing.
+sleep.test.mjs: 7 tests passing; multi-rate flow, priority/dedupe, autonomy/cooldown,
+safe Window interruption, sampled structural space, background-clock, bed raycast.
+npm run build: tsc --noEmit && vite build, success; 29 modules transformed.
+Vite build: 307 ms. Combined command completed with exit code 0.
+dist/assets/styles-CU297Xdk.js: 627.74 kB / gzip 158.66 kB.
+dist/assets/main-CuyTcngz.js: 13.95 kB / gzip 5.13 kB.
+Warning: Some chunks are larger than 500 kB after minification.
+Production smoke: npm run preview -- --port 4183 --strictPort.
+URL http://127.0.0.1:4183/; Codex In-app Browser, 802x673.
+Temporary resize 1280x800 restored; screenshot extent limited by host viewport.
+No FPS conclusion. Independent Chrome background/performance pending manual.
