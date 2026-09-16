@@ -1,5 +1,7 @@
 # Fox Life Web — Architecture
 
+> 最新 review：2026-09-17，見 §23 Pre-Eat Architecture Review。Sleep `fb9ad1f`、Read `2e18ed3` 均已 PO Accepted；目前只有 review 授權，Eat 未開始。下方 §1～20 的 Current / Proposed 與 approval 是 V0.1／規劃時快照，不代表目前僅有 Observe。
+
 > 2026-09-14 implementation update：後續 PO 已授權 Slice A Coding。Sleep 已在 `feature/v0.2-sleep` 延伸既有模組，技術驗證與人工待驗項目見 [Slice A acceptance](V0_2_SLEEP_ACCEPTANCE.md)。以下 2026-09-13 approval 與 Current / Proposed 內容保留為核准時快照；文件核准不等於 Slice A Accepted。
 
 > 狀態：Approved — Product Owner Review Completed  
@@ -548,3 +550,58 @@ Browser production smoke、獨立 Chrome background／performance 與 Product Ow
 - Window / Bed / Read 的 pointer down/up、5px drag、nearest raycast、listener cleanup 是三個實際重複 binder；未在驗證 polish 任務進行重構。未來若需修相同事件處理問題，可評估抽成一個小 click helper；不等於需要 Furniture Framework。
 - Read overlay 每幀先移除前一幀偏移再計算 baseline，避免 damping 把閱讀頭／手臂姿勢帶到走路。書本只在 Read pose 可見，隱藏時 raycast 不命中；prop meshes 留在 scene hierarchy，沿用 HMR 的 geometry/material Set 去重 dispose。
 - 原 15 項 V0.1 與 9 項 Sleep 測試未改；新增 9 項 Read 測試，合計 33 項通過。完整驗證與尚待人工邊界見 [Read Acceptance](V0_2_READ_ACCEPTANCE.md)。
+
+## 23. Pre-Eat Architecture Review（2026-09-17）
+
+### 23.1 結論與檢查基準
+
+**保持現狀，Eat 先用專用實作。** 這是未來獲得 Eat Coding 授權後的建議，本次只 review，不代表開始 Eat。
+
+檢查分支 `feature/v0.2-read`，HEAD `2e18ed3`，parent 為 Sleep checkpoint `fb9ad1f`；review 開始時 working tree 乾淨。已核對 PRODUCT、V0_2_WEB_SPEC、Architecture、Sleep / Read Acceptance，以及 Character、scene、visual、三個 interaction binder、main、Debug 與測試責任。Sleep / Read 的 PO Accepted 不改變獨立 Chrome background、完整 resize 與 performance 的 Pending 狀態。
+
+目前責任仍清楚：Character 管意圖／時間／world movement，visual 管 local pose，scene 提供 parts／站位，main 組合 callback，Debug 只讀真實 getters。沒有需要先重寫架構才能承接下一個專用 Action 的證據。共用語意多已集中；少量 request／phase branch 的重複成本低，保留可讀性更重要。
+
+### 23.2 十項實際重複分類
+
+分類以責任為單位：**A**＝已形成穩定重複，可能值得最小共用（包括已共用且不需再抽）；**B**＝外形相似但語意／演出仍應專用；**C**＝跨 Action 目前只有單一案例，不應推廣。同一項含不同責任時分別標記，不把整個 Action 歸為同一類。
+
+| 檢查項目 | 分類 | Observe / Sleep / Read 的實際證據與決定 |
+| --- | --- | --- |
+| 1. Intent / command entry | A：入口 invariant；B：初始化 | `Character.requestWindowObserve / requestSleep / requestRead` 都先拒絕 `commandActive`、再呼叫 `exitFor`。Sleep / Read 額外檢查 layout 與自主同目標去重，並由 `beginSleep / beginRead(player)` 合併兩種來源；Observe 只有玩家來源。短 guard 可保留，不能把不同初始化硬塞成通用 request config。 |
+| 2. Target / approach position | A：destination / identity；B：站位；C：床尾路徑 | 三者共用 `destination`、`targetKind`、Walk；scene 各自定義 position / heading。Window (0,-1.4)、Bed (-3.15,1.85)、Read (2.10,-0.30) 的淨空條件不同。`routePastBed` 可供不同出發／目的地使用，但繞床 corner 只有一個家具案例，不能據此建 waypoint framework。 |
+| 3. Facing / settle | A：已共用對正；B：進入姿勢 | `Character.update` 到點分支共用 0.035 容差、`turnTo`、0.025 朝向誤差門檻與 0.18 秒收勢。之後 Observe 直接開始，Sleep 再用 0.65 秒進床、Read 再用 0.35 秒開書；後兩者不是同一個 arrival settle。維持共用 approach + 明確分支。 |
+| 4. Active action phase | B | Observe 是 4 秒計時後 Idle；Sleep 是 settle / sleep / wake（0.65 / 8 / 0.75）；Read 是 settle / read / finish（0.35 / 7 / 0.35）。雖然 Sleep / Read 的 timer branch 結構相似，姿態建立、prop 與退出都不同；短顯式分支比 phase executor／通用 state machine 更易審查。前景 dt 已共用，不另抽 timer framework。 |
+| 5. Safe exit | A：已共用協調；B：退出姿勢 | Sleep / Read 真實使用 `exitFor / completeExit / afterExit`；`beginWake` 保存 bedPose 到 wakeFrom，`beginFinish` 保存 readingPose 到 finishFrom，已在退出時不重啟。Pose 必須各自演出；Observe 沒有需要解除的 anchored pose，不新增空 exit phase。 |
+| 6. Player command interruption | A：共用規則；B：當前動作退出 | 三個 request 都尊重單一 Player Command；已接受替代就鎖定 source，後續點擊拒絕。自主 Sleep / Read 可安全退出到另一目標；Observe 本身只有 Player Command，不能假設它有 Autonomous interruption 案例。既有有限 dispatch 足夠，不引入 queue 或 command object。 |
+| 7. Return to autonomous life | A：已共用 reset；B：完成副作用 | 三者最終經 `enterIdle` 清 target／source／phase／pose／移動狀態並設定 Idle。Sleep / Read 先設各自 cooldown，再由 `completeExit` 重設 Walk 計數；有 afterExit 才同幀清理後啟動新 request，下個 update 才能移動。Observe 直接 `enterIdle`，沒有 life cooldown；保留差別。 |
+| 8. Debug state/action reporting | A：已共用讀取；B：標籤與資料 | Character getters 統一 state / source / targetLabel / action；DebugPanel 的 `set` 共用 DOM 更新。`action` 明確依 Read / Sleep phase 再看 state，Observe seconds 與兩種 phase／cooldown 各有欄位。重複是幾行格式化，尚不值得建 action metadata registry；hit count 仍不等於 accepted command。 |
+| 9. Cooldown / autonomous selection | A：兩種 life action 已共用選擇；B：資格與值 | Sleep / Read 都在 Idle 的 `eligible` 陣列判斷初始 Walk 完成、layout、cooldown，再用單一選擇式處理 Walk:3、每個 eligible life action:1、三 Walk 上限。45 / 30 秒各自遞減／重設；Observe 不入候選。短局部邏輯足夠，不需 Needs、scheduler 或通用 weighted registry。 |
+| 10. Visual pose overlay / reset | B：reset 方法不同；C：專用機制 | Observe 用 damp 的 observeBlend／glance；Sleep 用 root 抬升側轉、腿／尾 morph 及顯式復位；Read 每幀撤除 readOffsets，再算 baseline／疊加並清 book。共同的是「完成後不能殘留」契約，不是同一套 pose algorithm。Read 的可撤除持書 overlay／隱藏 prop raycast 與 Sleep 的床面 morph 各只有一種 Action，不能先建立 pose layer stack、prop manager 或 rig。 |
+
+程式定位（以本 review 的 HEAD 為準）：`Character.ts` 43（afterExit）、74（action）、87～171（request／safe exit／begin／床尾路徑）、173（enterIdle）、214～315（timing／selection／arrival／Observe）；`createFoxVisual.ts` 284（readOffsets）、318（Observe blend）、351（Sleep morph）、399（Read overlay）。
+
+### 23.3 既有共用程式是否適量
+
+- **保留 `afterExit`。** 它把原 Sleep 的 windowAfterWake 特例擴為三個已存在目的地，真實涵蓋 Sleep→Window／Read、Read→Window／Bed；所有 union 成員都有使用。它只保留一個取代中的目的地，不儲存一串意圖，不接受 action callbacks／plugin hooks，也沒有未用 extension point。
+- **保留 `exitFor / completeExit`。** 前者只判斷現有兩種 pose 再交給專用退出；後者把「取出並清 afterExit → reset Walk count → enterIdle → dispatch」集中。少了重複清理與提前走動的風險。`enterIdle` 本身不清 afterExit，現有安全退出順序由 completeExit 保證；未來修改必須保留此順序，不能任意旁路呼叫。
+- **保留單一 Walk / turn / arrival 分支與 Idle chooser。** 已消除三份 locomotion 與兩份自主決策；沒有必要再包一層 ActionRunner。optional bed / reading layout 也實際用於 V0.1、Sleep 與完整 Read 的不同測試配置，不是預留家具插件。
+- **保留視覺層內的有限 helper。** 例如 secondary spring 供耳／尾使用，sleepMorph 供腿／尾使用，確實降低 geometry／次級運動重複；這是同一模型內的共用，不是兩個 Action 支持通用 pose 系統的證據。
+- **一個小型維護觀察，非 blocker：** `SLEEP.weight`、`READ.weight` 都宣告 1，但目前 chooser 以 eligible 個數實現等權，沒有讀取這兩個欄位；`walkWeight` 則仍掛在 SLEEP。現行數值符合規格，但只改 weight 常數不會改變選擇機率。這是常數與實際演算法表示的重複，不是已實作可擴充 weight API；未來若碰到該段應保持一致，不為此新增 framework。本輪不修改。
+
+### 23.4 唯一可選的最小 abstraction 建議：click binder
+
+這不是 Eat 的前置要求，也不在本輪實作。
+
+- **已存在案例：** `WindowInteraction.ts`、`BedInteraction.ts`、`ReadInteraction.ts` 的 binder，除函式名、parts 變數與註解外，pointer / raycast / dispose 流程相同。
+- **明確重複：** primary left press、pointer id、5px drag、cancel、螢幕座標轉換、scene 最近 raycast hit、parts membership 與四個 listener 的成對 cleanup。
+- **Eat 很可能再複製的依據：** 已核准 Spec §8.2／§5.3 同樣要求指定 Food parts、遮擋拒絕與 drag 排除；這個預測有三份現存同型程式支持，不只因為 Eat 也叫 Action。
+- **具體成本：** 任何 drag／取消／遮擋／cleanup 修正需同步三份，加入 Food 會變四份；目前未發現因此造成的 regression，故不當 blocker。
+- **最小形式：** 一個 `bindTargetClick(canvas, camera, scene, parts, onHit) -> dispose` 函式，只搬現有機制；各家具 parts、callback、request、hit counter 與 priority 留在原本邊界。可保留薄的專用 binder 名稱以減少呼叫端改動。不要再加 target registry、Action id config、事件匯流排、policy hooks 或家具 class。
+- **為何比其他方案小：** 不建立新資料模型，只消除重複的事件處理函式本體。若只改一份專用 binder，其餘兩份仍有同步成本；但目前沒有事件缺陷，保留三份直到未來實際變更也可接受。
+- **若未來採用的驗證：** 保留三個現有真實 raycast 測試（Window / Bed / Read），驗證有效 parts、遮擋、非目標、drag／cancel、dispose；另驗證同一 click 不觸發多個 target callback，隱藏 ReadingBook 不擋 raycast。各 Character priority／safe exit 與 33 項既有回歸仍須保留。helper 不保證「命中即接受 command」。
+
+### 23.5 Review 邊界與後續風險
+
+未來 Eat 若獲授權，專用 phase／姿勢／餐區幾何先行；沿用現有共用責任即可，不在本輪預建 Eat 欄位、入口或檔案。要留意新增 phase 同時納入 action reporting、enterIdle 清理、afterExit dispatch、cooldown eligibility 與 visual neutral reset，並以跨 Action 中斷測試防止漏清；不要藉此把三種既有演出改寫成通用圖。
+
+本 review 未發現需要大型重構的架構 blocker。既有 33 tests／typecheck／build 通過為 Read checkpoint 的歷史證據，本輪只檢查 source／docs 與 diff，沒有重跑驗證，也不把 Chrome Pending 改為 Pass。僅修改本文件；runtime、tests、assets、dependencies 與兩個 checkpoint 不變，不 commit／push／merge，不開始 Eat。
