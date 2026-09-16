@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { CharacterState, IdleVariation } from './Character.ts';
 import type { SleepPhase } from './sleep.ts';
+import type { ReadPhase } from './read.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -212,6 +213,43 @@ export function createFoxVisual() {
   sleepMorph(tailGeometry, restingTail);
   const tailMesh = new THREE.Mesh(tailGeometry, [fur, cream]);
   tail.add(tailMesh);
+  // A visual-only open book, held in the existing arm hierarchy's reach.
+  const book = new THREE.Group();
+  book.name = 'ReadingBook';
+  book.visible = false;
+  book.scale.setScalar(0);
+  book.position.set(0, 0.72, 0.415);
+  book.rotation.x = 0.20;
+  body.add(book);
+  const cover = new THREE.MeshStandardMaterial({ color: '#925d48', roughness: 1 });
+  const paper = new THREE.MeshStandardMaterial({ color: '#f2e5c6', roughness: 1 });
+  const halves: THREE.Group[] = [];
+  for (const sign of [-1, 1]) {
+    const half = new THREE.Group();
+    half.rotation.z = sign * 1.50;
+    for (const [w, h, d, y, material] of [
+      [0.255, 0.018, 0.33, -0.022, cover], [0.24, 0.026, 0.31, 0, paper],
+    ] as const) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+      mesh.position.set(sign * 0.125, y, 0);
+      half.add(mesh);
+    }
+    book.add(half); halves.push(half);
+  }
+  const page = new THREE.Group();
+  page.name = 'ReadingPage';
+  page.position.y = 0.025;
+  const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.004, 0.24), paper);
+  leaf.position.set(0.105, 0, 0.035);
+  page.add(leaf); book.add(page);
+  book.traverse(object => {
+    if (object instanceof THREE.Mesh) {
+      // Raycaster does not automatically skip invisible ancestors.
+      object.raycast = function (raycaster, intersects) {
+        if (book.visible) THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
+      };
+    }
+  });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -241,16 +279,26 @@ export function createFoxVisual() {
   const earMotion = [secondary(12, 0.78), secondary(13, 0.8)];
   const sleepRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0));
   const neutralRotation = new THREE.Quaternion();
+  // Remove last frame's Read overlay before running the accepted baseline pose.
+  // Otherwise damping would retain a held-book arm/head offset after PutAway.
+  const readOffsets = { headX: 0, headY: 0, bodyX: 0, bodyZ: 0, eyesX: 0, arms: [0, 0] };
   return {
     root,
     animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false,
-      sleepPose = 0, sleepPhase = null, sleepTime = 0 }: {
+      sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0 }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
+      readPose?: number; readPhase?: ReadPhase | null; readTime?: number;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
+      head.rotation.x -= readOffsets.headX; head.rotation.y -= readOffsets.headY;
+      body.rotation.x -= readOffsets.bodyX; body.rotation.z -= readOffsets.bodyZ;
+      eyes.position.x -= readOffsets.eyesX;
+      arms.forEach((arm, i) => { arm.rotation.x -= readOffsets.arms[i]!; });
+      readOffsets.headX = readOffsets.headY = readOffsets.bodyX = readOffsets.bodyZ = readOffsets.eyesX = 0;
+      readOffsets.arms.fill(0);
       const damp = (value: number, target: number, rate = 7) => THREE.MathUtils.damp(value, target, rate, dt);
       if (state === 'Walk' && previousState !== 'Walk') startTime = 0;
       startTime += dt;
@@ -347,6 +395,28 @@ export function createFoxVisual() {
         head.position.x = 0; head.position.y = 1.14; head.rotation.z = 0; tail.position.x = 0; tail.position.z = -0.10;
         ears.forEach((ear, index) => { ear.rotation.z = index === 0 ? 0.15 : -0.15; });
         arms.forEach((arm, index) => { arm.position.x = index === 0 ? -0.22 : 0.22; arm.position.z = 0; });
+      }
+      const reading = p === 0 ? THREE.MathUtils.smootherstep(readPose, 0, 1) : 0;
+      book.visible = reading > 0;
+      book.scale.setScalar(reading);
+      book.rotation.x = 0.20;
+      halves.forEach((half, index) => { half.rotation.z = (index === 0 ? -1 : 1) * (0.10 + (1 - reading) * 1.40); });
+      if (readPhase === 'read') {
+        // One quiet page turn followed by a pause; no continuous flapping.
+        page.rotation.z = Math.PI * THREE.MathUtils.smootherstep(readTime, 3.0, 3.85);
+      } else if (!book.visible) page.rotation.z = 0;
+      // A modest curled-page silhouette stays below the lowered muzzle.
+      page.scale.x = 1 - 0.75 * Math.sin(page.rotation.z);
+      if (reading > 0) {
+        readOffsets.headX = (0.38 + Math.sin(time * 0.8) * 0.012 - head.rotation.x) * reading;
+        readOffsets.headY = -head.rotation.y * reading;
+        readOffsets.eyesX = -eyes.position.x * reading;
+        readOffsets.bodyX = -body.rotation.x * reading;
+        readOffsets.bodyZ = -body.rotation.z * reading;
+        head.rotation.x += readOffsets.headX; head.rotation.y += readOffsets.headY;
+        eyes.position.x += readOffsets.eyesX;
+        body.rotation.x += readOffsets.bodyX; body.rotation.z += readOffsets.bodyZ;
+        arms.forEach((arm, i) => { readOffsets.arms[i] = (-1.30 - arm.rotation.x) * reading; arm.rotation.x += readOffsets.arms[i]!; });
       }
     },
   };

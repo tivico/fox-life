@@ -2,8 +2,12 @@
 
 > 狀態：Approved — Product Owner Review Completed  
 > 日期：2026-09-13  
-> Slice A — Sleep：**Accepted（PO Manual Acceptance，2026-09-15）**；[驗收紀錄與 checkpoint 準備](V0_2_SLEEP_ACCEPTANCE.md)。無新的功能 blocker；已知程序模型限制保留，不阻擋 Slice A。本次不修改 runtime，不開始 Read／Eat。  
-> Product Owner 已核准本規格，目前只授權 **Slice A — Sleep**；**本輪僅更新核准紀錄，不開始 Coding**。  
+> Slice A — Sleep：**Accepted（PO Manual Acceptance，2026-09-15）**；checkpoint `fb9ad1f`，保留 [驗收紀錄](V0_2_SLEEP_ACCEPTANCE.md)。
+>
+> Slice B — Read：**Accepted（PO Manual Acceptance；2026-09-17 closeout 確認）**；見 [驗收與 checkpoint 紀錄](V0_2_READ_ACCEPTANCE.md)。無新的功能 blocker；獨立 Chrome background / 完整 resize / performance 補驗保持 Pending，不因 PO 體驗接受而誤標通過。
+>
+> Slice C — Eat：未授權、未開始。規格內容與 Scope 不變。
+>
 > 實作順序固定為 **Sleep → Read → Eat**；每個 Slice 完成並由 Product Owner 驗收後，才能進入下一個 Slice。
 
 ## 1. 依據、現況與決策邊界
@@ -419,10 +423,10 @@ V0.2 不做：
 
 | ID | PO 核心問題 | 結果 |
 | --- | --- | --- |
-| SB-P01 | 隱藏 Debug 時，是否一看就知道狐狸在閱讀，而不是抱著方塊發呆？ | 待 PO 填 Accepted／Needs Adjustment／Not Reviewed |
-| SB-P02 | 取書／開書、閱讀停頓、翻頁、收書與回日常的節奏是否自然？ | 待 PO 填 |
-| SB-P03 | Camera 主要角度是否看得懂書、頭部與手的關係，並且不和 Sleep／Observe 混淆？ | 待 PO 填 |
-| SB-P04 | Autonomous Read 是否像狐狸自己選擇一段居家時間，而不是到點播另一個循環？ | 待 PO 填 |
+| SB-P01 | 隱藏 Debug 時，是否一看就知道狐狸在閱讀，而不是抱著方塊發呆？ | Accepted — PO 整體人工驗收，2026-09-17 closeout 確認 |
+| SB-P02 | 取書／開書、閱讀停頓、翻頁、收書與回日常的節奏是否自然？ | Accepted — 同上 |
+| SB-P03 | Camera 主要角度是否看得懂書、頭部與手的關係，並且不和 Sleep／Observe 混淆？ | Accepted — 同上；獨立 Chrome resize 技術補驗仍 Pending |
+| SB-P04 | Autonomous Read 是否像狐狸自己選擇一段居家時間，而不是到點播另一個循環？ | Accepted — 同上 |
 
 ## 15. Slice C — Eat Acceptance Criteria
 

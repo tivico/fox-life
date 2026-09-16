@@ -535,3 +535,16 @@ Browser production smoke、獨立 Chrome background／performance 與 Product Ow
 - 原 V0.1 motion / Observe / FrameClock 測試保留，新增 7 項 Sleep 測試。未建立 FurnitureInteraction、ActionManager、Action queue、Needs 或通用 navigation。
 - Bed / Window 的 pointer / raycast / dispose，以及 Character 的 request / approach / timed return 已有可觀察的重複。Sleep 安全 Wake 與床尾路徑仍是特例；此時只記錄，等未來已授權 Slice 的實際重複再評估小型抽取。
 - Slice A 仍待 PO 睡姿與體驗驗收、Chrome 補驗；Read / Eat 尚未開始。
+
+## 22. Slice B 實作與驗證觀察（2026-09-16）
+
+本節更新目前實作狀態；上方規劃與 Slice A 觀察保留其當時日期。Sleep 已由 PO Accepted 並保存為 `fb9ad1f`；Read 在 `feature/v0.2-read` 實作，PO 已 Accepted（2026-09-17 closeout 確認），Chrome 技術補驗保持 Pending。Eat 未開始。
+
+- Character 管 Read 的 approach / settle / read / finish、7 秒 duration、30 秒 cooldown 與 command priority；visual 管開收書、持書、低頭及一次翻頁。Scene 提供真正的 Bookshelf parts 和固定 reading anchor；main 只組合及 dispose。沒有改寫既有 locomotion 或 Sleep preset。
+- Observe / Sleep / Read 真實重複：玩家指令去重、Walk 到 anchor、最後對正／0.18 秒收勢、完成清 target 回 Idle。Sleep / Read 額外重複 anchored action 的安全退出與「退出後再走向一個新目的地」。Observe 沒有 anchored pose，不強迫加入安全退出 phase。
+- `afterExit: 'Window' | 'Bed' | 'Bookshelf' | null` 取代 Sleep 原本 `windowAfterWake` 的單目標 boolean；`exitFor` 與 `completeExit` 只涵蓋實際 Sleep / Read 退出案例。避免各處複製清理、重設與下一個 command dispatch，降低殘留 pose 或提前移動風險。
+- afterExit 只有一個槽位；接受替代時立即成為 Player Command，後續 command 全拒絕，完成退出即清空。沒有 queue、callback registry、泛型 Action class、Action Graph、未使用 target 或 extension point。Wake / PutAway 的 duration、姿勢、phase 仍各自明確實作。
+- Sleep / Read 的自主候選過濾、各自 cooldown 與 Walk:3 / life action:1 由 Idle 的短局部選擇碼管理，不新增 chooser framework。
+- Window / Bed / Read 的 pointer down/up、5px drag、nearest raycast、listener cleanup 是三個實際重複 binder；未在驗證 polish 任務進行重構。未來若需修相同事件處理問題，可評估抽成一個小 click helper；不等於需要 Furniture Framework。
+- Read overlay 每幀先移除前一幀偏移再計算 baseline，避免 damping 把閱讀頭／手臂姿勢帶到走路。書本只在 Read pose 可見，隱藏時 raycast 不命中；prop meshes 留在 scene hierarchy，沿用 HMR 的 geometry/material Set 去重 dispose。
+- 原 15 項 V0.1 與 9 項 Sleep 測試未改；新增 9 項 Read 測試，合計 33 項通過。完整驗證與尚待人工邊界見 [Read Acceptance](V0_2_READ_ACCEPTANCE.md)。

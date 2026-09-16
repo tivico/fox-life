@@ -1,0 +1,45 @@
+
+> fox-life-web@0.0.1 test
+> node --test tests/*.test.mjs
+
+✔ 30/60/90/135/180 degree turns in both directions advance forward and arrive across frame rates (160.648ms)
+✔ curved approaches from activity corners remain clear of room furniture (173.4654ms)
+✔ small corrections do not march; large pivots alternate feet and settle without head displacement (22.6494ms)
+✔ gait cadence follows distance and pose changes stay bounded through start, stop and command interruption (29.0604ms)
+✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (11.4908ms)
+✔ window command interrupts autonomous Idle within 0.5 seconds (2.6464ms)
+✔ window command interrupts autonomous Walk within 0.5 seconds (2.6574ms)
+✔ three different starts complete approach, facing, full Observe, clear command, leave window (14.8994ms)
+✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (3.2371ms)
+✔ already at station turns in place, no detour or snap (2.8671ms)
+✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (8.4317ms)
+✔ background/resume preserves approach and Observe; no accumulated hidden time (6.4577ms)
+✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.8827ms)
+✔ arrival settle stays in Walk, accepts no duplicate, then preserves four full Observe seconds (3.2238ms)
+✔ turn easing and secondary motion stay finite across frame rates, with lag that settles (74.8643ms)
+✔ SB-T02/04/05: three starts and frame rates, complete timed player Read with strict dedupe (102.2147ms)
+✔ SB-T03: first full walk, 3:1:1 candidates, three-walk cap and independent cooldowns (50.3336ms)
+✔ SB-T06: autonomous approach/open/read/finish safely exit to Window or Bed (71.1314ms)
+✔ SB-T10: autonomous Sleep exits safely to Read; active player Sleep/Observe rejects Bookshelf (41.6188ms)
+✔ SB-T07: full Read and departure envelope clears furniture across starts, headings and rates (2778.3521ms)
+✔ SB-T07: page turn, supported book, bounded pose transitions and no Read residue (50.0754ms)
+✔ SB-T02: Read takes priority from three actual autonomous walking positions (19.4849ms)
+✔ SB-T12: hidden foreground clock does not consume approach, open, read, finish or cooldown (15.1784ms)
+✔ SB-T08: only visible shelf/books hit; unrelated cabinet, occlusion, drag, cancel and dispose reject (3.3428ms)
+✔ SA-T02/04: three player starts complete settle, eight seconds sleep, wake and neutral return (124.2579ms)
+✔ SA-T02/05: player bed interrupts Idle/Walk; active player intent rejects all repeats and cross-targets (15.5134ms)
+✔ SA-T03: autonomous baseline, weighted eligibility, three-walk cap, cooldown and repeat source (43.416ms)
+✔ SA-T06: Window interrupts autonomous settle/sleep/wake with continuous safe exit (33.9388ms)
+✔ SA-T07: sampled full bed flow clears structural furniture and stays finite (3652.5621ms)
+✔ SA-T07 regression: settle, sleep and wake keep fox vertices above mattress and pillow (11614.6687ms)
+✔ sleep preset: separate curled feet, distal tail clearance, stable contact and full morph reset (18.2978ms)
+✔ SA-T12: background does not consume approach, pose, sleep, wake or cooldown (19.3765ms)
+✔ SA-T08: bed parts click, drag/occlusion/other surface rejection and listener cleanup (3.4229ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15668.6713

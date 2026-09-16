@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { createFoxVisual } from './createFoxVisual.ts';
 import { SLEEP, type SleepPhase } from './sleep.ts';
+import { READ, type ReadPhase } from './read.ts';
 
-export type CharacterState = 'Idle' | 'Walk' | 'Observe' | 'Sleep';
+export type CharacterState = 'Idle' | 'Walk' | 'Observe' | 'Sleep' | 'Read';
 export type IdleVariation = 'Breathe' | 'Look around';
 export interface CharacterLayout {
   windowPosition: THREE.Vector3;
   windowHeading: number;
   bed?: { position: THREE.Vector3; heading: number; corner: THREE.Vector3 };
+  reading?: { position: THREE.Vector3; heading: number };
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 export const OBSERVE_SECONDS = 4;
@@ -28,7 +30,7 @@ export class Character {
   private speed = 0;
   private turnVelocity = 0;
   private arrivalSettle = 0;
-  private targetKind: 'Room' | 'Window' | 'Bed' | null = null;
+  private targetKind: 'Room' | 'Window' | 'Bed' | 'Bookshelf' | null = null;
   private bedPhase: SleepPhase | null = null;
   private bedTime = 0;
   private bedPose = 0;
@@ -37,7 +39,13 @@ export class Character {
   private completedWalk = false;
   private consecutiveWalks = 0;
   private corner: THREE.Vector3 | null = null;
-  private windowAfterWake = false;
+  // One replacement during a safe exit, shared by the two actual anchored actions.
+  private afterExit: 'Window' | 'Bed' | 'Bookshelf' | null = null;
+  private readingPhase: ReadPhase | null = null;
+  private readingTime = 0;
+  private readingPose = 0;
+  private finishFrom = 1;
+  private readCooldown = 0;
   private readonly direction = new THREE.Vector3();
   private readonly layout: CharacterLayout;
   private readonly random: () => number;
@@ -45,6 +53,7 @@ export class Character {
   constructor(layout: CharacterLayout, random: () => number = Math.random) {
     this.layout = { ...layout, windowPosition: layout.windowPosition.clone(), bounds: { ...layout.bounds } };
     if (layout.bed) this.layout.bed = { position: layout.bed.position.clone(), heading: layout.bed.heading, corner: layout.bed.corner.clone() };
+    if (layout.reading) this.layout.reading = { position: layout.reading.position.clone(), heading: layout.reading.heading };
     this.random = random;
     this.idleRemaining = this.nextIdleDuration();
     this.root.name = 'Character';
@@ -59,8 +68,15 @@ export class Character {
   get sleepPhase() { return this.bedPhase; }
   get sleepElapsed() { return this.bedTime; }
   get sleepCooldownRemaining() { return this.sleepCooldown; }
+  get readPhase() { return this.readingPhase; }
+  get readElapsed() { return this.readingTime; }
+  get readCooldownRemaining() { return this.readCooldown; }
   get action() {
-    if (this.bedPhase === 'wake') return this.windowAfterWake ? 'Waking up for window' : 'Waking up';
+    if (this.readingPhase === 'finish') return 'Putting book away';
+    if (this.readingPhase === 'read') return 'Reading';
+    if (this.readingPhase === 'settle') return 'Opening book';
+    if (this.targetKind === 'Bookshelf') return 'Walk to reading area';
+    if (this.bedPhase === 'wake') return this.afterExit === 'Window' ? 'Waking up for window' : this.afterExit === 'Bookshelf' ? 'Waking up for reading' : 'Waking up';
     if (this.bedPhase === 'sleep') return 'Sleeping';
     if (this.bedPhase === 'settle') return 'Settle into bed';
     if (this.targetKind === 'Bed') return 'Walk to bed';
@@ -70,13 +86,9 @@ export class Character {
   }
   requestWindowObserve(): boolean {
     if (this.commandActive) return false;
-    if (this.bedPhase && this.bedPose > 0) {
-      this.commandActive = true;
-      this.windowAfterWake = true;
-      this.beginWake();
-      return true;
-    }
+    if (this.exitFor('Window')) return true;
     this.bedPhase = null;
+    this.readingPhase = null;
     this.commandActive = true;
     this.targetKind = 'Window';
     this.arrivalSettle = 0;
@@ -88,11 +100,53 @@ export class Character {
   }
   requestSleep(): boolean {
     if (!this.layout.bed || this.commandActive || this.targetKind === 'Bed') return false;
+    if (this.exitFor('Bed')) return true;
     this.beginSleep(true);
     return true;
   }
+  requestRead(): boolean {
+    if (!this.layout.reading || this.commandActive || this.targetKind === 'Bookshelf') return false;
+    if (this.exitFor('Bookshelf')) return true;
+    this.beginRead(true);
+    return true;
+  }
+  private exitFor(target: NonNullable<Character['afterExit']>) {
+    if (this.bedPose <= 0 && this.readingPose <= 0) return false;
+    this.commandActive = true;
+    this.afterExit = target;
+    if (this.bedPose > 0) this.beginWake();
+    else this.beginFinish();
+    return true;
+  }
+  private completeExit() {
+    const next = this.afterExit;
+    this.afterExit = null;
+    this.consecutiveWalks = 0;
+    this.enterIdle();
+    if (next === 'Window') this.requestWindowObserve();
+    else if (next === 'Bed') this.requestSleep();
+    else if (next === 'Bookshelf') this.requestRead();
+  }
+  private beginRead(player: boolean) {
+    this.commandActive = player;
+    this.bedPhase = null;
+    this.targetKind = 'Bookshelf';
+    this.destination = this.layout.reading!.position.clone();
+    this.readingPhase = 'approach';
+    this.readingTime = this.readingPose = this.arrivalSettle = 0;
+    this.currentState = 'Walk';
+    this.routePastBed();
+  }
+  private beginFinish() {
+    if (this.readingPhase === 'finish') return;
+    this.finishFrom = this.readingPose;
+    this.readingPhase = 'finish';
+    this.readingTime = 0;
+    this.currentState = 'Read';
+  }
   private beginSleep(player: boolean) {
     this.commandActive = player;
+    this.readingPhase = null;
     this.targetKind = 'Bed';
     this.destination = this.layout.bed!.position.clone();
     this.bedPhase = 'approach';
@@ -124,6 +178,8 @@ export class Character {
     this.corner = null;
     this.bedPhase = null;
     this.bedPose = this.bedTime = 0;
+    this.readingPhase = null;
+    this.readingPose = this.readingTime = 0;
     this.observeTime = 0;
     this.speed = 0;
     this.turnVelocity = 0;
@@ -161,10 +217,25 @@ export class Character {
     dt = Math.min(dt, 0.05);
     this.elapsed += dt;
     this.sleepCooldown = Math.max(0, this.sleepCooldown - dt);
+    this.readCooldown = Math.max(0, this.readCooldown - dt);
     let moved = 0;
     let lookHeading = this.root.rotation.y;
     const previousHeading = this.root.rotation.y;
-    if (this.bedPhase === 'settle' || this.bedPhase === 'sleep' || this.bedPhase === 'wake') {
+    if (this.readingPhase === 'settle' || this.readingPhase === 'read' || this.readingPhase === 'finish') {
+      this.readingTime += dt;
+      if (this.readingPhase === 'settle') {
+        this.readingPose = Math.min(1, this.readingTime / READ.settle);
+        if (this.readingTime >= READ.settle) { this.readingPhase = 'read'; this.readingTime = 0; this.currentState = 'Read'; }
+      } else if (this.readingPhase === 'read') {
+        if (this.readingTime >= READ.duration) this.beginFinish();
+      } else {
+        this.readingPose = this.finishFrom * (1 - Math.min(1, this.readingTime / READ.finish));
+        if (this.readingTime >= READ.finish) {
+          this.readCooldown = READ.cooldown;
+          this.completeExit();
+        }
+      }
+    } else if (this.bedPhase === 'settle' || this.bedPhase === 'sleep' || this.bedPhase === 'wake') {
       this.bedTime += dt;
       if (this.bedPhase === 'settle') {
         this.bedPose = THREE.MathUtils.clamp(this.bedTime / SLEEP.settle, 0, 1);
@@ -175,18 +246,19 @@ export class Character {
         this.bedPose = this.wakeFrom * (1 - THREE.MathUtils.clamp(this.bedTime / SLEEP.wake, 0, 1));
         if (this.bedTime >= SLEEP.wake) {
           this.sleepCooldown = SLEEP.cooldown;
-          this.consecutiveWalks = 0;
-          const windowRequested = this.windowAfterWake;
-          this.windowAfterWake = false;
-          this.enterIdle();
-          if (windowRequested) this.requestWindowObserve();
+          this.completeExit();
         }
       }
     } else if (this.currentState === 'Idle') {
       this.idleRemaining -= dt;
       if (this.idleRemaining <= 0) {
-        if (this.layout.bed && this.completedWalk && this.sleepCooldown === 0
-          && (this.consecutiveWalks >= 3 || this.random() < SLEEP.weight / (SLEEP.walkWeight + SLEEP.weight))) this.beginSleep(false);
+        const eligible: Array<'Bed' | 'Bookshelf'> = [];
+        if (this.completedWalk && this.layout.bed && this.sleepCooldown === 0) eligible.push('Bed');
+        if (this.completedWalk && this.layout.reading && this.readCooldown === 0) eligible.push('Bookshelf');
+        // Both enabled life actions have weight 1; Walk has weight 3.
+        const choice = eligible.length ? Math.floor(this.random() * (eligible.length + (this.consecutiveWalks >= 3 ? 0 : SLEEP.walkWeight))) : -1;
+        if (eligible[choice] === 'Bed') this.beginSleep(false);
+        else if (eligible[choice] === 'Bookshelf') this.beginRead(false);
         else {
           this.destination = this.chooseDestination();
           this.targetKind = 'Room';
@@ -199,7 +271,8 @@ export class Character {
       this.direction.subVectors(this.corner ?? this.destination, this.root.position);
       const distance = this.direction.length();
       if (distance <= ARRIVAL_DISTANCE) {
-        lookHeading = this.targetKind === 'Bed' ? this.layout.bed!.heading : this.layout.windowHeading;
+        lookHeading = this.targetKind === 'Bed' ? this.layout.bed!.heading
+          : this.targetKind === 'Bookshelf' ? this.layout.reading!.heading : this.layout.windowHeading;
         this.speed = 0;
         if (this.corner) this.corner = null;
         else if (this.targetKind === 'Room') { this.completedWalk = true; this.enterIdle(); }
@@ -208,6 +281,7 @@ export class Character {
           this.arrivalSettle += dt;
           if (this.arrivalSettle >= 0.18) {
             if (this.targetKind === 'Bed') { this.bedPhase = 'settle'; this.bedTime = 0; }
+            else if (this.targetKind === 'Bookshelf') { this.readingPhase = 'settle'; this.readingTime = 0; }
             else { this.currentState = 'Observe'; this.observeTime = 0; }
           }
         }
@@ -224,7 +298,7 @@ export class Character {
         // without introducing sideways sliding along its edges or a new pathfinding system.
         const b = this.layout.bounds;
         for (const [axis, min, max] of [
-          ['x', Math.min(b.minX, this.layout.windowPosition.x, this.layout.bed?.position.x ?? b.minX), Math.max(b.maxX, this.layout.windowPosition.x)],
+          ['x', Math.min(b.minX, this.layout.windowPosition.x, this.layout.bed?.position.x ?? b.minX), Math.max(b.maxX, this.layout.windowPosition.x, this.layout.reading?.position.x ?? b.maxX)],
           ['z', Math.min(b.minZ, this.layout.windowPosition.z), Math.max(b.maxZ, this.layout.windowPosition.z, this.layout.bed?.position.z ?? b.maxZ)],
         ] as const) {
           const forward = this.direction[axis];
@@ -245,6 +319,7 @@ export class Character {
       headingError: this.currentState === 'Walk' ? angleDifference(lookHeading, this.root.rotation.y) : 0,
       preparingObserve: this.commandActive && this.currentState === 'Walk'
         && this.targetKind === 'Window' && !this.bedPhase && this.root.position.distanceTo(this.layout.windowPosition) < 0.14,
-      sleepPose: this.bedPose, sleepPhase: this.bedPhase, sleepTime: this.bedTime });
+      sleepPose: this.bedPose, sleepPhase: this.bedPhase, sleepTime: this.bedTime,
+      readPose: this.readingPose, readPhase: this.readingPhase, readTime: this.readingTime });
   }
 }

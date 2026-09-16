@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, sleepLayout } from './scene';
+import { createScene, readLayout } from './scene';
+import { bindReadInteraction } from './ReadInteraction';
 import { bindBedInteraction } from './BedInteraction';
 import { Character } from './Character.ts';
 import { bindWindowInteraction } from './WindowInteraction';
@@ -22,9 +23,9 @@ function start() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點擊窗戶');
+  renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點窗戶、床或書架');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts, bedParts } = createScene();
+  const { scene, camera, windowParts, bedParts, readingParts } = createScene();
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -35,19 +36,25 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(sleepLayout);
+  const character = new Character(readLayout);
   scene.add(character.root);
   let windowHits = 0;
   let bedHits = 0;
+  let readHits = 0;
+  const unbindRead = bindReadInteraction(renderer.domElement, camera, scene, readingParts, () => {
+    readHits++;
+    character.requestRead();
+    debug.update(character, windowHits, width, height, bedHits, readHits);
+  });
   const unbindBed = bindBedInteraction(renderer.domElement, camera, scene, bedParts, () => {
     bedHits++;
     character.requestSleep();
-    debug.update(character, windowHits, width, height, bedHits);
+    debug.update(character, windowHits, width, height, bedHits, readHits);
   });
   const unbind = bindWindowInteraction(renderer.domElement, camera, scene, windowParts, () => {
     windowHits++;
     character.requestWindowObserve();
-    debug.update(character, windowHits, width, height, bedHits);
+    debug.update(character, windowHits, width, height, bedHits, readHits);
   });
   const debug = createDebugPanel(host, () => controls.reset());
   let width = 0;
@@ -77,7 +84,7 @@ function start() {
     character.update(dt);
     controls.update();
     renderer.render(scene, camera);
-    debug.update(character, windowHits, width, height, bedHits);
+    debug.update(character, windowHits, width, height, bedHits, readHits);
   });
   import.meta.hot?.dispose(() => {
     renderer.setAnimationLoop(null);
@@ -86,6 +93,7 @@ function start() {
     performanceSample?.dispose();
     unbind();
     unbindBed();
+    unbindRead();
     controls.dispose();
     debug.dispose();
     const geometries = new Set<THREE.BufferGeometry>();

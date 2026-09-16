@@ -3,7 +3,7 @@ import type { Character } from './Character.ts';
 export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
   const panel = document.createElement('aside');
   panel.innerHTML = `
-    <p class="eyebrow">A LITTLE HOME · SLEEP</p>
+    <p class="eyebrow">A LITTLE HOME · READ</p>
     <h1>Fox Life</h1>
     <p class="intro">陪牠，看一會窗外。</p>
     <button id="debug-toggle" type="button" aria-expanded="false" aria-controls="debug-data">顯示 Debug</button>
@@ -19,11 +19,14 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
       <dt>Bed hits</dt><dd id="bed-hits">0</dd>
       <dt>Sleep phase / seconds</dt><dd id="sleep-phase">—</dd>
       <dt>Sleep cooldown</dt><dd id="sleep-cooldown">0</dd>
+      <dt>Bookshelf hits</dt><dd id="read-hits">0</dd>
+      <dt>Read phase / seconds</dt><dd id="read-phase">—</dd>
+      <dt>Read cooldown</dt><dd id="read-cooldown">0</dd>
       <dt>Viewport</dt><dd id="viewport">—</dd>
       <dt>Renderer</dt><dd id="renderer-status">Starting</dd>
     </dl>
     <button id="reset-camera" type="button">重設鏡頭</button>
-    <p class="hint">拖曳環繞 · 滾輪縮放<br>點窗看風景，點床休息一會。</p>`;
+    <p class="hint">拖曳環繞 · 滾輪縮放<br>點窗看風景，點床休息，點書架讀一會。</p>`;
   host.append(panel);
   const reset = panel.querySelector<HTMLButtonElement>('#reset-camera')!;
   const toggle = panel.querySelector<HTMLButtonElement>('#debug-toggle')!;
@@ -41,7 +44,7 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
     if (node.textContent !== value) node.textContent = value;
   };
   return {
-    update(character: Character, count: number, width: number, height: number, bedHits = 0) {
+    update(character: Character, count: number, width: number, height: number, bedHits = 0, readHits = 0) {
       const target = character.target;
       set('state', character.state);
       set('action', character.action);
@@ -54,6 +57,9 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
       set('bed-hits', String(bedHits));
       set('sleep-phase', character.sleepPhase ? `${character.sleepPhase} / ${character.sleepElapsed.toFixed(2)}` : '—');
       set('sleep-cooldown', character.sleepCooldownRemaining.toFixed(1));
+      set('read-hits', String(readHits));
+      set('read-phase', character.readPhase ? `${character.readPhase} / ${character.readElapsed.toFixed(2)}` : '—');
+      set('read-cooldown', character.readCooldownRemaining.toFixed(1));
       set('viewport', `${width} × ${height}`);
       set('renderer-status', 'WebGL · rendering');
     },

@@ -1,0 +1,43 @@
+- main:
+  - generic "3D 房間：拖曳環繞、滾輪縮放、點窗戶、床或書架"
+  - complementary:
+    - paragraph: A LITTLE HOME · READ
+    - heading "Fox Life" [level=1]
+    - paragraph: 陪牠，看一會窗外。
+    - button "隱藏 Debug" [expanded] [active]
+    - term: Current State
+    - definition: Read
+    - term: Current Action
+    - definition: Reading
+    - term: Current Target
+    - definition: Bookshelf (2.10, -0.30)
+    - term: Control Source
+    - definition: Autonomous
+    - term: Idle variation
+    - definition: —
+    - term: Observe seconds
+    - definition: —
+    - term: Position · X / Z
+    - definition: 2.07 / -0.28
+    - term: Window hits
+    - definition: "0"
+    - term: Bed hits
+    - definition: "1"
+    - term: Sleep phase / seconds
+    - definition: —
+    - term: Sleep cooldown
+    - definition: "13.6"
+    - term: Bookshelf hits
+    - definition: "1"
+    - term: Read phase / seconds
+    - definition: read / 0.06
+    - term: Read cooldown
+    - definition: "0.0"
+    - term: Viewport
+    - definition: 802 × 673
+    - term: Renderer
+    - definition: WebGL · rendering
+    - button "重設鏡頭"
+    - paragraph:
+      - text: 拖曳環繞 · 滾輪縮放
+      - text: 點窗看風景，點床休息，點書架讀一會。

@@ -12,6 +12,11 @@ export const sleepLayout: CharacterLayout = {
   bed: { position: new THREE.Vector3(-3.15, 0, 1.85), heading: Math.PI,
     corner: new THREE.Vector3(-1.65, 0, 1.85) },
 };
+export const readLayout: CharacterLayout = {
+  ...sleepLayout,
+  // Within the approved +/-0.25 adjustment: reserve tail clearance on departure.
+  reading: { position: new THREE.Vector3(2.10, 0, -0.30), heading: Math.PI / 2 },
+};
 
 export function createScene() {
   const scene = new THREE.Scene();
@@ -57,8 +62,16 @@ export function createScene() {
   bedParts.forEach((part, index) => { part.name = ['BedFrame', 'Mattress', 'Pillow', 'Headboard'][index]!; });
   box(0.7, 0.72, 1.25, '#b0bcaa', 3.5, 0.36, -0.3);
   box(0.79, 0.08, 1.35, '#eee5d2', 3.5, 0.76, -0.3);
-  box(0.4, 0.06, 0.47, '#c99573', 3.48, 0.84, -0.52);
-  box(0.34, 0.05, 0.44, '#e2cfa5', 3.5, 0.895, -0.53);
+  // A small open bookshelf above the existing cabinet. The unrelated cabinet
+  // and tabletop stay non-target surfaces; only the visible shelf/books read.
+  const readingParts: THREE.Object3D[] = [];
+  for (const z of [-0.94, 0.34]) readingParts.push(box(0.62, 0.86, 0.07, '#b0bcaa', 3.52, 1.23, z));
+  for (const y of [0.84, 1.24, 1.64]) readingParts.push(box(0.62, 0.065, 1.35, '#b0bcaa', 3.52, y, -0.30));
+  for (const y of [1.045, 1.445]) for (let i = 0; i < 6; i++) {
+    readingParts.push(box(0.36, 0.31 - (i % 2) * 0.045, 0.105,
+      ['#c99573', '#839889', '#dbcaa3'][i % 3]!, 3.42, y, -0.77 + i * 0.18));
+  }
+  readingParts.forEach((part, index) => { part.name = index < 5 ? 'Bookshelf' : 'ShelfBook'; });
   // Window posts connect the raised window to the cutaway wall.
   for (const x of [-1.15, 1.15]) box(0.16, 0.95, 0.22, '#faf0dd', x, 0.475, -3);
 
@@ -71,5 +84,5 @@ export function createScene() {
   windowParts.push(box(0.08, 1.6, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.2, 0.08, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.65, 0.12, 0.55, '#faf0dd', 0, 0.85, -2.95));
-  return { scene, camera, windowParts, bedParts };
+  return { scene, camera, windowParts, bedParts, readingParts };
 }
