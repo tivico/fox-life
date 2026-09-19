@@ -605,3 +605,15 @@ Browser production smoke、獨立 Chrome background／performance 與 Product Ow
 未來 Eat 若獲授權，專用 phase／姿勢／餐區幾何先行；沿用現有共用責任即可，不在本輪預建 Eat 欄位、入口或檔案。要留意新增 phase 同時納入 action reporting、enterIdle 清理、afterExit dispatch、cooldown eligibility 與 visual neutral reset，並以跨 Action 中斷測試防止漏清；不要藉此把三種既有演出改寫成通用圖。
 
 本 review 未發現需要大型重構的架構 blocker。既有 33 tests／typecheck／build 通過為 Read checkpoint 的歷史證據，本輪只檢查 source／docs 與 diff，沒有重跑驗證，也不把 Chrome Pending 改為 Pass。僅修改本文件；runtime、tests、assets、dependencies 與兩個 checkpoint 不變，不 commit／push／merge，不開始 Eat。
+
+## 24. Slice C — Eat implementation observation（2026-09-19）
+
+§23 為 Pre-Eat 歷史 review；其後 PO 授權提交為 `79d6427`，從乾淨 working tree 建立 `feature/v0.2-eat` 並開始 Slice C。Read `2e18ed3` / Sleep `fb9ad1f` 歷史不變。
+
+- 維持「保持現狀，Eat 先用專用實作」。Eat 擁有 `EatPhase`、0.40 / 6 / 0.35 timing、30 秒 cooldown、獨立 pose / props / reset；沒有 generic phase system 或 Action / Furniture framework。
+- `afterExit` 只新增實際 Food 目的地；`exitFor` 分派 Wake / PutAway / FinishMeal，`completeExit` 清空單一目的地並透過既有入口啟動下一個玩家命令。三種 anchored actions 的安全退出責任確實共用，不新增 queue 或未用 extension points。
+- 食用期間 motion time 和 phase timer 分離，Finish 凍結入口／咀嚼位置，再從當前 pose 淡出，避免 partial settle 或進食中斷突然跳姿。這是 Eat 演出需求，沒有推廣成全域 phase abstraction。
+- Read 與 Eat 都有每幀撤回 overlay 的真實重複；目前欄位、prop 和演出不同且程式短，仍保留專用清理，靠跨 action 測試防止偏移殘留。
+- Chooser 延續 equal eligible slots + Walk 3。沒有加入未被使用的 `EAT.weight`；`SLEEP.weight` / `READ.weight` 既有 observation 不變，本輪不順便重構 chooser。
+- EatInteraction 延續最近命中、drag threshold、dispose 慣例；四份 binder 的重複確實存在，§23.4 的最小 helper 仍可在後續獨立整理時考慮，並非本輪必要修改。
+- 原 33 tests 未改；新增 10 Eat tests，43/43、typecheck、build 通過。Production smoke / 中斷與人工缺口見 [Eat Acceptance](V0_2_EAT_ACCEPTANCE.md)。Eat 等待 PO，未進行 Overall Closeout。

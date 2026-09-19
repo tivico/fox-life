@@ -1,0 +1,5 @@
+{
+  "action": "Autonomous idle",
+  "phase": "—",
+  "source": "Autonomous"
+}

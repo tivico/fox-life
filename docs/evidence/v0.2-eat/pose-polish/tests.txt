@@ -1,0 +1,56 @@
+
+> fox-life-web@0.0.1 test
+> node --test tests/*.test.mjs
+
+✔ 30/60/90/135/180 degree turns in both directions advance forward and arrive across frame rates (170.8908ms)
+✔ curved approaches from activity corners remain clear of room furniture (173.2364ms)
+✔ small corrections do not march; large pivots alternate feet and settle without head displacement (22.4346ms)
+✔ gait cadence follows distance and pose changes stay bounded through start, stop and command interruption (31.2752ms)
+✔ 60 seconds autonomous: multiple safe destinations, both idle variations, consistent debug data (18.7879ms)
+✔ window command interrupts autonomous Idle within 0.5 seconds (3.6209ms)
+✔ window command interrupts autonomous Walk within 0.5 seconds (3.8755ms)
+✔ three different starts complete approach, facing, full Observe, clear command, leave window (16.2754ms)
+✔ repeat clicks cannot queue, overwrite target, restart or extend Observe (3.965ms)
+✔ already at station turns in place, no detour or snap (3.8125ms)
+✔ character envelope clears actual walls/furniture along approach segments at every sampled heading (9.3677ms)
+✔ background/resume preserves approach and Observe; no accumulated hidden time (7.9357ms)
+✔ visible window frame/glass hit; occluder, drag, cancel, other surfaces do not (1.8413ms)
+✔ arrival settle stays in Walk, accepts no duplicate, then preserves four full Observe seconds (3.0904ms)
+✔ turn easing and secondary motion stay finite across frame rates, with lag that settles (66.6924ms)
+✔ SC-T02/04/05: three starts, three frame rates, timed player meal, no restart or queue (107.5678ms)
+✔ SC-T03: 3:1:1:1 chooser, initial walk, three-walk cap, complete autonomous meal and cooldown (66.9082ms)
+✔ SC-T06: autonomous approach, partial smell, bite, chew and finish safely exit to all three commands (158.4176ms)
+✔ SC-T10: accepted Sleep/Read safe exits to Eat, player action locks, and cross-action cleanup (75.1163ms)
+✔ SC-T07: full meal plus departure clears every furniture mesh at 20/60/144 Hz (3157.0506ms)
+✔ SC-T07: three distinct hand-to-mouth phrases, prop support, bounded blends and exact reset (3010.2092ms)
+✔ SC-T07/10: all dining cross-action approach and departure routes keep furniture clearance (985.1294ms)
+✔ PO polish: bowl rim clears bib/body/limbs and each bite reaches the lower muzzle without face penetration (1080.7029ms)
+✔ SC-T02: player food interrupts three actual autonomous walk positions (14.8614ms)
+✔ SC-T12: hidden clock preserves approach, smell, eating, finish and cooldown (18.0528ms)
+✔ SC-T08: food and designated surface only, occlusion, drag, cancel and cleanup (2.3539ms)
+✔ SB-T02/04/05: three starts and frame rates, complete timed player Read with strict dedupe (107.0632ms)
+✔ SB-T03: first full walk, 3:1:1 candidates, three-walk cap and independent cooldowns (56.4797ms)
+✔ SB-T06: autonomous approach/open/read/finish safely exit to Window or Bed (81.3989ms)
+✔ SB-T10: autonomous Sleep exits safely to Read; active player Sleep/Observe rejects Bookshelf (49.6733ms)
+✔ SB-T07: full Read and departure envelope clears furniture across starts, headings and rates (3114.1212ms)
+✔ SB-T07: page turn, supported book, bounded pose transitions and no Read residue (70.4598ms)
+✔ SB-T02: Read takes priority from three actual autonomous walking positions (26.1219ms)
+✔ SB-T12: hidden foreground clock does not consume approach, open, read, finish or cooldown (23.7718ms)
+✔ SB-T08: only visible shelf/books hit; unrelated cabinet, occlusion, drag, cancel and dispose reject (4.4938ms)
+✔ SA-T02/04: three player starts complete settle, eight seconds sleep, wake and neutral return (130.5967ms)
+✔ SA-T02/05: player bed interrupts Idle/Walk; active player intent rejects all repeats and cross-targets (17.6906ms)
+✔ SA-T03: autonomous baseline, weighted eligibility, three-walk cap, cooldown and repeat source (52.1255ms)
+✔ SA-T06: Window interrupts autonomous settle/sleep/wake with continuous safe exit (40.374ms)
+✔ SA-T07: sampled full bed flow clears structural furniture and stays finite (5113.5066ms)
+✔ SA-T07 regression: settle, sleep and wake keep fox vertices above mattress and pillow (13687.8863ms)
+✔ sleep preset: separate curled feet, distal tail clearance, stable contact and full morph reset (22.5494ms)
+✔ SA-T12: background does not consume approach, pose, sleep, wake or cooldown (22.3947ms)
+✔ SA-T08: bed parts click, drag/occlusion/other surface rejection and listener cleanup (3.5603ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19251.8118

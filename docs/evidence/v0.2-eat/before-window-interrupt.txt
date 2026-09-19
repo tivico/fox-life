@@ -1,0 +1,49 @@
+- main:
+  - generic "3D 房間：拖曳環繞、滾輪縮放、點窗戶、床、書架或餐碗"
+  - complementary:
+    - paragraph: A LITTLE HOME · EAT
+    - heading "Fox Life" [level=1]
+    - paragraph: 陪牠，看一會窗外。
+    - button "隱藏 Debug" [expanded] [active]
+    - term: Current State
+    - definition: Eat
+    - term: Current Action
+    - definition: Eating
+    - term: Current Target
+    - definition: DiningArea (2.10, 1.45)
+    - term: Control Source
+    - definition: Autonomous
+    - term: Idle variation
+    - definition: —
+    - term: Observe seconds
+    - definition: —
+    - term: Position · X / Z
+    - definition: 2.07 / 1.43
+    - term: Window hits
+    - definition: "0"
+    - term: Bed hits
+    - definition: "0"
+    - term: Sleep phase / seconds
+    - definition: —
+    - term: Sleep cooldown
+    - definition: "7.4"
+    - term: Bookshelf hits
+    - definition: "0"
+    - term: Read phase / seconds
+    - definition: —
+    - term: Read cooldown
+    - definition: "10.7"
+    - term: Food hits
+    - definition: "0"
+    - term: Eat phase / seconds
+    - definition: eat / 0.07
+    - term: Eat cooldown
+    - definition: "0.0"
+    - term: Viewport
+    - definition: 1280 × 720
+    - term: Renderer
+    - definition: WebGL · rendering
+    - button "重設鏡頭"
+    - paragraph:
+      - text: 拖曳環繞 · 滾輪縮放
+      - text: 點窗看風景，點床休息，點書架讀一會，點餐碗吃點心。

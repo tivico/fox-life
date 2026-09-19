@@ -250,6 +250,28 @@ export function createFoxVisual() {
       };
     }
   });
+  // Eat-only props, tucked away at zero scale outside the dedicated pose.
+  const meal = new THREE.Group();
+  meal.name = 'EatingBowl';
+  // Reserve space for the projecting overall bib, not just the pear torso.
+  meal.position.set(-0.10, 0.65, 0.49);
+  meal.visible = false; meal.scale.setScalar(0); body.add(meal);
+  const dish = new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(0, 0), new THREE.Vector2(0.10, 0), new THREE.Vector2(0.19, 0.10),
+    new THREE.Vector2(0.17, 0.10), new THREE.Vector2(0.08, 0.02), new THREE.Vector2(0, 0.02),
+  ], 20), cream);
+  meal.add(dish);
+  const biscuitMaterial = new THREE.MeshStandardMaterial({ color: '#ce9555', roughness: 1 });
+  ellipsoid(meal, biscuitMaterial, [0.09, 0.04, 0.08], [0, 0.06, 0]);
+  const bite = new THREE.Group();
+  bite.name = 'EatingBite'; bite.visible = false; bite.scale.setScalar(0);
+  bite.position.set(0.05, -0.35, 0.04); arms[1]!.add(bite);
+  ellipsoid(bite, biscuitMaterial, [0.065, 0.045, 0.055], [0, 0, 0]);
+  for (const prop of [meal, bite]) prop.traverse(object => {
+    if (object instanceof THREE.Mesh) object.raycast = function (raycaster, intersects) {
+      if (prop.visible) THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
+    };
+  });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -282,17 +304,28 @@ export function createFoxVisual() {
   // Remove last frame's Read overlay before running the accepted baseline pose.
   // Otherwise damping would retain a held-book arm/head offset after PutAway.
   const readOffsets = { headX: 0, headY: 0, bodyX: 0, bodyZ: 0, eyesX: 0, arms: [0, 0] };
+  const eatOffsets = { headX: 0, headY: 0, bodyX: 0, arms: [0, 0], armRoll: [0, 0] };
   return {
     root,
     animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false,
-      sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0 }: {
+      sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
+      eatPose = 0, eatTime = 0 }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
       readPose?: number; readPhase?: ReadPhase | null; readTime?: number;
+      eatPose?: number; eatTime?: number;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
+      head.rotation.x -= eatOffsets.headX; head.rotation.y -= eatOffsets.headY;
+      body.rotation.x -= eatOffsets.bodyX;
+      arms.forEach((arm, i) => {
+        arm.rotation.x -= eatOffsets.arms[i]!;
+        arm.rotation.z -= eatOffsets.armRoll[i]!;
+      });
+      eatOffsets.headX = eatOffsets.headY = eatOffsets.bodyX = 0; eatOffsets.arms.fill(0);
+      eatOffsets.armRoll.fill(0);
       head.rotation.x -= readOffsets.headX; head.rotation.y -= readOffsets.headY;
       body.rotation.x -= readOffsets.bodyX; body.rotation.z -= readOffsets.bodyZ;
       eyes.position.x -= readOffsets.eyesX;
@@ -417,6 +450,40 @@ export function createFoxVisual() {
         eyes.position.x += readOffsets.eyesX;
         body.rotation.x += readOffsets.bodyX; body.rotation.z += readOffsets.bodyZ;
         arms.forEach((arm, i) => { readOffsets.arms[i] = (-1.30 - arm.rotation.x) * reading; arm.rotation.x += readOffsets.arms[i]!; });
+      }
+      const eating = p === 0 && reading === 0 ? THREE.MathUtils.smootherstep(eatPose, 0, 1) : 0;
+      meal.visible = bite.visible = eating > 0;
+      meal.scale.setScalar(eating);
+      // Three unequal phrases: reach, bring to muzzle, chew, then a quiet pause.
+      // Finish freezes this motion time and fades the exact interrupted pose.
+      let lift = 0, chew = 0, morsel = 1;
+      for (const start of [0.25, 2.05, 4.30]) {
+        const t = eatTime - start;
+        lift += THREE.MathUtils.smootherstep(t, 0, 0.45) * (1 - THREE.MathUtils.smootherstep(t, 0.80, 1.20));
+        chew += Math.sin(Math.max(0, t - 0.65) * 18) * THREE.MathUtils.smoothstep(t, 0.65, 0.85)
+          * (1 - THREE.MathUtils.smoothstep(t, 1.25, 1.65));
+        if (t >= 0 && t < 1.8) morsel = 1 - THREE.MathUtils.smoothstep(t, 0.65, 0.85)
+          + THREE.MathUtils.smoothstep(t, 1.35, 1.65);
+      }
+      bite.scale.setScalar(eating * morsel);
+      if (eating > 0) {
+        eatOffsets.headX = (0.30 - 0.10 * lift + 0.015 * chew - head.rotation.x) * eating;
+        eatOffsets.headY = (0.01 * lift - head.rotation.y) * eating;
+        eatOffsets.bodyX = (0.025 + 0.02 * lift - body.rotation.x) * eating;
+        head.rotation.x += eatOffsets.headX; head.rotation.y += eatOffsets.headY;
+        body.rotation.x += eatOffsets.bodyX;
+        arms.forEach((arm, i) => {
+          // Lift above the bowl rim before moving the paw inward.
+          const target = i === 0 ? -1.18 : -0.85 - 0.87 * THREE.MathUtils.smootherstep(lift, 0, 0.85);
+          eatOffsets.arms[i] = (target - arm.rotation.x) * eating;
+          arm.rotation.x += eatOffsets.arms[i]!;
+          // Bring the entire paw and its attached morsel to the lower muzzle.
+          // The proximal arm still overlaps the shoulder; no detached food path.
+          eatOffsets.armRoll[i] = i === 0 ? 0 : (-0.72 - arm.rotation.z) * lift * eating;
+          arm.rotation.z += eatOffsets.armRoll[i]!;
+          // Clear the cheek on the way in/out before closing toward the muzzle.
+          arm.position.z += (i === 0 ? 0.07 : 0.21 * lift + 0.09 * Math.sin(Math.PI * lift)) * eating;
+        });
       }
     },
   };

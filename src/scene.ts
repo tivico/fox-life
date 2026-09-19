@@ -18,6 +18,11 @@ export const readLayout: CharacterLayout = {
   reading: { position: new THREE.Vector3(2.10, 0, -0.30), heading: Math.PI / 2 },
 };
 
+export const eatLayout: CharacterLayout = {
+  ...readLayout,
+  dining: { position: new THREE.Vector3(2.10, 0, 1.45), heading: Math.PI / 2 },
+};
+
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e9e6df');
@@ -72,6 +77,22 @@ export function createScene() {
       ['#c99573', '#839889', '#dbcaa3'][i % 3]!, 3.42, y, -0.77 + i * 0.18));
   }
   readingParts.forEach((part, index) => { part.name = index < 5 ? 'Bookshelf' : 'ShelfBook'; });
+  // Dedicated dining surface outside the central walking envelope.
+  const foodParts: THREE.Object3D[] = [box(0.70, 0.08, 0.80, '#e5d8bc', 3.35, 0.62, 1.65)];
+  foodParts[0]!.name = 'DiningSurface';
+  box(0.22, 0.58, 0.38, '#aeb998', 3.45, 0.29, 1.65).name = 'DiningSupport';
+  const bowl = new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(0, 0), new THREE.Vector2(0.12, 0), new THREE.Vector2(0.23, 0.13),
+    new THREE.Vector2(0.20, 0.13), new THREE.Vector2(0.10, 0.03), new THREE.Vector2(0, 0.03),
+  ], 24), new THREE.MeshStandardMaterial({ color: '#eee1c5', roughness: 1 }));
+  bowl.position.set(3.25, 0.66, 1.55); bowl.name = 'FoodBowl';
+  bowl.castShadow = true; room.add(bowl); foodParts.push(bowl);
+  for (const [x, z] of [[3.18, 1.49], [3.31, 1.49], [3.25, 1.62]]) {
+    const food = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8),
+      new THREE.MeshStandardMaterial({ color: '#ce9555', roughness: 1 }));
+    food.position.set(x!, 0.77, z!); food.scale.y = 0.65; food.name = 'Food';
+    food.castShadow = true; room.add(food); foodParts.push(food);
+  }
   // Window posts connect the raised window to the cutaway wall.
   for (const x of [-1.15, 1.15]) box(0.16, 0.95, 0.22, '#faf0dd', x, 0.475, -3);
 
@@ -84,5 +105,5 @@ export function createScene() {
   windowParts.push(box(0.08, 1.6, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.2, 0.08, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.65, 0.12, 0.55, '#faf0dd', 0, 0.85, -2.95));
-  return { scene, camera, windowParts, bedParts, readingParts };
+  return { scene, camera, windowParts, bedParts, readingParts, foodParts };
 }

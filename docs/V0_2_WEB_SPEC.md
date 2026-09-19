@@ -6,7 +6,7 @@
 >
 > Slice B — Read：**Accepted（PO Manual Acceptance；2026-09-17 closeout 確認）**；見 [驗收與 checkpoint 紀錄](V0_2_READ_ACCEPTANCE.md)。無新的功能 blocker；獨立 Chrome background / 完整 resize / performance 補驗保持 Pending，不因 PO 體驗接受而誤標通過。
 >
-> Slice C — Eat：未授權、未開始。規格內容與 Scope 不變。
+> Slice C — Eat：**Accepted（PO Manual Acceptance，2026-09-19）**；PO 已解除 bowl/body clipping 與 hand-to-mouth readability blocker，見 [Eat 驗收與 checkpoint 紀錄](V0_2_EAT_ACCEPTANCE.md)。44/44 tests / typecheck / build 通過；Known Limitations 不阻擋 Slice C。獨立 Chrome background-tab / 完整 resize / performance 保持 Pending。規格內容與 Scope 不變，未進行 V0.2 Overall Closeout。
 >
 > 實作順序固定為 **Sleep → Read → Eat**；每個 Slice 完成並由 Product Owner 驗收後，才能進入下一個 Slice。
 

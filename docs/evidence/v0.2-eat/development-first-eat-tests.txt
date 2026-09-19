@@ -1,0 +1,76 @@
+✔ SC-T02/04/05: three starts, three frame rates, timed player meal, no restart or queue (77.3431ms)
+✖ SC-T03: 3:1:1:1 chooser, initial walk, three-walk cap, complete autonomous meal and cooldown (68.4656ms)
+✖ SC-T06: autonomous approach, partial smell, bite, chew and finish safely exit to all three commands (8.0934ms)
+✖ SC-T10: accepted Sleep/Read safe exits to Eat, player action locks, and cross-action cleanup (61.2177ms)
+✔ SC-T07: full meal plus departure clears every furniture mesh at 20/60/144 Hz (2833.0032ms)
+✔ SC-T07: three distinct hand-to-mouth phrases, prop support, bounded blends and exact reset (44.7697ms)
+✔ SC-T02: player food interrupts three actual autonomous walk positions (13.6586ms)
+✔ SC-T12: hidden clock preserves approach, smell, eating, finish and cooldown (15.2144ms)
+✔ SC-T08: food and designated surface only, occlusion, drag, cancel and cleanup (3.6452ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 6
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3253.9442
+
+✖ failing tests:
+
+test at tests\eat.test.mjs:53:1
+✖ SC-T03: 3:1:1:1 chooser, initial walk, three-walk cap, complete autonomous meal and cooldown (68.4656ms)
+  AssertionError [ERR_ASSERTION]: Walk to bed: -0.6949651827731688,0,0.4160076939247269
+      at until (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:14:10)
+      at TestContext.<anonymous> (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:62:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\eat.test.mjs:65:1
+✖ SC-T06: autonomous approach, partial smell, bite, chew and finish safely exit to all three commands (8.0934ms)
+  AssertionError [ERR_ASSERTION]: FoxHead residual
+      at neutral (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:20:61)
+      at TestContext.<anonymous> (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:77:35)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\eat.test.mjs:81:1
+✖ SC-T10: accepted Sleep/Read safe exits to Eat, player action locks, and cross-action cleanup (61.2177ms)
+  AssertionError [ERR_ASSERTION]: FoxHead residual
+      at neutral (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:20:61)
+      at TestContext.<anonymous> (file:///C:/Users/tivic/%E6%A1%8C%E9%9D%A2/Fox-Life-Web/Fox-Life-Web/tests/eat.test.mjs:95:70)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,19 @@
+✔ SC-T02/04/05: three starts, three frame rates, timed player meal, no restart or queue (78.3717ms)
+✔ SC-T03: 3:1:1:1 chooser, initial walk, three-walk cap, complete autonomous meal and cooldown (50.3202ms)
+✔ SC-T06: autonomous approach, partial smell, bite, chew and finish safely exit to all three commands (115.1269ms)
+✔ SC-T10: accepted Sleep/Read safe exits to Eat, player action locks, and cross-action cleanup (66.3614ms)
+✔ SC-T07: full meal plus departure clears every furniture mesh at 20/60/144 Hz (2731.1606ms)
+✔ SC-T07: three distinct hand-to-mouth phrases, prop support, bounded blends and exact reset (1910.0347ms)
+✔ SC-T07/10: all dining cross-action approach and departure routes keep furniture clearance (632.4182ms)
+✔ PO polish: bowl rim clears bib/body/limbs and each bite reaches the lower muzzle without face penetration (794.9891ms)
+✔ SC-T02: player food interrupts three actual autonomous walk positions (13.3249ms)
+✔ SC-T12: hidden clock preserves approach, smell, eating, finish and cooldown (16.9049ms)
+✔ SC-T08: food and designated surface only, occlusion, drag, cancel and cleanup (2.2675ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6524.9021
