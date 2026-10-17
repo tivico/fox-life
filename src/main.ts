@@ -11,7 +11,8 @@ import { FrameClock } from './FrameClock.ts';
 import { createPerformanceSample } from './PerformanceSample';
 import { createLifePanel } from './LifePanel';
 import type { LifeAction } from './life.ts';
-import { HomeAudio, AUDIO_KEY, audioPreferences } from './HomeAudio.ts';
+import { HomeAudio, AUDIO_KEY, LEGACY_AUDIO_KEY, audioPreferences } from './HomeAudio.ts';
+import { homeAudioAssets } from './audioAssets.ts';
 import { createSoundPanel } from './SoundPanel.ts';
 import './styles.css';
 
@@ -57,8 +58,8 @@ function start() {
   };
   const life = createLifePanel(host, character, request, () => controls.reset(), () => resize());
   let savedAudio: unknown;
-  try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
-  const audio = new HomeAudio(audioPreferences(savedAudio));
+  try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? localStorage.getItem(LEGACY_AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
+  const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
   const soundPanel = createSoundPanel(host, audio);
   const unbindClean = bindWindowInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
   const unbindPlay = bindWindowInteraction(renderer.domElement, camera, scene, playParts, () => request('Play'));

@@ -65,7 +65,7 @@ test('footsteps use distance, rug/wood surfaces, and ignore teleports or turning
 });
 
 test('original sound buffers are finite, quiet, reproducible and begin/end without DC clicks', () => {
-  for (const kind of ['wind', 'bird', 'step-wood', 'step-rug', 'page', 'sweep', 'crunch', 'cloth', 'yarn']) {
+  for (const kind of ['bird', 'page', 'sweep', 'crunch', 'cloth', 'yarn']) {
     const buffer = soundSamples(kind, 24000);
     assert.deepEqual(buffer, soundSamples(kind, 24000));
     let energy = 0, peak = 0;
@@ -77,7 +77,8 @@ test('original sound buffers are finite, quiet, reproducible and begin/end witho
 });
 
 test('preferences survive invalid storage and audio remains uninitialized until explicit opt-in', () => {
-  assert.deepEqual(audioPreferences({ enabled: 'yes', ambience: NaN, effects: 9 }), { enabled: false, ambience: .65, effects: 1 });
+  assert.deepEqual(audioPreferences({ enabled: 'yes', ambience: NaN, effects: 9 }), { enabled: false, music: .55, ambience: .3, effects: 1 });
+  assert.deepEqual(audioPreferences({ enabled: true, ambience: .2, effects: .4 }), { enabled: true, music: .55, ambience: .2, effects: .4 }, 'v1 preferences keep customized levels and gain a music level');
   const audio = new HomeAudio(audioPreferences({ enabled: true }));
   assert.equal(audio.running, false, 'saved opt-in never bypasses autoplay gesture');
   audio.setVolume('ambience', -.5); assert.equal(audio.preferences.ambience, 0);
@@ -86,7 +87,8 @@ test('preferences survive invalid storage and audio remains uninitialized until 
 
 test('audio opt-in, mute, background resume and disposal cannot leave a running or duplicate audio graph', async () => {
   const OriginalContext = globalThis.AudioContext;
-  let created = 0, started = 0, stopped = 0, context;
+  const originalFetch = globalThis.fetch;
+  let created = 0, started = 0, stopped = 0, context, fetched = 0;
   const param = () => ({ value: 0, setTargetAtTime(value) { this.value = value; } });
   const node = () => ({ connect() {}, disconnect() {} });
   class TestContext {
@@ -95,6 +97,7 @@ test('audio opt-in, mute, background resume and disposal cannot leave a running 
     createGain() { return { ...node(), gain: param() }; }
     createDynamicsCompressor() { return { ...node(), threshold: param(), ratio: param() }; }
     createBuffer(_channels, length) { return { length, copyToChannel() {} }; }
+    async decodeAudioData() { return { length: 128 }; }
     createBufferSource() { return { ...node(), playbackRate: param(), start() { started++; }, stop() { stopped++; }, onended: null }; }
     createStereoPanner() { return { ...node(), pan: param() }; }
     async resume() { this.state = 'running'; }
@@ -102,20 +105,23 @@ test('audio opt-in, mute, background resume and disposal cannot leave a running 
     async close() { this.state = 'closed'; }
   }
   globalThis.AudioContext = TestContext;
+  globalThis.fetch = async () => { fetched++; return { ok: true, arrayBuffer: async () => new ArrayBuffer(8) }; };
   try {
-    const audio = new HomeAudio(audioPreferences(null));
+    const audio = new HomeAudio(audioPreferences(null), { music: 'test:music', wind: 'test:leaves', steps: { 'step-wood': ['test:wood'], 'step-rug': ['test:rug'] } });
     assert.equal(created, 0); assert.equal(await audio.enable(), true);
-    assert.equal(created, 1); assert.equal(started, 1, 'one persistent wind source');
+    assert.equal(created, 1); assert.equal(started, 1, 'one persistent music source; wind no longer loops');
+    assert.equal(fetched, 4);
     audio.preview(); assert.equal(started, 2);
     audio.mute(); assert.equal(audio.running, false); assert.equal(context.state, 'suspended'); assert.equal(stopped, 1);
-    await audio.enable(); assert.equal(created, 1); assert.equal(started, 2, 'enabling reuses the context and wind');
+    await audio.enable(); assert.equal(created, 1); assert.equal(started, 2, 'enabling reuses the context and music');
+    assert.equal(fetched, 4, 'decoded assets are reused');
     audio.pause(); assert.equal(context.state, 'suspended');
     await audio.resumeVisible(); assert.equal(audio.running, true);
     audio.pause(); const pending = audio.resumeVisible(); audio.mute(); await pending;
     assert.equal(audio.running, false, 'a late resume never overrides mute');
     assert.equal(context.state, 'suspended');
     audio.dispose(); assert.equal(context.state, 'closed'); assert.equal(await audio.enable(), false);
-  } finally { globalThis.AudioContext = OriginalContext; }
+  } finally { globalThis.AudioContext = OriginalContext; globalThis.fetch = originalFetch; }
 });
 
 test('authored performance clips crossfade, remain bounded, freeze on zero delta and do not accumulate', () => {

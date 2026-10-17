@@ -1,4 +1,4 @@
-import { AUDIO_KEY, HomeAudio } from './HomeAudio.ts';
+import { AUDIO_KEY, HomeAudio, type AudioChannel } from './HomeAudio.ts';
 
 export function createSoundPanel(host: HTMLElement, audio: HomeAudio) {
   const tools = host.querySelector('.home-tools')!;
@@ -10,17 +10,19 @@ export function createSoundPanel(host: HTMLElement, audio: HomeAudio) {
   dialog.setAttribute('aria-labelledby', 'sound-title');
   dialog.innerHTML = `<button class="dialog-close" type="button" aria-label="關閉聲音設定">×</button>
     <p class="eyebrow">SOUNDS OF A LITTLE HOME</p><h2 id="sound-title">聽見小屋的日常。</h2>
-    <p>窗外的風與偶爾的鳥鳴，還有腳下、書頁間的小小聲響。</p>
+    <p>輕柔的鋼琴留一點空白，窗外偶爾有微風。陪牠慢慢過日子。</p>
     <button type="button" class="primary-button sound-toggle" aria-pressed="false">開啟聲音</button>
     <p class="sound-status" role="status">由你決定，什麼時候讓聲音進來。</p>
-    <label class="sound-level">環境音 <output>65%</output><input name="ambience" type="range" min="0" max="100" step="1" aria-label="環境音音量"></label>
-    <label class="sound-level">動作音效 <output>70%</output><input name="effects" type="range" min="0" max="100" step="1" aria-label="動作音效音量"></label>
-    <button class="sound-preview" type="button">試聽翻頁聲</button>
+    <p class="music-track"><span>小屋配樂</span><b>窗邊慢慢</b><small>原創輕鋼琴 · 66 BPM · 無鼓點</small></p>
+    <label class="sound-level">背景音樂 <output>55%</output><input name="music" type="range" min="0" max="100" step="1" aria-label="背景音樂音量"></label>
+    <label class="sound-level">環境音 <output>30%</output><input name="ambience" type="range" min="0" max="100" step="1" aria-label="環境音音量"></label>
+    <label class="sound-level">動作音效 <output>50%</output><input name="effects" type="range" min="0" max="100" step="1" aria-label="動作音效音量"></label>
+    <div class="sound-previews" aria-label="試聽聲音"><button class="sound-preview" data-preview="step-wood" type="button">木地板腳步</button><button class="sound-preview" data-preview="step-rug" type="button">地毯腳步</button><button class="sound-preview" data-preview="wind" type="button">窗外微風</button><button class="sound-preview" data-preview="page" type="button">翻頁聲</button></div>
     <p class="help-note">聲音設定會保存在這個瀏覽器。切到其他分頁時，聲音也會一起休息。</p>`;
   host.querySelector('.life-ui')!.append(dialog);
   const toggle = dialog.querySelector<HTMLButtonElement>('.sound-toggle')!;
   const status = dialog.querySelector<HTMLElement>('.sound-status')!;
-  const preview = dialog.querySelector<HTMLButtonElement>('.sound-preview')!;
+  const previews = [...dialog.querySelectorAll<HTMLButtonElement>('.sound-preview')];
   const sliders = [...dialog.querySelectorAll<HTMLInputElement>('input')];
   let failed = false, busy = false;
   const save = () => { try { localStorage.setItem(AUDIO_KEY, JSON.stringify(audio.preferences)); } catch { /* Playback works without storage. */ } };
@@ -34,18 +36,18 @@ export function createSoundPanel(host: HTMLElement, audio: HomeAudio) {
     if (toggle.textContent !== label) toggle.textContent = label;
     if (toggle.disabled !== busy) toggle.disabled = busy;
     if (toggle.getAttribute('aria-pressed') !== String(active)) toggle.setAttribute('aria-pressed', String(active));
-    preview.disabled = !active || audio.preferences.effects === 0;
-    const text = failed ? '暫時無法播放，請再按一次開啟聲音。' : active ? '風聲、鳥鳴與動作音效，正在陪伴小屋。' : '由你決定，什麼時候讓聲音進來。';
+    previews.forEach(preview => { preview.disabled = !active || audio.preferences[preview.dataset.preview === 'wind' ? 'ambience' : 'effects'] === 0; });
+    const text = failed ? '聲音載入未完成，請再按一次開啟聲音。' : busy ? '正在準備小屋的音樂與聲音…' : active ? '音樂與小小聲響，正在陪伴小屋。' : '由你決定，什麼時候讓聲音進來。';
     if (status.textContent !== text) status.textContent = text;
     for (const input of sliders) {
-      const value = Math.round(audio.preferences[input.name as 'ambience' | 'effects'] * 100);
+      const value = Math.round(audio.preferences[input.name as AudioChannel] * 100);
       if (input.value !== String(value)) input.value = String(value);
       if (input.previousElementSibling!.textContent !== `${value}%`) input.previousElementSibling!.textContent = `${value}%`;
     }
   }
   const open = () => { update(); dialog.showModal(); };
   const close = () => dialog.close();
-  const audition = () => audio.preview();
+  const audition = (event: MouseEvent) => audio.preview((event.currentTarget as HTMLButtonElement).dataset.preview as 'page' | 'step-wood' | 'step-rug' | 'wind');
   const switchSound = async () => {
     if (busy) return;
     if (audio.running) { audio.mute(); failed = false; }
@@ -54,16 +56,16 @@ export function createSoundPanel(host: HTMLElement, audio: HomeAudio) {
   };
   const change = (event: Event) => {
     const input = event.target as HTMLInputElement;
-    audio.setVolume(input.name as 'ambience' | 'effects', Number(input.value) / 100); save(); update();
+    audio.setVolume(input.name as AudioChannel, Number(input.value) / 100); save(); update();
   };
   button.addEventListener('click', open);
   dialog.querySelector('.dialog-close')!.addEventListener('click', close);
   toggle.addEventListener('click', switchSound);
-  preview.addEventListener('click', audition);
+  previews.forEach(preview => preview.addEventListener('click', audition));
   sliders.forEach(input => input.addEventListener('input', change)); update();
   return { update, dispose() {
     button.removeEventListener('click', open); toggle.removeEventListener('click', switchSound);
-    preview.removeEventListener('click', audition);
+    previews.forEach(preview => preview.removeEventListener('click', audition));
     sliders.forEach(input => input.removeEventListener('input', change)); dialog.close(); button.remove(); dialog.remove();
   } };
 }
