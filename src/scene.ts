@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterLayout } from './Character.ts';
+import { dressRoom } from './roomDetails.ts';
+import { CLEAN_STORAGE } from './daily.ts';
 
 export const characterLayout: CharacterLayout = {
   windowPosition: new THREE.Vector3(0, 0, -1.4),
@@ -22,14 +24,20 @@ export const eatLayout: CharacterLayout = {
   ...readLayout,
   dining: { position: new THREE.Vector3(2.10, 0, 1.45), heading: Math.PI / 2 },
 };
+export const homeLayout: CharacterLayout = {
+  ...eatLayout,
+  leisure: { clean: new THREE.Vector3(-.65, 0, .15), play: new THREE.Vector3(.65, 0, .55), heading: .25,
+    storage: { position: new THREE.Vector3().fromArray(CLEAN_STORAGE.position),
+      tool: new THREE.Vector3().fromArray(CLEAN_STORAGE.tool), heading: CLEAN_STORAGE.heading } },
+};
 
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e9e6df');
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
   camera.position.set(8, 7, 10);
-  scene.add(new THREE.HemisphereLight('#fff5e3', '#7b8980', 2.5));
-  const sunlight = new THREE.DirectionalLight('#fff0d6', 3);
+  scene.add(new THREE.HemisphereLight('#fff5e3', '#7b8980', 1.9));
+  const sunlight = new THREE.DirectionalLight('#fff0d6', 2.7);
   sunlight.position.set(3, 8, 5);
   sunlight.castShadow = true;
   sunlight.shadow.mapSize.set(1024, 1024);
@@ -48,14 +56,14 @@ export function createScene() {
     room.add(mesh);
     return mesh;
   }
-  box(8.4, 0.3, 6.4, '#c2b5a3', 0, -0.15, 0);
+  const floor = box(8.4, 0.3, 6.4, '#c2b5a3', 0, -0.15, 0);
   // Low cutaway walls, no roof. The camera remains outside the room envelope.
-  box(8.4, 0.55, 0.18, '#a6b6ac', 0, 0.275, -3.1);
-  box(0.18, 0.55, 6.4, '#a6b6ac', -4.1, 0.275, 0);
+  box(8.4, 0.9, 0.18, '#a6b6ac', 0, 0.45, -3.1);
+  box(0.18, 0.9, 6.4, '#a6b6ac', -4.1, 0.45, 0);
   box(8.4, 0.18, 0.18, '#d6cbb9', 0, 0.09, 3.1);
   box(0.18, 0.18, 6.4, '#d6cbb9', 4.1, 0.09, 0);
   // An inset rug avoids placing an elevated surface under the feet.
-  box(3.7, 0.008, 2.9, '#d4b29b', 0, -0.003, 0.35);
+  const rug = box(3.7, 0.008, 2.9, '#d4b29b', 0, -0.003, 0.35);
 
   // Decorative furniture only. Inner faces stay outside |x| = 2.9.
   const bedParts = [
@@ -105,5 +113,11 @@ export function createScene() {
   windowParts.push(box(0.08, 1.6, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.2, 0.08, 0.24, '#faf0dd', 0, 1.8, -3));
   windowParts.push(box(2.65, 0.12, 0.55, '#faf0dd', 0, 0.85, -2.95));
-  return { scene, camera, windowParts, bedParts, readingParts, foodParts };
+  const details = dressRoom(scene, { floor: floor.material, rug: rug.material,
+    mattress: bedParts[1]!.material, window: windowPane.material });
+  foodParts.push(...details.diningDetails);
+  // Nested tool groups have world positions even before the first render/query.
+  scene.updateMatrixWorld(true);
+  return { scene, camera, windowParts, bedParts, readingParts, foodParts,
+    cleanParts: details.cleanParts, playParts: details.playParts, roomTextures: details.textures };
 }

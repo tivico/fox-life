@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:26:53.121Z",
+  "values": {
+    "action": "Waking up for reading",
+    "bed-hits": "3",
+    "eat-cooldown": "18.6",
+    "eat-hits": "3",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "—",
+    "position": "-3.12 / 1.85",
+    "read-cooldown": "8.7",
+    "read-hits": "3",
+    "read-phase": "—",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "0.0",
+    "sleep-phase": "wake / 0.18",
+    "source": "Player Command",
+    "state": "Sleep",
+    "target": "Bed (-3.15, 1.85)",
+    "variation": "—",
+    "viewport": "802 × 673"
+  }
+}

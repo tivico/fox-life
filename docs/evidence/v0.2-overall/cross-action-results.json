@@ -1,0 +1,737 @@
+{
+  "date": "2026-09-20T09:07:39.616Z",
+  "checkpoint": "562c945",
+  "matrixCases": 72,
+  "playerLockCases": 16,
+  "rows": [
+    {
+      "hz": 20,
+      "from": "Idle",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Idle",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Idle",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Idle",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Walk",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Walk",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Walk",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Walk",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Observe",
+      "target": "Window",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Observe",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Observe",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Observe",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Sleep",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.06638323938950337,
+        -0.045420111177076304
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Sleep",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Sleep",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.06638323938950337,
+        -0.045420111177076304
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Sleep",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.06638323938950337,
+        -0.045420111177076304
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Read",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        2.5703183282139347e-7,
+        -2.570318328213937e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Read",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        2.5703183282139347e-7,
+        -2.570318328213937e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Read",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Read",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        2.5703183282139347e-7,
+        -2.570318328213937e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Eat",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.174003109608641e-8,
+        -5.1740031087669166e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Eat",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.174003109608641e-8,
+        -5.1740031087669166e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Eat",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.174003109608641e-8,
+        -5.1740031087669166e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 20,
+      "from": "Eat",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Idle",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Idle",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Idle",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Idle",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Walk",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Walk",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Walk",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Walk",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Observe",
+      "target": "Window",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Observe",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Observe",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Observe",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Sleep",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.12162079339425871,
+        -0.08321422706340961
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Sleep",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Sleep",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.12162079339425871,
+        -0.08321422706340961
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Sleep",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.75,
+      "exitArmX": [
+        -0.12162079339425871,
+        -0.08321422706340961
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Read",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        4.992742484658926e-7,
+        -4.992742484658927e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Read",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        4.992742484658926e-7,
+        -4.992742484658927e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Read",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Read",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        4.992742484658926e-7,
+        -4.992742484658927e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Eat",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.519102678863845e-8,
+        -5.5191026786252314e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Eat",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.519102678863845e-8,
+        -5.5191026786252314e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Eat",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.35,
+      "exitArmX": [
+        5.519102678863845e-8,
+        -5.5191026786252314e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 60,
+      "from": "Eat",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Idle",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Idle",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Idle",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Idle",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Walk",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Walk",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Walk",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Walk",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Observe",
+      "target": "Window",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Observe",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Observe",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Observe",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Sleep",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.757,
+      "exitArmX": [
+        -0.16781340066735825,
+        -0.11481969519907996
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Sleep",
+      "target": "Bed",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Sleep",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.757,
+      "exitArmX": [
+        -0.16781340066735825,
+        -0.11481969519907996
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Sleep",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.757,
+      "exitArmX": [
+        -0.16781340066735825,
+        -0.11481969519907996
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Read",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        4.7279676958839507e-7,
+        -4.7279676958839507e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Read",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        4.7279676958839507e-7,
+        -4.7279676958839507e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Read",
+      "target": "Bookshelf",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Read",
+      "target": "Food",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        4.7279676958839507e-7,
+        -4.7279676958839507e-7
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Eat",
+      "target": "Window",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        5.895077287229096e-8,
+        -5.895077289956021e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Eat",
+      "target": "Bed",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        5.895077287229096e-8,
+        -5.895077289956021e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Eat",
+      "target": "Bookshelf",
+      "accepted": true,
+      "exitSeconds": 0.354,
+      "exitArmX": [
+        5.895077287229096e-8,
+        -5.895077289956021e-8
+      ],
+      "result": "PASS"
+    },
+    {
+      "hz": 144,
+      "from": "Eat",
+      "target": "Food",
+      "accepted": false,
+      "exitSeconds": 0,
+      "exitArmX": null,
+      "result": "PASS"
+    }
+  ]
+}

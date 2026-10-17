@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, eatLayout } from './scene';
+import { createScene, homeLayout } from './scene';
 import { bindEatInteraction } from './EatInteraction';
 import { bindReadInteraction } from './ReadInteraction';
 import { bindBedInteraction } from './BedInteraction';
@@ -9,6 +9,8 @@ import { bindWindowInteraction } from './WindowInteraction';
 import { createDebugPanel } from './DebugPanel';
 import { FrameClock } from './FrameClock.ts';
 import { createPerformanceSample } from './PerformanceSample';
+import { createLifePanel } from './LifePanel';
+import type { LifeAction } from './life.ts';
 import './styles.css';
 
 const host = document.querySelector<HTMLElement>('#app')!;
@@ -24,9 +26,9 @@ function start() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點窗戶、床、書架或餐碗');
+  renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點窗戶、床、書架、餐碗、掃帚或毛線球');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts, bedParts, readingParts, foodParts } = createScene();
+  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, playParts, roomTextures } = createScene();
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -37,39 +39,52 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(eatLayout);
+  const character = new Character(homeLayout);
   scene.add(character.root);
+  const storedBroom = scene.getObjectByName('RoomBroom')!;
   let windowHits = 0;
   let bedHits = 0;
   let readHits = 0;
   let eatHits = 0;
+  const request = (action: LifeAction) => {
+    const accepted = action === 'Window' ? character.requestWindowObserve() :
+      action === 'Bed' ? character.requestSleep() : action === 'Bookshelf' ? character.requestRead() :
+      action === 'Food' ? character.requestEat() : action === 'Clean' ? character.requestClean() : character.requestPlay();
+    life.commandResult(action, accepted);
+  };
+  const life = createLifePanel(host, character, request, () => controls.reset(), () => resize());
+  const unbindClean = bindWindowInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
+  const unbindPlay = bindWindowInteraction(renderer.domElement, camera, scene, playParts, () => request('Play'));
   const unbindEat = bindEatInteraction(renderer.domElement, camera, scene, foodParts, () => {
     eatHits++;
-    character.requestEat();
+    request('Food');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
   const unbindRead = bindReadInteraction(renderer.domElement, camera, scene, readingParts, () => {
     readHits++;
-    character.requestRead();
+    request('Bookshelf');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
   const unbindBed = bindBedInteraction(renderer.domElement, camera, scene, bedParts, () => {
     bedHits++;
-    character.requestSleep();
+    request('Bed');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
   const unbind = bindWindowInteraction(renderer.domElement, camera, scene, windowParts, () => {
     windowHits++;
-    character.requestWindowObserve();
+    request('Window');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
-  const debug = createDebugPanel(host, () => controls.reset());
+  const debug = createDebugPanel(host);
   let width = 0;
   let height = 0;
   const resize = () => {
-    width = host.clientWidth;
-    height = host.clientHeight;
+    width = Math.max(1, host.clientWidth);
+    height = Math.max(1, host.clientHeight);
     camera.aspect = width / Math.max(height, 1);
+    // Keep the home above the invitation dock and fit its width on narrow screens.
+    camera.zoom = Math.min(1, camera.aspect / 1.25);
+    camera.setViewOffset(width, height, 0, host.classList.contains('quiet-mode') ? 0 : Math.min(100, height * 0.14), width, height);
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
@@ -81,6 +96,7 @@ function start() {
   const performanceSample = createPerformanceSample(host, renderer);
   const visibilityChanged = () => {
     frameClock.reset();
+    life.update();
     if (document.hidden) performanceSample?.frame(performance.now(), true, character.state);
   };
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -89,6 +105,8 @@ function start() {
     performanceSample?.frame(now, document.hidden, character.state);
     if (document.hidden) return;
     character.update(dt);
+    storedBroom.visible = !character.cleanToolInUse;
+    life.update();
     controls.update();
     renderer.render(scene, camera);
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
@@ -102,8 +120,11 @@ function start() {
     unbindBed();
     unbindRead();
     unbindEat();
+    unbindClean();
+    unbindPlay();
     controls.dispose();
     debug.dispose();
+    life.dispose();
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
     scene.traverse(object => {
@@ -116,6 +137,7 @@ function start() {
     });
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => material.dispose());
+    roomTextures.forEach(texture => texture.dispose());
     renderer.dispose();
     renderer.domElement.remove();
   });

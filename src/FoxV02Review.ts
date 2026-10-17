@@ -128,6 +128,7 @@ function start() {
     controls.dispose();
     release(left.scene);
     release(right.scene);
+    [...left.roomTextures, ...right.roomTextures].forEach(texture => texture.dispose());
     renderer.dispose();
   };
 }

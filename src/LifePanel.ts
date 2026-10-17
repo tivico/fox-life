@@ -1,0 +1,177 @@
+import type { Character } from './Character.ts';
+import { actionLabels, JOURNAL_KEY, LifeJournal, lifePresentation, momentText, type LifeAction } from './life.ts';
+
+const drawings = {
+  Window: '<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M12 3v17M4 11h16M2 21h20"/>',
+  Bed: '<path d="M3 18V9m18 9V9M3 14h18v4H3m0-7V5h18v6M6 11V8h5v3m2 0V8h5v3"/>',
+  Bookshelf: '<path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15M5 9h4m-4 4h4m6-4h4m-4 4h4"/>',
+  Food: '<path d="M3 12h18c0 6-3 9-9 9s-9-3-9-9ZM6 3c-3 3 3 3 0 6m6-6c-3 3 3 3 0 6m6-6c-3 3 3 3 0 6"/>',
+  Clean: '<path d="m16 3-5 11m-4-2 8 4-4 6-9-4 5-6Zm-1 3-2 4m5-3-2 4m5-2-2 3"/>',
+  Play: '<circle cx="12" cy="12" r="9"/><path d="M5 6c8 1 10 6 12 12M3 11c6-1 9 3 11 10M10 3c1 6 5 9 11 10M7 19c0-6 5-10 12-11"/>',
+  Doze: '<path d="M3 13h8l-8 8h8m3-18h7l-7 7h7"/>',
+  Stretch: '<circle cx="12" cy="7" r="3"/><path d="m3 3 5 10h8l5-10m-9 10v8m-4 0 4-4 4 4"/>',
+  leaf: '<path d="M5 20C3 10 8 3 21 3c0 12-6 18-14 14m-3 4L16 9"/>',
+  reset: '<path d="M4 9a8 8 0 1 1 0 7M4 3v6h6"/>',
+  journal: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18m4-12h5m-5 4h5"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01"/>',
+  close: '<path d="m6 6 12 12M6 18 18 6"/>',
+};
+function icon(name: keyof typeof drawings) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${drawings[name]}</svg>`;
+}
+
+export function createLifePanel(host: HTMLElement, character: Character,
+  request: (action: LifeAction) => void, resetCamera: () => void, viewChanged: () => void) {
+  let saved: unknown = [];
+  let storageAvailable = true;
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY);
+    try { saved = JSON.parse(raw ?? '[]'); } catch { /* A damaged record starts a fresh diary. */ }
+  } catch { storageAvailable = false; }
+  const journal = new LifeJournal(saved);
+  const ui = document.createElement('div');
+  ui.className = 'life-ui';
+  ui.innerHTML = `
+    <header class="home-header">
+      <div class="brand"><span class="brand-mark">${icon('leaf')}</span><div><h1>Fox Life<span>小狐狸的慢日子</span></h1><p>A LITTLE HOME, A LITTLE LIFE.</p></div></div>
+      <nav class="home-tools" aria-label="小屋工具">
+        <button type="button" data-tool="journal">${icon('journal')}<span>生活日記</span><span class="moment-count">${journal.entries.length}</span></button>
+        <button type="button" data-tool="help" aria-label="怎麼玩">${icon('help')}</button>
+      </nav>
+    </header>
+    <div class="room-caption"><span></span> 一隅小屋 <i>／</i> 自在生活中</div>
+    <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
+    <footer class="life-footer">
+      <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
+      <div class="invitation"><span>陪牠做點什麼</span><p>也可以什麼都不做，讓日常自己發生。</p></div>
+      <nav class="action-dock" aria-label="邀請狐狸做點什麼">${(Object.keys(actionLabels) as LifeAction[]).map((key, index) => `
+        <button type="button" data-action="${key}" aria-pressed="false" aria-keyshortcuts="${index + 1}"><span class="action-icon">${icon(key)}</span><span>${actionLabels[key]}</span><kbd>${index + 1}</kbd></button>`).join('')}</nav>
+      <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具，邀請牠開始下一段日常</p>
+    </footer>
+    <p class="feedback" role="status" hidden></p>
+    <button class="quiet-exit" type="button" hidden>${icon('leaf')} 回到小屋介面 <kbd>Esc</kbd></button>
+    <dialog class="home-dialog" data-dialog="help" aria-labelledby="help-title">
+      <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
+      <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
+      <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
+      <ol class="help-steps"><li><b>先看一會</b><span>牠會自己散步、吃點心、讀書、睡覺，也會打掃和玩毛線。偶爾讀到打瞌睡，或停下來伸懶腰。</span></li><li><b>送一個小邀請</b><span>點家具、床邊的掃帚、書架上的毛線球，或用下方六個按鈕。牠會自己走過去。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <p class="help-note">拖曳環繞 · 滾輪縮放 · 數字 1–6 邀請行為<br>一次完成一個邀請；離開分頁時，日常會先暫停。</p>
+      <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
+    </dialog>
+    <dialog class="home-dialog journal-dialog" data-dialog="journal" aria-labelledby="journal-title">
+      <button class="dialog-close" type="button" aria-label="關閉生活日記">${icon('close')}</button>
+      <p class="eyebrow">LITTLE MOMENTS</p><h2 id="journal-title">生活日記</h2><p>沒有大事發生的日子，也值得記下來。</p>
+      <ol class="moment-list"></ol><p class="journal-note"></p>
+    </dialog>`;
+  host.append(ui);
+  const find = <T extends HTMLElement>(selector: string) => ui.querySelector<T>(selector)!;
+  const title = find('.status-title');
+  const source = find('.status-source');
+  const symbol = find('.status-symbol');
+  const progress = find<HTMLProgressElement>('.action-progress');
+  const feedback = find('.feedback');
+  const list = find<HTMLOListElement>('.moment-list');
+  const count = find('.moment-count');
+  const buttons = [...ui.querySelectorAll<HTMLButtonElement>('[data-action]')];
+  const help = find<HTMLDialogElement>('[data-dialog="help"]');
+  const diary = find<HTMLDialogElement>('[data-dialog="journal"]');
+  let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
+  let previousSymbol = '';
+  let quiet = false;
+  const setText = (element: HTMLElement, text: string) => { if (element.textContent !== text) element.textContent = text; };
+  function notify(message: string) {
+    clearTimeout(feedbackTimer);
+    feedback.textContent = message;
+    feedback.hidden = false;
+    feedbackTimer = setTimeout(() => { feedback.hidden = true; }, 3600);
+  }
+  function setQuiet(value: boolean) {
+    quiet = value;
+    host.classList.toggle('quiet-mode', value);
+    viewChanged();
+    find<HTMLButtonElement>('.quiet-exit').hidden = !value;
+    if (value) find('.quiet-exit').focus();
+    else find('[data-tool="quiet"]').focus();
+  }
+  function renderJournal() {
+    list.replaceChildren();
+    if (!journal.entries.length) {
+      const empty = document.createElement('li');
+      empty.className = 'journal-empty';
+      empty.textContent = '第一頁，留給接下來的小日常。陪牠看窗外、讀本書，或等牠自己開始生活。';
+      list.append(empty);
+    }
+    const formatter = new Intl.DateTimeFormat('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    for (const entry of journal.entries) {
+      const item = document.createElement('li');
+      item.innerHTML = `<span class="moment-icon">${icon(entry.kind)}</span><div><time></time><p></p><small></small></div>`;
+      const time = item.querySelector('time')!;
+      time.dateTime = new Date(entry.at).toISOString();
+      time.textContent = formatter.format(entry.at);
+      item.querySelector('p')!.textContent = momentText[entry.kind];
+      item.querySelector('small')!.textContent = entry.source === 'player' ? '來自你的小邀請' : '牠自己的小日常';
+      list.append(item);
+    }
+    setText(find('.journal-note'), storageAvailable ? '最近 40 則片段保存在這個瀏覽器。關閉頁面後不會產生離線日記。' : '瀏覽器暫時無法保存日記，這次開啟期間仍會記錄。');
+    setText(count, String(journal.entries.length));
+  }
+  function update() {
+    const status = lifePresentation(character);
+    setText(title, status.title);
+    setText(source, document.hidden ? '離開一下，日常暫停中' : status.source);
+    const nextSymbol = status.active ?? 'leaf';
+    if (nextSymbol !== previousSymbol) { symbol.innerHTML = icon(nextSymbol); previousSymbol = nextSymbol; }
+    progress.hidden = status.progress === null;
+    if (status.progress !== null && progress.value !== status.progress) progress.value = status.progress;
+    for (const button of buttons) {
+      const selected = button.dataset.action === status.active;
+      const disabled = status.locked || selected;
+      if (button.getAttribute('aria-pressed') !== String(selected)) button.setAttribute('aria-pressed', String(selected));
+      if (button.getAttribute('aria-disabled') !== String(disabled)) button.setAttribute('aria-disabled', String(disabled));
+    }
+    if (journal.observe(character)) {
+      try {
+        localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal.entries));
+        storageAvailable = true;
+      } catch { storageAvailable = false; }
+      renderJournal();
+    }
+  }
+  const click = (event: MouseEvent) => {
+    const target = (event.target as Element).closest<HTMLButtonElement>('button');
+    if (!target) return;
+    if (target.dataset.action) request(target.dataset.action as LifeAction);
+    else if (target.dataset.tool === 'reset') { resetCamera(); notify('回到熟悉的小屋視角。'); }
+    else if (target.dataset.tool === 'quiet') setQuiet(true);
+    else if (target.classList.contains('quiet-exit')) setQuiet(false);
+    else if (target.dataset.tool === 'help') help.showModal();
+    else if (target.dataset.tool === 'journal') { renderJournal(); diary.showModal(); }
+    else if (target.matches('.dialog-close, [data-dismiss]')) target.closest('dialog')!.close();
+  };
+  const keydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && quiet) { setQuiet(false); return; }
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || quiet || ui.querySelector('dialog[open]') ||
+      (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
+    const action = (Object.keys(actionLabels) as LifeAction[])[Number(event.key) - 1];
+    if (action) { event.preventDefault(); request(action); }
+  };
+  ui.addEventListener('click', click);
+  document.addEventListener('keydown', keydown);
+  renderJournal();
+  update();
+  return {
+    update,
+    commandResult(action: LifeAction, accepted: boolean) {
+      notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : character.source === 'Player Command' ?
+        '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : '牠已經在做這件事了，陪牠一會吧。');
+      update();
+    },
+    dispose() {
+      clearTimeout(feedbackTimer);
+      ui.removeEventListener('click', click);
+      document.removeEventListener('keydown', keydown);
+      host.classList.remove('quiet-mode');
+      help.close(); diary.close(); ui.remove();
+    },
+  };
+}

@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:26:31.711Z",
+  "values": {
+    "action": "Putting book away",
+    "bed-hits": "3",
+    "eat-cooldown": "8.8",
+    "eat-hits": "3",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "—",
+    "position": "2.07 / -0.31",
+    "read-cooldown": "0.0",
+    "read-hits": "2",
+    "read-phase": "finish / 0.19",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "0.0",
+    "sleep-phase": "—",
+    "source": "Player Command",
+    "state": "Read",
+    "target": "Bookshelf (2.10, -0.30)",
+    "variation": "—",
+    "viewport": "802 × 673"
+  }
+}

@@ -11,3 +11,5 @@
 .v02-labels span { justify-self: center; padding: 6px 12px; border-radius: 20px; background: #faf8f0df; }
 .v02-stage::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid #ccd0c5; pointer-events: none; }
 @media (max-width: 700px) { .v02-toolbar { padding: 10px; } #v02-status { display: block; margin: 5px 0 0; } }
+.v02-toolbar button { border: 1px solid #b8c6b7; border-radius: 6px; padding: 8px 12px; background: #edf0e7; }
+.v02-toolbar button:hover { background: #dce6d8; }

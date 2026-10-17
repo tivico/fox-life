@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:25:31.951Z",
+  "values": {
+    "action": "Observe environment",
+    "bed-hits": "3",
+    "eat-cooldown": "6.4",
+    "eat-hits": "2",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "0.02 / 4.00",
+    "position": "-0.01 / -1.37",
+    "read-cooldown": "0.0",
+    "read-hits": "2",
+    "read-phase": "—",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "38.3",
+    "sleep-phase": "—",
+    "source": "Player Command",
+    "state": "Observe",
+    "target": "Window (0.00, -1.40)",
+    "variation": "—",
+    "viewport": "802 × 673"
+  }
+}

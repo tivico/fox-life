@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:25:35.984Z",
+  "values": {
+    "action": "Autonomous idle",
+    "bed-hits": "3",
+    "eat-cooldown": "2.4",
+    "eat-hits": "2",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "—",
+    "position": "-0.01 / -1.37",
+    "read-cooldown": "0.0",
+    "read-hits": "2",
+    "read-phase": "—",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "34.2",
+    "sleep-phase": "—",
+    "source": "Autonomous",
+    "state": "Idle",
+    "target": "None",
+    "variation": "Look around",
+    "viewport": "802 × 673"
+  }
+}

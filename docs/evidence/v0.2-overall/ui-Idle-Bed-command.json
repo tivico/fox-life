@@ -1,0 +1,52 @@
+{
+  "before": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:25:08.409Z",
+    "values": {
+      "action": "Autonomous idle",
+      "bed-hits": "2",
+      "eat-cooldown": "30.0",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "2",
+      "observe-time": "—",
+      "position": "2.10 / 1.42",
+      "read-cooldown": "15.7",
+      "read-hits": "2",
+      "read-phase": "—",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "0.0",
+      "sleep-phase": "—",
+      "source": "Autonomous",
+      "state": "Idle",
+      "target": "None",
+      "variation": "Look around",
+      "viewport": "802 × 673"
+    }
+  },
+  "after": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:25:08.599Z",
+    "values": {
+      "action": "Walk to bed",
+      "bed-hits": "3",
+      "eat-cooldown": "29.8",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "2",
+      "observe-time": "—",
+      "position": "2.10 / 1.42",
+      "read-cooldown": "15.5",
+      "read-hits": "2",
+      "read-phase": "—",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "0.0",
+      "sleep-phase": "approach / 0.00",
+      "source": "Player Command",
+      "state": "Walk",
+      "target": "Bed (-3.15, 1.85)",
+      "variation": "—",
+      "viewport": "802 × 673"
+    }
+  }
+}

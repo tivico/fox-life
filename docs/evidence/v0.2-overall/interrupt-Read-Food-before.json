@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:26:31.443Z",
+  "values": {
+    "action": "Reading",
+    "bed-hits": "3",
+    "eat-cooldown": "9.1",
+    "eat-hits": "2",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "—",
+    "position": "2.07 / -0.31",
+    "read-cooldown": "0.0",
+    "read-hits": "2",
+    "read-phase": "read / 0.03",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "0.0",
+    "sleep-phase": "—",
+    "source": "Autonomous",
+    "state": "Read",
+    "target": "Bookshelf (2.10, -0.30)",
+    "variation": "—",
+    "viewport": "802 × 673"
+  }
+}

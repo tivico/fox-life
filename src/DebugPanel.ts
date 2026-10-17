@@ -1,11 +1,9 @@
 import type { Character } from './Character.ts';
 
-export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
-  const panel = document.createElement('aside');
+export function createDebugPanel(host: HTMLElement) {
+  const panel = document.createElement('div');
+  panel.className = 'debug-panel';
   panel.innerHTML = `
-    <p class="eyebrow">A LITTLE HOME · EAT</p>
-    <h1>Fox Life</h1>
-    <p class="intro">陪牠，看一會窗外。</p>
     <button id="debug-toggle" type="button" aria-expanded="false" aria-controls="debug-data">顯示 Debug</button>
     <dl id="debug-data" hidden>
       <dt>Current State</dt><dd id="state">—</dd>
@@ -25,13 +23,14 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
       <dt>Food hits</dt><dd id="eat-hits">0</dd>
       <dt>Eat phase / seconds</dt><dd id="eat-phase">—</dd>
       <dt>Eat cooldown</dt><dd id="eat-cooldown">0</dd>
+      <dt>Daily activity / phase</dt><dd id="daily-phase">—</dd>
+      <dt>Daily seconds</dt><dd id="daily-time">—</dd>
+      <dt>Clean / Play cooldown</dt><dd id="daily-cooldown">—</dd>
+      <dt>Micro-event</dt><dd id="micro-event">—</dd>
       <dt>Viewport</dt><dd id="viewport">—</dd>
       <dt>Renderer</dt><dd id="renderer-status">Starting</dd>
-    </dl>
-    <button id="reset-camera" type="button">重設鏡頭</button>
-    <p class="hint">拖曳環繞 · 滾輪縮放<br>點窗看風景，點床休息，點書架讀一會，點餐碗吃點心。</p>`;
+    </dl>`;
   host.append(panel);
-  const reset = panel.querySelector<HTMLButtonElement>('#reset-camera')!;
   const toggle = panel.querySelector<HTMLButtonElement>('#debug-toggle')!;
   const data = panel.querySelector<HTMLElement>('#debug-data')!;
   const toggleDebug = () => {
@@ -39,7 +38,6 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
     toggle.setAttribute('aria-expanded', String(!data.hidden));
     toggle.textContent = data.hidden ? '顯示 Debug' : '隱藏 Debug';
   };
-  reset.addEventListener('click', resetCamera);
   toggle.addEventListener('click', toggleDebug);
   const fields = new Map([...data.querySelectorAll('dd')].map(node => [node.id, node]));
   const set = (id: string, value: string) => {
@@ -66,11 +64,14 @@ export function createDebugPanel(host: HTMLElement, resetCamera: () => void) {
       set('eat-hits', String(eatHits));
       set('eat-phase', character.eatPhase ? `${character.eatPhase} / ${character.eatElapsed.toFixed(2)}` : '—');
       set('eat-cooldown', character.eatCooldownRemaining.toFixed(1));
+      set('daily-phase', character.activityKind ? `${character.activityKind} / ${character.activityPhase}` : '—');
+      set('daily-time', character.activityKind ? character.activityElapsed.toFixed(2) : '—');
+      set('daily-cooldown', `${character.cleanCooldownRemaining.toFixed(1)} / ${character.playCooldownRemaining.toFixed(1)}`);
+      set('micro-event', character.microEvent ?? '—');
       set('viewport', `${width} × ${height}`);
       set('renderer-status', 'WebGL · rendering');
     },
     dispose() {
-      reset.removeEventListener('click', resetCamera);
       toggle.removeEventListener('click', toggleDebug);
       panel.remove();
     },

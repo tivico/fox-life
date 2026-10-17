@@ -5,3 +5,9 @@
 .asset-review button:disabled { opacity: .5; cursor: wait; }
 .asset-review a { color: #426b53; font-size: 12px; }
 #asset-status { font-size: 12px; color: #426b53; }
+.asset-review { position: absolute; top: 24px; left: 24px; width: 300px; max-height: calc(100dvh - 48px); overflow: auto; padding: 22px; border: 1px solid #ffffffb0; border-radius: 16px; background: #faf8f0eb; box-shadow: 0 8px 32px #34443d0a; }
+.asset-review .eyebrow { font-size: 10px; letter-spacing: 1.5px; color: #748276; }
+.asset-review p { font-size: 13px; line-height: 1.7; }
+.asset-review button { border: 1px solid #b8c6b7; border-radius: 6px; padding: 8px 12px; background: #edf0e7; }
+.asset-review button:hover { background: #dce6d8; }
+@media (max-width: 650px) { .asset-review { top: 10px; left: 10px; width: 215px; padding: 12px; } .asset-review .hint { display: none; } }

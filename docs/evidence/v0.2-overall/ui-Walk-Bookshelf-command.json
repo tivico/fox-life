@@ -1,0 +1,52 @@
+{
+  "before": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:24:40.749Z",
+    "values": {
+      "action": "Walk to bed",
+      "bed-hits": "2",
+      "eat-cooldown": "15.2",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "2",
+      "observe-time": "—",
+      "position": "-1.65 / 1.82",
+      "read-cooldown": "0.0",
+      "read-hits": "1",
+      "read-phase": "—",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "0.0",
+      "sleep-phase": "approach / 0.00",
+      "source": "Autonomous",
+      "state": "Walk",
+      "target": "Bed (-3.15, 1.85)",
+      "variation": "—",
+      "viewport": "802 × 673"
+    }
+  },
+  "after": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:24:40.939Z",
+    "values": {
+      "action": "Walk to reading area",
+      "bed-hits": "2",
+      "eat-cooldown": "15.0",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "2",
+      "observe-time": "—",
+      "position": "-1.65 / 1.82",
+      "read-cooldown": "0.0",
+      "read-hits": "2",
+      "read-phase": "approach / 0.00",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "0.0",
+      "sleep-phase": "—",
+      "source": "Player Command",
+      "state": "Walk",
+      "target": "Bookshelf (2.10, -0.30)",
+      "variation": "—",
+      "viewport": "802 × 673"
+    }
+  }
+}

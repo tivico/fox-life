@@ -1,0 +1,28 @@
+
+> fox-life-web@0.0.1 build
+> tsc --noEmit && vite build
+
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                             0.37 kB │ gzip:   0.26 kB
+dist/assets/fox_v01-D8rjlDI0.glb          253.75 kB
+dist/assets/fox_v02_static-xELw9o6D.glb   370.39 kB
+dist/assets/FoxAssetPreview-BfgQtnJf.css    0.40 kB │ gzip:   0.25 kB
+dist/assets/FoxV02Review-DOpSjT6h.css       1.02 kB │ gzip:   0.52 kB
+dist/assets/styles-BtoMTbOP.css             1.51 kB │ gzip:   0.78 kB
+dist/assets/index-B7Obv3F9.js               2.52 kB │ gzip:   1.21 kB
+dist/assets/FoxV02Review-CnBCe6Zi.js        3.56 kB │ gzip:   1.86 kB
+dist/assets/FoxAssetPreview-BPCKQiZl.js     3.97 kB │ gzip:   1.97 kB
+dist/assets/main-DL8ABjv-.js               21.55 kB │ gzip:   6.36 kB
+dist/assets/GLTFLoader-DVqAyzKe.js         45.20 kB │ gzip:  13.47 kB
+dist/assets/styles-Da6ySvwf.js            633.58 kB │ gzip: 160.56 kB
+
+✓ built in 454ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

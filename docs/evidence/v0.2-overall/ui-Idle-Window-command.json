@@ -1,0 +1,52 @@
+{
+  "before": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:25:25.310Z",
+    "values": {
+      "action": "Autonomous idle",
+      "bed-hits": "3",
+      "eat-cooldown": "13.1",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "2",
+      "observe-time": "—",
+      "position": "-3.12 / 1.85",
+      "read-cooldown": "0.0",
+      "read-hits": "2",
+      "read-phase": "—",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "44.9",
+      "sleep-phase": "—",
+      "source": "Autonomous",
+      "state": "Idle",
+      "target": "None",
+      "variation": "Breathe",
+      "viewport": "802 × 673"
+    }
+  },
+  "after": {
+    "debugHidden": true,
+    "time": "2026-09-20T01:25:25.517Z",
+    "values": {
+      "action": "Walk to window",
+      "bed-hits": "3",
+      "eat-cooldown": "12.9",
+      "eat-hits": "2",
+      "eat-phase": "—",
+      "hits": "3",
+      "observe-time": "—",
+      "position": "-3.12 / 1.85",
+      "read-cooldown": "0.0",
+      "read-hits": "2",
+      "read-phase": "—",
+      "renderer-status": "WebGL · rendering",
+      "sleep-cooldown": "44.7",
+      "sleep-phase": "—",
+      "source": "Player Command",
+      "state": "Walk",
+      "target": "Window (0.00, -1.40)",
+      "variation": "—",
+      "viewport": "802 × 673"
+    }
+  }
+}

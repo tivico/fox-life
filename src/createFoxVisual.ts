@@ -3,6 +3,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import type { CharacterState, IdleVariation } from './Character.ts';
 import type { SleepPhase } from './sleep.ts';
 import type { ReadPhase } from './read.ts';
+import { createDailyVisual } from './dailyVisual.ts';
+import type { CleanMode, DailyKind } from './daily.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -272,6 +274,7 @@ export function createFoxVisual() {
       if (prop.visible) THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
     };
   });
+  const daily = createDailyVisual({ root, body, head, eyes, arms, legs, tail, book, page });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -309,15 +312,19 @@ export function createFoxVisual() {
     root,
     animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
-      eatPose = 0, eatTime = 0 }: {
+      eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
+      cleanMode, cleanPark, cleanParkYaw = 0 }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
       readPose?: number; readPhase?: ReadPhase | null; readTime?: number;
       eatPose?: number; eatTime?: number;
+      dailyKind?: DailyKind | null; dailyPose?: number; dailyTime?: number; dozePose?: number;
+      cleanMode?: CleanMode; cleanPark?: THREE.Vector3; cleanParkYaw?: number;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
+      daily.restore();
       head.rotation.x -= eatOffsets.headX; head.rotation.y -= eatOffsets.headY;
       body.rotation.x -= eatOffsets.bodyX;
       arms.forEach((arm, i) => {
@@ -485,6 +492,7 @@ export function createFoxVisual() {
           arm.position.z += (i === 0 ? 0.07 : 0.21 * lift + 0.09 * Math.sin(Math.PI * lift)) * eating;
         });
       }
+      daily.animate(dailyKind, dailyPose, dailyKind ? dailyTime : readTime, dozePose, dt, cleanMode, cleanPark, cleanParkYaw);
     },
   };
 }

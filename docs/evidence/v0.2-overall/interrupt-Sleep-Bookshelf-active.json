@@ -1,0 +1,25 @@
+{
+  "debugHidden": true,
+  "time": "2026-09-20T01:27:01.258Z",
+  "values": {
+    "action": "Reading",
+    "bed-hits": "3",
+    "eat-cooldown": "10.5",
+    "eat-hits": "3",
+    "eat-phase": "—",
+    "hits": "3",
+    "observe-time": "—",
+    "position": "2.07 / -0.28",
+    "read-cooldown": "0.6",
+    "read-hits": "3",
+    "read-phase": "read / 0.12",
+    "renderer-status": "WebGL · rendering",
+    "sleep-cooldown": "37.4",
+    "sleep-phase": "—",
+    "source": "Player Command",
+    "state": "Read",
+    "target": "Bookshelf (2.10, -0.30)",
+    "variation": "—",
+    "viewport": "802 × 673"
+  }
+}

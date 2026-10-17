@@ -60,7 +60,7 @@ function start() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-label', '狐狸靜態預覽：拖曳環繞、滾輪縮放');
   host.prepend(renderer.domElement);
-  const { scene, camera } = createScene();
+  const { scene, camera, roomTextures } = createScene();
   // Match main.ts exactly: original room target, limits, lighting and framing.
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
@@ -145,6 +145,7 @@ function start() {
     positionButtons.forEach(b => b.removeEventListener('click', onPosition));
     controls.dispose();
     release(scene);
+    roomTextures.forEach(texture => texture.dispose());
     renderer.dispose();
     renderer.domElement.remove();
   };

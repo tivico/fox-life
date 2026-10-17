@@ -1,4 +1,34 @@
-# Fox Life Web — V0.1 Vertical Slice
+# Fox Life Web — 小狐狸的慢日子
+
+## 目前可體驗版本（2026-10-17）
+
+主入口 `/` 已在既有 V0.2 自主生活上加入完整的互動介面：
+
+- 下方六個生活邀請，或鍵盤 `1`～`6`：看風景、睡個覺、讀本書、吃點心、掃掃地、玩毛線。也可以直接點家具、掃帚或書架上的毛線球。
+- 自主打掃與玩耍、閱讀時偶爾點頭打瞌睡、睡醒離床後伸懶腰。動作、道具、中文近況與日記會同步更新，見 [更多生活細節](docs/DAILY_LIFE.md)。
+- 中文近況、目前目標、生活片段進度，以及收到邀請／忙碌／重複操作回饋。
+- 右上「生活日記」保存最近 40 則實際發生的片段，使用此瀏覽器的 localStorage。
+- 「靜靜陪伴」隱藏介面，`Esc` 或右下按鈕返回；「？」開啟玩法說明。
+- 小螢幕自動縮小構圖，Debug 收在右上，不再由資訊卡擋住房間。
+- 小屋美術增補：木紋地板、織紋地毯、拼布床單、窗簾與山景、床頭暖燈、盆栽、收藏櫃、鈕扣小盤、藏書與餐桌茶杯。茶杯沿用餐桌的吃點心邀請。
+
+執行 `npm run dev -- --port 5173 --strictPort`，開啟 <http://127.0.0.1:5173/>。建置後也可用 `npm run preview -- --port 4173 --strictPort`。
+
+目前 `npm run build`（含 typecheck）與 **65/65 tests** 通過。操作步驟、架構邊界與驗證限制見 [互動體驗預覽](docs/INTERACTION_PREVIEW.md) 與 [更多生活細節](docs/DAILY_LIFE.md)。這是可以逐步體驗產品方向的版本，沒有將既有 V0.2 PO Acceptance 改成 Accepted；目前也沒有 Needs、遊戲存檔或離線模擬。
+
+---
+
+## GitHub 與網站部署
+
+程式碼儲存庫：<https://github.com/tivico/fox-life>。
+
+GitHub Pages 部署網址：<https://tivico.github.io/fox-life/>。儲存庫的 Settings → Pages → Source 使用 **GitHub Actions**；推送到 `main` 後，工作流程會先執行測試，再以 `/fox-life/` 資源路徑建置並部署 `dist/`。也能在 Actions 手動執行 **Test and deploy Fox Life**。測試或建置失敗時不部署。
+
+本機開發仍使用 `npm run dev`；需要檢查 Pages 資源路徑時執行 `npm run build -- --base=/fox-life/`。不提交 `node_modules/`、`dist/` 或環境機密檔案。
+
+---
+
+以下保留早期 V0.1 與角色造型實驗的歷史紀錄，舊連接埠不代表目前正在執行的服務。
 
 目前實作範圍為自主 Idle／Walk → 點窗 → 走到窗前 → Observe → 返回自主生活。
 產品依據是 `docs/PRODUCT.md`，驗收依 `docs/V0_1_WEB_SPEC.md`。
