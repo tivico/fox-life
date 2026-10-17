@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createBroom, createYarnBall } from './dailyVisual.ts';
 import { CLEAN_STORAGE } from './daily.ts';
+import { createRoomAtmosphere } from './RoomAtmosphere.ts';
 
 // Pure data textures also work in the Node geometry regressions, without a DOM.
 function pattern(width: number, height: number, pixel: (x: number, y: number) => number[]) {
@@ -183,7 +184,8 @@ export function dressRoom(scene: THREE.Scene, surfaces: {
     } });
     return meshes;
   };
-  return { cleanParts: parts(broom), playParts: parts(yarn),
+  const atmosphere = createRoomAtmosphere(scene);
+  return { cleanParts: parts(broom), playParts: parts(yarn), atmosphere,
     diningDetails: decor.children.filter(part => ['CupSaucer', 'TeaCup', 'TeaSurface', 'CupHandle'].includes(part.name)),
     textures: [surfaces.floor.map, surfaces.rug.map, surfaces.mattress.map, surfaces.window.map] };
 }

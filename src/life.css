@@ -68,6 +68,15 @@
 .moment-list small { font-size: 9px; color: #8d9581; }
 .moment-list .journal-empty { font-size: 12px; line-height: 2; color: #87907a; padding: 24px 0; }
 .journal-note { border-top: 1px solid #e1e2d5; padding-top: 16px; font-size: 10px !important; }
+.sound-tool[data-audio-state="off"] .sound-waves, .sound-tool[data-audio-state="on"] .sound-slash { display: none; }
+.sound-tool[data-audio-state="on"] { color: #52764e; background: #e8eddf; }
+.sound-dialog .sound-status { font-size: 11px; min-height: 21px; margin: 12px 0 24px; text-align: center; }
+.sound-level { display: grid; grid-template-columns: 1fr auto; gap: 14px; font-size: 12px; margin: 24px 0; color: #5e7056; }
+.sound-level output { color: #8d937e; font-size: 11px; font-variant-numeric: tabular-nums; }
+.sound-level input { grid-column: 1 / -1; width: 100%; accent-color: #718565; pointer-events: auto; cursor: pointer; }
+.sound-dialog .help-note { font-size: 10px; }
+.sound-preview { border: 1px solid #d4d9c6; background: #eef0e5; color: #607653; padding: 10px 16px; border-radius: 10px; font-size: 11px; }
+.sound-preview:disabled { opacity: .5; cursor: default; }
 @media (min-width: 1500px) { .life-footer { bottom: 34px; } .home-header { inset: 36px 42px auto; } .room-caption { left: 45px; top: 120px; } }
 @media (max-width: 760px) { .view-tools { left: auto; right: 18px; bottom: 235px; } .view-tools button { width: 36px; height: 36px; padding: 8px; } .view-tools span { display: none; } .brand h1 span { display: none; } }
 @media (max-width: 650px) {
@@ -85,5 +94,8 @@
 }
 @media (max-height: 560px) and (min-width: 651px) {
   .home-header { inset: 16px 24px auto; } .room-caption { display: none; } .life-footer { bottom: 12px; } .fox-status { margin-bottom: 9px; padding: 8px 12px; } .invitation, .control-hint { display: none; } .action-dock button { padding: 10px; } .view-tools { bottom: 18px; } .feedback { bottom: 158px; }
+}
+@media (max-width: 420px) {
+  .home-tools [data-tool="journal"] > span:not(.moment-count) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) { .action-dock button { transition: none; } }

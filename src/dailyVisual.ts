@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CleanMode, DailyKind } from './daily.ts';
 import { createCleaningVisual } from './cleaning.ts';
+import { createYarnChoreography } from './YarnChoreography.ts';
 export { createBroom } from './cleaning.ts';
 
 export function createYarnBall() {
@@ -21,6 +22,7 @@ export function createDailyVisual(joints: {
 }) {
   const { root, body, head, eyes, arms, tail, book, page } = joints;
   const cleaning = createCleaningVisual(joints);
+  const yarnMotion = createYarnChoreography();
   const ball = createYarnBall(); ball.name = 'PlayingYarn'; root.add(ball);
   const zzz = new THREE.Group(); zzz.name = 'ReadingDoze'; root.add(zzz);
   const zMaterial = new THREE.MeshStandardMaterial({ color: '#718567', roughness: 1 });
@@ -57,6 +59,7 @@ export function createDailyVisual(joints: {
   };
   return {
     restore,
+    dispose() { yarnMotion.dispose(); },
     animate(kind: DailyKind | null, pose: number, time: number, doze: number, dt: number,
       cleanMode: CleanMode = 'carry', cleanPark = new THREE.Vector3(), cleanParkYaw = 0) {
       if (kind !== 'Clean') cleaning.reset();
@@ -78,18 +81,19 @@ export function createDailyVisual(joints: {
       if (kind === 'Clean') {
         cleaning.animate(pose, time, cleanMode, cleanPark, cleanParkYaw, dt);
       } else if (kind === 'Play') {
-        const roll = Math.sin(time * 2.6);
+        const phrase = yarnMotion.sample(time);
+        const roll = phrase.x / .38;
         ball.visible = true; ball.scale.setScalar(blend);
-        ball.position.set(roll * .38, .13 + Math.pow(Math.sin(time * 2.6), 6) * .12, .65);
-        ball.rotation.set(0, time * 1.1, -roll * 2.5);
+        ball.position.set(phrase.x, .13, .65);
+        ball.rotation.set(0, .1, -phrase.x / .125);
         head.rotation.x += .28 * blend; head.rotation.y += roll * .25 * blend;
         for (const [i, arm] of arms.entries()) {
-          const reach = Math.max(0, roll * (i === 0 ? -1 : 1));
+          const reach = i === 0 ? phrase.left : phrase.right;
           arm.rotation.x += (-.65 - reach * .8 - arm.rotation.x) * blend;
           arm.rotation.z += (i === 0 ? -.1 : .1) * reach * blend;
           arm.position.z += .16 * reach * blend;
         }
-        tail.rotation.y += Math.sin(time * 5) * .13 * blend;
+        tail.rotation.y += (phrase.left - phrase.right) * .1 * blend;
       } else if (kind === 'Stretch') {
         const stretch = Math.sin(Math.min(1, time / 2.3) * Math.PI) * blend;
         body.scale.y *= 1 + stretch * .045;

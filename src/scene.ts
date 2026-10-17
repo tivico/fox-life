@@ -119,5 +119,6 @@ export function createScene() {
   // Nested tool groups have world positions even before the first render/query.
   scene.updateMatrixWorld(true);
   return { scene, camera, windowParts, bedParts, readingParts, foodParts,
-    cleanParts: details.cleanParts, playParts: details.playParts, roomTextures: details.textures };
+    cleanParts: details.cleanParts, playParts: details.playParts, roomTextures: details.textures,
+    atmosphere: details.atmosphere };
 }

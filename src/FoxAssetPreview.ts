@@ -43,6 +43,7 @@ function release(scene: THREE.Object3D) {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   scene.traverse(object => {
+    if (object instanceof THREE.InstancedMesh) object.dispose();
     if (object instanceof THREE.Mesh) {
       geometries.add(object.geometry);
       (Array.isArray(object.material) ? object.material : [object.material]).forEach(m => materials.add(m));

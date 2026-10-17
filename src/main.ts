@@ -11,6 +11,8 @@ import { FrameClock } from './FrameClock.ts';
 import { createPerformanceSample } from './PerformanceSample';
 import { createLifePanel } from './LifePanel';
 import type { LifeAction } from './life.ts';
+import { HomeAudio, AUDIO_KEY, audioPreferences } from './HomeAudio.ts';
+import { createSoundPanel } from './SoundPanel.ts';
 import './styles.css';
 
 const host = document.querySelector<HTMLElement>('#app')!;
@@ -28,7 +30,8 @@ function start() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點窗戶、床、書架、餐碗、掃帚或毛線球');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, playParts, roomTextures } = createScene();
+  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, playParts, roomTextures, atmosphere } = createScene();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -53,6 +56,10 @@ function start() {
     life.commandResult(action, accepted);
   };
   const life = createLifePanel(host, character, request, () => controls.reset(), () => resize());
+  let savedAudio: unknown;
+  try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
+  const audio = new HomeAudio(audioPreferences(savedAudio));
+  const soundPanel = createSoundPanel(host, audio);
   const unbindClean = bindWindowInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
   const unbindPlay = bindWindowInteraction(renderer.domElement, camera, scene, playParts, () => request('Play'));
   const unbindEat = bindEatInteraction(renderer.domElement, camera, scene, foodParts, () => {
@@ -97,6 +104,9 @@ function start() {
   const visibilityChanged = () => {
     frameClock.reset();
     life.update();
+    if (document.hidden) audio.pause();
+    else void audio.resumeVisible();
+    soundPanel.update();
     if (document.hidden) performanceSample?.frame(performance.now(), true, character.state);
   };
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -105,9 +115,13 @@ function start() {
     performanceSample?.frame(now, document.hidden, character.state);
     if (document.hidden) return;
     character.update(dt);
+    atmosphere.update(dt, reducedMotion.matches);
     storedBroom.visible = !character.cleanToolInUse;
     life.update();
     controls.update();
+    const right = camera.matrixWorld.elements;
+    audio.update(character, dt, (character.root.position.x * right[0]! + character.root.position.z * right[2]!) / 4);
+    soundPanel.update();
     renderer.render(scene, camera);
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
@@ -125,9 +139,13 @@ function start() {
     controls.dispose();
     debug.dispose();
     life.dispose();
+    soundPanel.dispose();
+    audio.dispose();
+    character.dispose();
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
     scene.traverse(object => {
+      if (object instanceof THREE.InstancedMesh) object.dispose();
       if (object instanceof THREE.Mesh) {
         geometries.add(object.geometry);
         const list = Array.isArray(object.material) ? object.material : [object.material];

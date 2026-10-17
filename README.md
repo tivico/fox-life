@@ -11,10 +11,11 @@
 - 「靜靜陪伴」隱藏介面，`Esc` 或右下按鈕返回；「？」開啟玩法說明。
 - 小螢幕自動縮小構圖，Debug 收在右上，不再由資訊卡擋住房間。
 - 小屋美術增補：木紋地板、織紋地毯、拼布床單、窗簾與山景、床頭暖燈、盆栽、收藏櫃、鈕扣小盤、藏書與餐桌茶杯。茶杯沿用餐桌的吃點心邀請。
+- 美術與聲音：座鐘、乾燥花、小畫、流蘇與餐巾，窗簾／植物微動及茶杯熱氣；角色關鍵影格表情與毛線球分段動畫。右上「小屋聲音」可啟用風聲、鳥鳴與同步動作音效，分別調整環境音與音效音量，詳見 [美術與聲音](docs/ART_AND_SOUND.md)。
 
 執行 `npm run dev -- --port 5173 --strictPort`，開啟 <http://127.0.0.1:5173/>。建置後也可用 `npm run preview -- --port 4173 --strictPort`。
 
-目前 `npm run build`（含 typecheck）與 **65/65 tests** 通過。操作步驟、架構邊界與驗證限制見 [互動體驗預覽](docs/INTERACTION_PREVIEW.md) 與 [更多生活細節](docs/DAILY_LIFE.md)。這是可以逐步體驗產品方向的版本，沒有將既有 V0.2 PO Acceptance 改成 Accepted；目前也沒有 Needs、遊戲存檔或離線模擬。
+目前 `npm run build`（含 typecheck）與 **75/75 tests** 通過。操作步驟、架構邊界與驗證限制見 [互動體驗預覽](docs/INTERACTION_PREVIEW.md)、[更多生活細節](docs/DAILY_LIFE.md) 與 [美術與聲音](docs/ART_AND_SOUND.md)。這是可以逐步體驗產品方向的版本，沒有將既有 V0.2 PO Acceptance 改成 Accepted；目前也沒有 Needs、遊戲存檔或離線模擬。
 
 ---
 

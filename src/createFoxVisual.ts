@@ -5,6 +5,7 @@ import type { SleepPhase } from './sleep.ts';
 import type { ReadPhase } from './read.ts';
 import { createDailyVisual } from './dailyVisual.ts';
 import type { CleanMode, DailyKind } from './daily.ts';
+import { createFoxPerformance } from './FoxPerformance.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -275,6 +276,7 @@ export function createFoxVisual() {
     };
   });
   const daily = createDailyVisual({ root, body, head, eyes, arms, legs, tail, book, page });
+  const performance = createFoxPerformance();
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -310,7 +312,8 @@ export function createFoxVisual() {
   const eatOffsets = { headX: 0, headY: 0, bodyX: 0, arms: [0, 0], armRoll: [0, 0] };
   return {
     root,
-    animate({ dt, time, distance, state, variation, observeTime, turnRate = 0, headingError = 0, preparingObserve = false,
+    dispose() { performance.dispose(); daily.dispose(); },
+    animate({ dt, time, distance, state, variation, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
       eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
       cleanMode, cleanPark, cleanParkYaw = 0 }: {
@@ -324,6 +327,7 @@ export function createFoxVisual() {
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
+      const expression = performance.update(state, dt);
       daily.restore();
       head.rotation.x -= eatOffsets.headX; head.rotation.y -= eatOffsets.headY;
       body.rotation.x -= eatOffsets.bodyX;
@@ -364,16 +368,14 @@ export function createFoxVisual() {
         + Math.sin(gait) * (0.018 * walkBlend + 0.025 * turnBlend) - turnRate * 0.012);
       body.rotation.x = damp(body.rotation.x, -0.035 * observeBlend + acceleration * 0.01 - anticipation * 0.018, 6);
       // Ease into a glance, hold it briefly, then return; avoid continuous metronomic scanning.
-      const glance = state === 'Observe'
-        ? THREE.MathUtils.smoothstep(observeTime, 0.35, 1.25) * (1 - THREE.MathUtils.smoothstep(observeTime, 2.4, 3.7)) : 0;
-      head.rotation.y = damp(head.rotation.y, Math.sin(time * 0.65) * 0.18 * lookBlend
-        + 0.22 * glance + THREE.MathUtils.clamp(headingError * 0.65, -0.48, 0.48), 12);
-      head.rotation.x = damp(head.rotation.x, -0.13 * observeBlend - 0.035 * glance + breath * 0.012, 5);
-      eyes.position.x = damp(eyes.position.x, Math.sin(time * 0.7) * 0.005 * (1 - walkBlend) + glance * 0.006);
-      const blink = Math.pow(Math.max(0, Math.cos(time * 1.13)), 36);
-      eyes.scale.y = 1 - blink * 0.8;
+      const glance = state === 'Observe' ? expression.gaze : 0;
+      head.rotation.y = damp(head.rotation.y, expression.gaze * lookBlend
+        + glance + THREE.MathUtils.clamp(headingError * 0.65, -0.48, 0.48), 12);
+      head.rotation.x = damp(head.rotation.x, -0.13 * observeBlend + expression.nod + breath * 0.012, 5);
+      eyes.position.x = damp(eyes.position.x, expression.gaze * .02 + glance * .006);
+      eyes.scale.y = expression.eyes;
       ears.forEach((ear, index) => {
-        ear.rotation.x = earMotion[index]!(Math.sin(time * 1.4 + index * 2.1) * 0.025
+        ear.rotation.x = earMotion[index]!((index === 0 ? expression.earLeft : expression.earRight)
           - acceleration * 0.014 + turnRate * (index === 0 ? 0.016 : -0.012), dt);
       });
       tail.rotation.y = tailYaw(Math.sin(time * 0.85) * 0.07 - turnRate * 0.075

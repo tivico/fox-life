@@ -86,6 +86,7 @@ export class Character {
     this.root.add(this.visual.root);
   }
   get state() { return this.currentState; }
+  dispose() { this.visual.dispose(); }
   get source() { return this.commandActive ? 'Player Command' : 'Autonomous'; }
   get target() { return this.destination?.clone() ?? null; }
   get idleVariation() { return this.variation; }
