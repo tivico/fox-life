@@ -1,8 +1,8 @@
-export type SoundKind = 'step-wood' | 'step-rug' | 'page' | 'sweep' | 'crunch' | 'cloth' | 'yarn' | 'bird';
+export type SoundKind = 'step-wood' | 'step-rug' | 'page' | 'sweep' | 'crunch' | 'cloth' | 'yarn' | 'bird' | 'remote' | 'cup' | 'sip' | 'radio';
 
 /** Original, deterministic Foley synthesis. Shared by playback and exported listening samples. */
 export function soundSamples(kind: Exclude<SoundKind, 'step-wood' | 'step-rug'>, sampleRate: number, seed = 73) {
-  const duration = { page: .65, sweep: 1.05, crunch: .18, cloth: .48, yarn: .2, bird: .72 }[kind];
+  const duration = { page: .65, sweep: 1.05, crunch: .18, cloth: .48, yarn: .2, bird: .72, remote: .1, cup: .35, sip: .5, radio: 2.8 }[kind];
   const samples = new Float32Array(Math.ceil(sampleRate * duration));
   let low = 0, softer = 0, phase = 0;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296 * 2 - 1; };
@@ -13,7 +13,15 @@ export function soundSamples(kind: Exclude<SoundKind, 'step-wood' | 'step-rug'>,
     const white = random(); low += alpha * (white - low); softer += .015 * (low - softer);
     const envelope = Math.pow(Math.sin(Math.PI * u), 2);
     let value = 0;
-    if (kind === 'bird') {
+    if (kind === 'radio') {
+      const beat = Math.floor(t / .5), noteTime = t - beat * .5;
+      const frequency = [261.63, 329.63, 392, 329.63, 293.66, 261.63][Math.min(5, beat)]!;
+      const attack = Math.min(1, noteTime / .025), release = Math.exp(-noteTime * 7);
+      value = Math.sin(t * 2 * Math.PI * frequency) * attack * release * envelope * .055;
+    } else if (kind === 'remote') value = low * envelope * .05;
+    else if (kind === 'cup') value = Math.sin(t * 2 * Math.PI * 1320) * Math.exp(-t * 15) * Math.min(1, t * 700) * envelope * .07;
+    else if (kind === 'sip') value = softer * envelope * .14;
+    else if (kind === 'bird') {
       const phrase = t < .24 ? t / .24 : (t - .36) / .28;
       const voice = phrase > 0 && phrase < 1 ? Math.sin(Math.PI * phrase) ** 3 : 0;
       const frequency = 1750 + 800 * Math.sin(Math.PI * Math.max(0, Math.min(1, phrase))) + 70 * Math.sin(t * 80);

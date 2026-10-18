@@ -1,5 +1,6 @@
 import type { Character } from './Character.ts';
-import { actionLabels, JOURNAL_KEY, LifeJournal, lifePresentation, momentText, type LifeAction } from './life.ts';
+import { actionLabels, roomActions, JOURNAL_KEY, LifeJournal, lifePresentation, momentText, type LifeAction } from './life.ts';
+import { homeRooms, roomAt } from './HomeNavigation.ts';
 
 const drawings = {
   Window: '<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M12 3v17M4 11h16M2 21h20"/>',
@@ -8,8 +9,16 @@ const drawings = {
   Food: '<path d="M3 12h18c0 6-3 9-9 9s-9-3-9-9ZM6 3c-3 3 3 3 0 6m6-6c-3 3 3 3 0 6m6-6c-3 3 3 3 0 6"/>',
   Clean: '<path d="m16 3-5 11m-4-2 8 4-4 6-9-4 5-6Zm-1 3-2 4m5-3-2 4m5-2-2 3"/>',
   Play: '<circle cx="12" cy="12" r="9"/><path d="M5 6c8 1 10 6 12 12M3 11c6-1 9 3 11 10M10 3c1 6 5 9 11 10M7 19c0-6 5-10 12-11"/>',
+  WatchTV: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4m-2-13 5 3-5 3V8Z"/>',
+  SofaRest: '<path d="M4 12V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5M2 10h4v7h12v-7h4v10H2V10Zm2 10v2m16-2v2"/>',
+  Tea: '<path d="M4 8h12v7a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Zm12 1h3a3 3 0 0 1 0 6h-3M2 22h18M7 2v3m5-3v3"/>',
+  Exercise: '<circle cx="12" cy="5" r="3"/><path d="m3 7 5 5h8l5-5m-9 5v5m-5 5 5-5 5 5"/>',
+  Music: '<path d="M9 18V5l12-3v13M9 9l12-3"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="18" cy="15" rx="3" ry="3"/>',
+  TidySofa: '<rect x="3" y="8" width="15" height="13" rx="3"/><path d="m16 2 1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3ZM7 12l7 5m-7 0 7-5"/>',
   Doze: '<path d="M3 13h8l-8 8h8m3-18h7l-7 7h7"/>',
   Stretch: '<circle cx="12" cy="7" r="3"/><path d="m3 3 5 10h8l5-10m-9 10v8m-4 0 4-4 4 4"/>',
+  Bedroom: '<path d="M3 11 12 3l9 8v10H3V11Zm5 10v-8h8v8"/>',
+  LivingRoom: '<path d="M4 12V7h16v5M2 11h4v6h12v-6h4v9H2v-9Zm2 9v2m16-2v2"/>',
   leaf: '<path d="M5 20C3 10 8 3 21 3c0 12-6 18-14 14m-3 4L16 9"/>',
   reset: '<path d="M4 9a8 8 0 1 1 0 7M4 3v6h6"/>',
   journal: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18m4-12h5m-5 4h5"/>',
@@ -39,13 +48,12 @@ export function createLifePanel(host: HTMLElement, character: Character,
         <button type="button" data-tool="help" aria-label="怎麼玩">${icon('help')}</button>
       </nav>
     </header>
-    <div class="room-caption"><span></span> 一隅小屋 <i>／</i> 自在生活中</div>
+    <div class="room-caption"><span></span> 兩間房的小日子 <i>／</i> 自在生活中</div>
     <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
     <footer class="life-footer">
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
-      <div class="invitation"><span>陪牠做點什麼</span><p>也可以什麼都不做，讓日常自己發生。</p></div>
-      <nav class="action-dock" aria-label="邀請狐狸做點什麼">${(Object.keys(actionLabels) as LifeAction[]).map((key, index) => `
-        <button type="button" data-action="${key}" aria-pressed="false" aria-keyshortcuts="${index + 1}"><span class="action-icon">${icon(key)}</span><span>${actionLabels[key]}</span><kbd>${index + 1}</kbd></button>`).join('')}</nav>
+      <div class="invitation"><span class="dock-room-label">臥室日常</span><p>也可以什麼都不做，讓日常自己發生。</p></div>
+      <nav class="action-dock" aria-label="邀請狐狸做點什麼"></nav>
       <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具，邀請牠開始下一段日常</p>
     </footer>
     <p class="feedback" role="status" hidden></p>
@@ -54,8 +62,8 @@ export function createLifePanel(host: HTMLElement, character: Character,
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
       <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
-      <ol class="help-steps"><li><b>先看一會</b><span>牠會自己散步、吃點心、讀書、睡覺，也會打掃和玩毛線。偶爾讀到打瞌睡，或停下來伸懶腰。</span></li><li><b>送一個小邀請</b><span>點家具、床邊的掃帚、書架上的毛線球，或用下方六個按鈕。牠會自己走過去。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
-      <p class="help-note">拖曳環繞 · 滾輪縮放 · 數字 1–6 邀請行為<br>一次完成一個邀請；離開分頁時，日常會先暫停。</p>
+      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具。房間面板的「去客廳／回臥室」可以邀請牠往返。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
     </dialog>
     <dialog class="home-dialog journal-dialog" data-dialog="journal" aria-labelledby="journal-title">
@@ -72,7 +80,8 @@ export function createLifePanel(host: HTMLElement, character: Character,
   const feedback = find('.feedback');
   const list = find<HTMLOListElement>('.moment-list');
   const count = find('.moment-count');
-  const buttons = [...ui.querySelectorAll<HTMLButtonElement>('[data-action]')];
+  let buttons: HTMLButtonElement[] = [];
+  let dockKey = '';
   const help = find<HTMLDialogElement>('[data-dialog="help"]');
   const diary = find<HTMLDialogElement>('[data-dialog="journal"]');
   let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
@@ -116,6 +125,17 @@ export function createLifePanel(host: HTMLElement, character: Character,
     setText(count, String(journal.entries.length));
   }
   function update() {
+    const actions = roomActions(character), nextDockKey = actions.join(',');
+    if (dockKey !== nextDockKey) {
+      const dock = find('.action-dock');
+      const hadFocus = dock.contains(document.activeElement);
+      dock.innerHTML = actions.map((key, index) => `<button type="button" data-action="${key}" aria-pressed="false" aria-keyshortcuts="${index + 1}"><span class="action-icon">${icon(key)}</span><span>${actionLabels[key]}</span><kbd>${index + 1}</kbd></button>`).join('');
+      dock.style.setProperty('--action-count', String(actions.length));
+      buttons = [...dock.querySelectorAll<HTMLButtonElement>('button')];
+      if (hadFocus) buttons[0]?.focus();
+      dockKey = nextDockKey;
+      setText(find('.dock-room-label'), `${homeRooms[roomAt(character.root.position)].label}日常 · 陪牠做點什麼`);
+    }
     const status = lifePresentation(character);
     setText(title, status.title);
     setText(source, document.hidden ? '離開一下，日常暫停中' : status.source);
@@ -152,7 +172,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
     if (event.key === 'Escape' && quiet) { setQuiet(false); return; }
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || quiet || ui.querySelector('dialog[open]') ||
       (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
-    const action = (Object.keys(actionLabels) as LifeAction[])[Number(event.key) - 1];
+    const action = roomActions(character)[Number(event.key) - 1];
     if (action) { event.preventDefault(); request(action); }
   };
   ui.addEventListener('click', click);
@@ -161,6 +181,10 @@ export function createLifePanel(host: HTMLElement, character: Character,
   update();
   return {
     update,
+    visitResult(room: string, accepted: boolean) {
+      notify(accepted ? `收到邀請了，去${room}待一會。` : '牠正在完成你的上一個邀請，等一下再邀請牠吧。');
+      update();
+    },
     commandResult(action: LifeAction, accepted: boolean) {
       notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : character.source === 'Player Command' ?
         '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : '牠已經在做這件事了，陪牠一會吧。');

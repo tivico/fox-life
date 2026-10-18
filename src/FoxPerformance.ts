@@ -3,7 +3,7 @@ import type { CharacterState } from './Character.ts';
 
 type Channel = 'gaze' | 'nod' | 'earLeft' | 'earRight' | 'eyes';
 type Keys = Array<[number, number]>;
-const lengths = { Idle: 12, Walk: 4.8, Observe: 4, Sleep: 8, Read: 7, Eat: 6, Clean: 8.8, Play: 7.6, Stretch: 2.3 };
+const lengths = { Idle: 12, Walk: 4.8, Observe: 4, Sleep: 8, Read: 7, Eat: 6, Clean: 8.8, Play: 7.6, Stretch: 2.3, Living: 14 };
 const rest: Record<Channel, number> = { gaze: 0, nod: 0, earLeft: 0, earRight: 0, eyes: 1 };
 function blinks(duration: number, moments: number[]): Keys {
   return [[0, 1], ...moments.flatMap(t => [[t, 1], [t + .08, .12], [t + .18, 1]] as Keys), [duration, 1]];

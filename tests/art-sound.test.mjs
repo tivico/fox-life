@@ -126,7 +126,8 @@ test('audio opt-in, mute, background resume and disposal cannot leave a running 
 
 test('authored performance clips crossfade, remain bounded, freeze on zero delta and do not accumulate', () => {
   const clips = foxPerformanceClips();
-  assert.equal(new Set(clips.map(clip => clip.name)).size, 9);
+  assert.deepEqual([...new Set(clips.map(clip => clip.name))].sort(),
+    ['Idle', 'Walk', 'Observe', 'Sleep', 'Read', 'Eat', 'Clean', 'Play', 'Stretch', 'Living'].sort());
   clips.forEach(clip => assert.equal(clip.validate(), true));
   for (const dt of [1 / 20, 1 / 60, 1 / 144]) {
     const performance = createFoxPerformance(); let last;

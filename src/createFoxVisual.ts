@@ -6,6 +6,8 @@ import type { ReadPhase } from './read.ts';
 import { createDailyVisual } from './dailyVisual.ts';
 import type { CleanMode, DailyKind } from './daily.ts';
 import { createFoxPerformance } from './FoxPerformance.ts';
+import { createLivingVisual } from './LivingVisual.ts';
+import type { LivingSnapshot } from './LivingActivity.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -277,6 +279,7 @@ export function createFoxVisual() {
   });
   const daily = createDailyVisual({ root, body, head, eyes, arms, legs, tail, book, page });
   const performance = createFoxPerformance();
+  const livingVisual = createLivingVisual({ root, body, head, eyes, arms, legs, tail });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -316,7 +319,7 @@ export function createFoxVisual() {
     animate({ dt, time, distance, state, variation, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
       eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
-      cleanMode, cleanPark, cleanParkYaw = 0 }: {
+      cleanMode, cleanPark, cleanParkYaw = 0, living = null }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
@@ -324,10 +327,12 @@ export function createFoxVisual() {
       eatPose?: number; eatTime?: number;
       dailyKind?: DailyKind | null; dailyPose?: number; dailyTime?: number; dozePose?: number;
       cleanMode?: CleanMode; cleanPark?: THREE.Vector3; cleanParkYaw?: number;
+      living?: LivingSnapshot | null;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
       const expression = performance.update(state, dt);
+      livingVisual.restore();
       daily.restore();
       head.rotation.x -= eatOffsets.headX; head.rotation.y -= eatOffsets.headY;
       body.rotation.x -= eatOffsets.bodyX;
@@ -495,6 +500,7 @@ export function createFoxVisual() {
         });
       }
       daily.animate(dailyKind, dailyPose, dailyKind ? dailyTime : readTime, dozePose, dt, cleanMode, cleanPark, cleanParkYaw);
+      livingVisual.animate(living);
     },
   };
 }

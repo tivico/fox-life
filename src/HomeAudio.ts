@@ -117,7 +117,7 @@ export class HomeAudio {
   }
   preview(kind: 'page' | 'step-wood' | 'step-rug' | 'wind' = 'page') { this.play(kind, 0, kind === 'wind'); }
   private play(kind: SoundKind | 'wind', pan: number, ambient = false) {
-    if (!this.running || this.voices.size >= 12 || !(ambient ? this.preferences.ambience : this.preferences.effects)) return;
+    if (!this.running || this.voices.size >= 12 || !(kind === 'radio' ? this.preferences.music : ambient ? this.preferences.ambience : this.preferences.effects)) return;
     let buffer: AudioBuffer | undefined;
     if (kind === 'wind') buffer = this.buffers.get('wind');
     else if (kind === 'step-wood' || kind === 'step-rug') {
@@ -129,7 +129,7 @@ export class HomeAudio {
     const ctx = this.context!, voice = ctx.createBufferSource(), panner = ctx.createStereoPanner();
     voice.buffer = buffer; voice.playbackRate.value = kind === 'bird' || kind === 'wind' ? 1 : .98 + Math.random() * .04;
     panner.pan.value = Math.max(-.75, Math.min(.75, pan));
-    voice.connect(panner); panner.connect(ambient ? this.ambience! : this.effects!);
+    voice.connect(panner); panner.connect(kind === 'radio' ? this.music! : ambient ? this.ambience! : this.effects!);
     this.voices.add(voice);
     if (kind === 'wind') this.windVoice = voice;
     voice.onended = () => { if (this.windVoice === voice) this.windVoice = null; this.voices.delete(voice); voice.disconnect(); panner.disconnect(); };

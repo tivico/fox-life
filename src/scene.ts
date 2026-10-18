@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CharacterLayout } from './Character.ts';
 import { dressRoom } from './roomDetails.ts';
 import { CLEAN_STORAGE } from './daily.ts';
+import { createLivingRoom } from './livingRoom.ts';
 
 export const characterLayout: CharacterLayout = {
   windowPosition: new THREE.Vector3(0, 0, -1.4),
@@ -31,7 +32,12 @@ export const homeLayout: CharacterLayout = {
       tool: new THREE.Vector3().fromArray(CLEAN_STORAGE.tool), heading: CLEAN_STORAGE.heading } },
 };
 
-export function createScene() {
+export const expandedHomeLayout: CharacterLayout = {
+  ...homeLayout, connectedRooms: true,
+  leisure: { ...homeLayout.leisure!, play: new THREE.Vector3(.65, 0, 6.2) },
+};
+
+export function createScene({ expanded = false } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e9e6df');
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
@@ -60,7 +66,7 @@ export function createScene() {
   // Low cutaway walls, no roof. The camera remains outside the room envelope.
   box(8.4, 0.9, 0.18, '#a6b6ac', 0, 0.45, -3.1);
   box(0.18, 0.9, 6.4, '#a6b6ac', -4.1, 0.45, 0);
-  box(8.4, 0.18, 0.18, '#d6cbb9', 0, 0.09, 3.1);
+  if (!expanded) box(8.4, 0.18, 0.18, '#d6cbb9', 0, 0.09, 3.1);
   box(0.18, 0.18, 6.4, '#d6cbb9', 4.1, 0.09, 0);
   // An inset rug avoids placing an elevated surface under the feet.
   const rug = box(3.7, 0.008, 2.9, '#d4b29b', 0, -0.003, 0.35);
@@ -116,9 +122,24 @@ export function createScene() {
   const details = dressRoom(scene, { floor: floor.material, rug: rug.material,
     mattress: bedParts[1]!.material, window: windowPane.material });
   foodParts.push(...details.diningDetails);
+  const living = expanded ? createLivingRoom(scene, floor.material) : null;
+  if (expanded) {
+    // The live home's former yarn invitation is now exercise; historical previews keep their prop.
+    const yarn = scene.getObjectByName('RoomYarn')!;
+    const yarnGeometries = new Set<THREE.BufferGeometry>(), yarnMaterials = new Set<THREE.Material>();
+    yarn.traverse(object => { if (object instanceof THREE.Mesh) {
+      yarnGeometries.add(object.geometry);
+      (Array.isArray(object.material) ? object.material : [object.material]).forEach(material => yarnMaterials.add(material));
+    } });
+    yarn.removeFromParent(); yarnGeometries.forEach(geometry => geometry.dispose()); yarnMaterials.forEach(material => material.dispose());
+    sunlight.shadow.camera.bottom = -12;
+    sunlight.shadow.camera.far = 35;
+    sunlight.shadow.mapSize.set(2048, 2048);
+    sunlight.shadow.camera.updateProjectionMatrix();
+  }
   // Nested tool groups have world positions even before the first render/query.
   scene.updateMatrixWorld(true);
   return { scene, camera, windowParts, bedParts, readingParts, foodParts,
-    cleanParts: details.cleanParts, playParts: details.playParts, roomTextures: details.textures,
-    atmosphere: details.atmosphere };
+    cleanParts: details.cleanParts, playParts: living?.livingParts.Exercise ?? details.playParts, roomTextures: [...details.textures, ...(living?.textures ?? [])],
+    atmosphere: details.atmosphere, loungeParts: living?.loungeParts ?? [], livingRoom: living };
 }

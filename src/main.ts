@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, homeLayout } from './scene';
+import { createScene, expandedHomeLayout } from './scene';
+import { createHomeView } from './HomeView.ts';
+import { createRoomPanel } from './RoomPanel.ts';
+import { homeRooms, type RoomId } from './HomeNavigation.ts';
+import { isLivingAction } from './LivingActivity.ts';
 import { bindEatInteraction } from './EatInteraction';
 import { bindReadInteraction } from './ReadInteraction';
 import { bindBedInteraction } from './BedInteraction';
@@ -29,40 +33,47 @@ function start() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.domElement.setAttribute('aria-label', '3D 房間：拖曳環繞、滾輪縮放、點窗戶、床、書架、餐碗、掃帚或毛線球');
+  renderer.domElement.setAttribute('aria-label', '3D 小屋：拖曳環繞、滾輪縮放；點臥室家具，或客廳的電視、沙發、茶杯、運動墊、小音響與抱枕');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, playParts, roomTextures, atmosphere } = createScene();
+  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, roomTextures, atmosphere, livingRoom } = createScene({ expanded: true });
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
   controls.enablePan = false;
   controls.minDistance = 10;
-  controls.maxDistance = 24;
+  controls.maxDistance = 34;
   controls.minPolarAngle = Math.PI / 8;
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(homeLayout);
+  const character = new Character(expandedHomeLayout);
   scene.add(character.root);
+  const homeView = createHomeView(camera, controls, character.root.position, () => reducedMotion.matches);
   const storedBroom = scene.getObjectByName('RoomBroom')!;
   let windowHits = 0;
   let bedHits = 0;
   let readHits = 0;
   let eatHits = 0;
   const request = (action: LifeAction) => {
-    const accepted = action === 'Window' ? character.requestWindowObserve() :
+    const accepted = isLivingAction(action) ? character.requestLivingAction(action) : action === 'Window' ? character.requestWindowObserve() :
       action === 'Bed' ? character.requestSleep() : action === 'Bookshelf' ? character.requestRead() :
       action === 'Food' ? character.requestEat() : action === 'Clean' ? character.requestClean() : character.requestPlay();
     life.commandResult(action, accepted);
   };
-  const life = createLifePanel(host, character, request, () => controls.reset(), () => resize());
+  const life = createLifePanel(host, character, request, () => homeView.reset(), () => resize());
+  const visit = (room: RoomId) => {
+    const accepted = character.requestRoomVisit(room);
+    life.visitResult(homeRooms[room].label, accepted);
+  };
+  const rooms = createRoomPanel(host, character, homeView, visit);
+  const unbindLiving = Object.entries(livingRoom!.livingParts).map(([action, parts]) =>
+    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
   let savedAudio: unknown;
   try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? localStorage.getItem(LEGACY_AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
   const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
   const soundPanel = createSoundPanel(host, audio);
   const unbindClean = bindWindowInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
-  const unbindPlay = bindWindowInteraction(renderer.domElement, camera, scene, playParts, () => request('Play'));
   const unbindEat = bindEatInteraction(renderer.domElement, camera, scene, foodParts, () => {
     eatHits++;
     request('Food');
@@ -116,12 +127,16 @@ function start() {
     performanceSample?.frame(now, document.hidden, character.state);
     if (document.hidden) return;
     character.update(dt);
+    homeView.update(dt);
+    rooms.update();
     atmosphere.update(dt, reducedMotion.matches);
+    livingRoom!.update(dt, reducedMotion.matches, character.livingActivity);
     storedBroom.visible = !character.cleanToolInUse;
     life.update();
     controls.update();
     const right = camera.matrixWorld.elements;
-    audio.update(character, dt, (character.root.position.x * right[0]! + character.root.position.z * right[2]!) / 4);
+    audio.update(character, dt, ((character.root.position.x - controls.target.x) * right[0]!
+      + (character.root.position.z - controls.target.z) * right[2]!) / 4);
     soundPanel.update();
     renderer.render(scene, camera);
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
@@ -136,7 +151,9 @@ function start() {
     unbindRead();
     unbindEat();
     unbindClean();
-    unbindPlay();
+    unbindLiving.forEach(unbind => unbind());
+    rooms.dispose();
+    homeView.dispose();
     controls.dispose();
     debug.dispose();
     life.dispose();
