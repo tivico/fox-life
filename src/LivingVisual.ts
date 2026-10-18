@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CUP_PARK, type LivingSnapshot } from './LivingActivity.ts';
+import { createLivingArm } from './LivingArm.ts';
 
 export const REMOTE_PARK = new THREE.Vector3(-2.85, .76, 6.15);
 export function createTeaCup() {
@@ -25,6 +26,11 @@ export function createRemote() {
 export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Group; head: THREE.Group; eyes: THREE.Group;
   arms: THREE.Group[]; legs: THREE.Group[]; tail: THREE.Group }) {
   const { root, body, head, eyes, arms, legs, tail } = joints;
+  const armBends = arms.map((arm, i) => createLivingArm(arm, i ? 1 : -1));
+  function reachArm(index: number, target: THREE.Vector3, hint: THREE.Vector3, amount: number) {
+    body.updateWorldMatrix(true, false);
+    armBends[index]!.pose(body.localToWorld(target), body.localToWorld(hint), amount);
+  }
   const cup = createTeaCup(); cup.name = 'HeldTeaCup'; root.add(cup);
   const remote = createRemote(); remote.name = 'HeldRemote'; root.add(remote);
   const props = [cup, remote];
@@ -47,6 +53,7 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
   }
   return {
     restore() {
+      armBends.forEach(arm => arm.restore());
       for (const pose of saved) { pose.object.position.copy(pose.position); pose.object.rotation.copy(pose.rotation); pose.object.scale.copy(pose.scale); }
       saved = []; props.forEach(prop => { prop.visible = false; prop.scale.setScalar(0); });
     },
@@ -110,20 +117,27 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
           hold(cup, CUP_PARK, activity.cupHold, 1 / .76, -.1 * lift);
         }
       } else if (kind === 'Exercise' && p > 0) {
-        const armLift = t < 3.6 ? Math.sin(Math.PI * (t % 1.8) / 1.8) * p : t < 7.2 ? p : 0;
-        arms.forEach((arm, i) => {
-          const side = i ? 1 : -1;
-          arm.position.x += side * .18 * armLift;
-          arm.rotation.z += (side * .5 - arm.rotation.z) * armLift;
-        });
         if (t < 3.6) {
           const raise = Math.sin(Math.PI * (t % 1.8) / 1.8);
-          arms.forEach(arm => { arm.rotation.x += (-2.7 * raise - arm.rotation.x) * p; });
+          const armPose = p * blend(raise, 0, .2);
+          arms.forEach((arm, i) => {
+            const side = i ? 1 : -1;
+            arm.rotation.x *= 1 - armPose;
+            reachArm(i, new THREE.Vector3(side * (.27 + .27 * raise), .50 + .49 * raise, .07),
+              new THREE.Vector3(side * .55, .73, .02), armPose);
+          });
           head.rotation.x -= .1 * raise * p;
         } else if (t < 7.2) {
           const side = Math.sin((t - 3.6) / 3.6 * Math.PI * 2);
-          body.rotation.z += .19 * side * p;
-          arms.forEach(arm => { arm.rotation.x += (-2.6 - arm.rotation.x) * p; });
+          const stretch = blend(t, 3.6, 4.15) * (1 - blend(t, 6.65, 7.2));
+          const armPose = p * blend(stretch, 0, .2);
+          body.rotation.z += .19 * side * stretch * p;
+          arms.forEach((arm, i) => {
+            const sign = i ? 1 : -1;
+            arm.rotation.x *= 1 - armPose;
+            reachArm(i, new THREE.Vector3(sign * (.27 + .27 * stretch), .50 + .49 * stretch, .07),
+              new THREE.Vector3(sign * .58, .72, 0), armPose);
+          });
         } else {
           const march = Math.sin((t - 7.2) * Math.PI * 2);
           legs.forEach((leg, i) => { leg.position.y += Math.max(0, march * (i ? -1 : 1)) * .15 * p; });
@@ -137,15 +151,15 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
         legs[0]!.position.z += Math.max(0, Math.sin(t * Math.PI * 1.4)) * .06 * p;
       } else if (kind === 'TidySofa' && p > 0) {
         const pat = Math.max(0, Math.sin(t * Math.PI * 1.3));
-        // Clear the cushion before reaching in; reverse that order when stepping away.
-        const raised = blend(pose, 0, .55), reach = blend(pose, .35, 1);
-        root.position.z += .3 * reach;
-        body.rotation.x += .17 * p;
-        head.rotation.x += .22 * p;
+        const armPose = blend(pose, 0, .55), reach = blend(pose, .55, 1);
+        root.position.z += .80 * reach;
+        head.rotation.x -= .10 * p;
+        eyes.position.y -= .008 * p;
         arms.forEach((arm, i) => {
-          arm.rotation.x += (-1.65 + pat * .15 - arm.rotation.x) * raised;
-          arm.position.y += .42 * raised; arm.position.z += .27 * reach;
-          arm.position.x += (i ? .23 : -.23) * raised;
+          const side = i ? 1 : -1;
+          arm.rotation.x *= 1 - armPose;
+          reachArm(i, new THREE.Vector3(side * (i ? .42 : .29), i ? .95 + .025 * pat : .63, i ? .245 - .018 * pat : .14),
+            new THREE.Vector3(side * .45, .54, .14), armPose);
         });
       }
     },

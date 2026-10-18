@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手臂動作近距離檢查 · Fox Life</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#e9e6df;color:#394a39;font:14px system-ui}canvas{display:block;width:100vw;height:100vh}
+  aside{position:fixed;top:16px;left:16px;z-index:1;width:260px;padding:18px;border-radius:16px;background:#fffcf2ed;box-shadow:0 6px 30px #46553d16}
+  h1{font-size:18px;margin:0 0 14px}label{display:block;margin:12px 0}select,input,button{font:inherit}select,input[type=range]{width:100%}button{padding:8px;margin:3px;border:1px solid #c8d0bf;border-radius:8px;background:#f0f2e9;color:inherit}p{line-height:1.6;margin-bottom:0}output{font-variant-numeric:tabular-nums}
+</style>
+<aside><h1>手臂動作近距離檢查</h1>
+<label>動作<select id="action"><option value="TidySofa">整理沙發</option><option value="Exercise">做運動</option></select></label>
+<label>階段<select id="phase"><option value="active">進行中</option><option value="settle">準備</option><option value="finish">收尾</option></select></label>
+<label>時間 <output id="time-label">0.50 秒</output><input id="time" type="range" min="0" max="8" step="0.05" value="0.5"></label>
+<div><button data-angle="front">正面</button><button data-angle="side">側面</button><button data-angle="top">上方</button></div>
+<p>實際角色與沙發動畫，暫停在指定時間。拖曳可旋轉，滾輪可縮放。僅供本機檢查。</p></aside>
+<script type="module" src="./living-arm-review.ts"></script></html>

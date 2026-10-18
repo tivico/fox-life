@@ -32,7 +32,7 @@ export class LivingActivity implements LivingSnapshot {
   constructor(kind: LivingAction) {
     this.kind = kind;
     this.destination = kind === 'Tea' ? CUP_APPROACH.clone() : kind === 'Exercise' ? new THREE.Vector3(.35, 0, 6.35)
-      : kind === 'TidySofa' ? new THREE.Vector3(-1.65, 0, 7.4) : SOFA_APPROACH.clone();
+      : kind === 'TidySofa' ? new THREE.Vector3(-1.65, 0, 7.15) : SOFA_APPROACH.clone();
     this.heading = kind === 'TidySofa' ? -Math.PI / 2 : kind === 'Exercise' ? .25 : Math.PI / 2;
   }
   arrive() {

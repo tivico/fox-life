@@ -35,6 +35,68 @@ function meshHitsBox(mesh, box) {
   return false;
 }
 
+test('tidying and exercise keep the original shoulder sockets, arm length and continuous surface, then restore the original mesh', () => {
+  for (const kind of ['TidySofa', 'Exercise']) {
+    const fox = new Character(expandedHomeLayout, () => .45);
+    const arms = ['FoxArmL', 'FoxArmR'].map(name => fox.root.getObjectByName(name));
+    const restPositions = arms.map(arm => Array.from(arm.children[0].geometry.attributes.position.array));
+    fox.requestLivingAction(kind); let frame = 0; let previousHands = null;
+    until(fox, () => fox.state === 'Idle', 1 / 60, () => {
+      if (kind === 'Exercise' && fox.livingActivity?.phase === 'active') {
+        fox.root.updateMatrixWorld(true);
+        const hands = arms.map(arm => {
+          const mesh = arm.children[0];
+          return mesh.localToWorld(mesh.getVertexPosition(mesh.geometry.attributes.position.count - 1, new THREE.Vector3()));
+        });
+        if (previousHands) hands.forEach((hand, i) => assert.ok(hand.distanceTo(previousHands[i]) < .06, 'no hand snap between exercise phrases'));
+        previousHands = hands;
+      }
+      if (frame++ % 6) return;
+      arms.forEach((arm, index) => {
+        const sign = index ? 1 : -1;
+        assert.deepEqual(arm.position.toArray(), [sign * .22, .82, 0], 'shoulder socket never translates');
+        const mesh = arm.children[0], rest = mesh.geometry.attributes.armRestPosition;
+        const socket = new THREE.Vector3(sign * .05, 0, 0), ring = new THREE.Vector3(); let count = 0;
+        for (let i = 0; i < rest.count; i++) {
+          const point = mesh.getVertexPosition(i, new THREE.Vector3()).multiply(mesh.scale).add(mesh.position);
+          assert.ok(point.distanceTo(socket) < .41, 'bending does not lengthen the arm');
+          if (Math.abs(rest.getY(i) - .5) < .001) { ring.add(point); count++; }
+        }
+        assert.ok(count > 10 && ring.divideScalar(count).distanceTo(socket) < .02, 'the rendered shoulder stays joined to the torso');
+      });
+    });
+    arms.forEach((arm, i) => assert.deepEqual(Array.from(arm.children[0].geometry.attributes.position.array), restPositions[i]));
+    fox.dispose();
+  }
+});
+
+test('the tidying paw reaches the animated pillow surface instead of patting empty air', () => {
+  const { scene, livingRoom } = createScene({ expanded: true });
+  const fox = new Character(expandedHomeLayout, () => .45); scene.add(fox.root); fox.requestLivingAction('TidySofa');
+  const paw = fox.root.getObjectByName('FoxArmR').children[0];
+  const pillow = scene.getObjectsByProperty('name', 'SofaPillow')[1];
+  const triangle = new THREE.Triangle(), closest = new THREE.Vector3(); let frame = 0, contact = false;
+  until(fox, () => fox.state === 'Idle', 1 / 60, () => {
+    livingRoom.update(1 / 60, false, fox.livingActivity);
+    if (fox.livingActivity?.phase !== 'active' || frame++ % 15) return;
+    scene.updateMatrixWorld(true); let distance = Infinity;
+    const geometry = pillow.geometry, index = geometry.index;
+    for (let v = 0; v < paw.geometry.attributes.position.count; v += 3) {
+      if (paw.geometry.attributes.armRestPosition.getY(v) > -.7) continue;
+      const point = paw.localToWorld(paw.getVertexPosition(v, new THREE.Vector3()));
+      for (let i = 0; i < (index?.count ?? geometry.attributes.position.count); i += 3) {
+        for (const [offset, corner] of [[0, triangle.a], [1, triangle.b], [2, triangle.c]]) {
+          pillow.getVertexPosition(index ? index.getX(i + offset) : i + offset, corner).applyMatrix4(pillow.matrixWorld);
+        }
+        triangle.closestPointToPoint(point, closest); distance = Math.min(distance, point.distanceTo(closest));
+      }
+    }
+    assert.ok(distance < .08, `paw is ${distance.toFixed(3)} m from pillow`);
+    contact ||= distance < .008;
+  });
+  assert.ok(contact, 'at least one pat makes surface contact'); fox.dispose();
+});
+
 // Ray parity in the actual closed surface, including the sculpted muzzle.
 function insideSurface(point, mesh) {
   const local = mesh.worldToLocal(point.clone());
@@ -73,13 +135,14 @@ for (const kind of ['TidySofa', 'Exercise', 'Tea']) {
           || kind === 'Exercise' && fox.livingActivity.motionTime >= 3.6 && fox.livingActivity.motionTime < 7.2);
         for (const mesh of samples) {
           const positions = mesh.geometry.getAttribute('position');
+          const rest = mesh.geometry.getAttribute('armRestPosition') ?? positions;
           for (let i = 0; i < positions.count; i += 2) {
-            // Standing shoulders join the neck; fully raised arms must clear the whole head.
-            if (mesh === tail ? i < 6 * 24 : !raised && positions.getY(i) > -.2) continue;
+            // Keep the shoulder's joining cap; validate the upper arm and forearm below it.
+            if (mesh === tail ? i < 6 * 24 : rest.getY(i) > (raised ? .2 : -.2)) continue;
             const vertex = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
             const surfaces = mesh === tail ? [head, torso] : [head];
             for (const surface of surfaces) {
-              assert.ok(!insideSurface(vertex, surface), `${kind}/${fox.livingActivity.phase}: ${mesh.parent.name} enters ${surface === head ? 'head' : 'torso'} at ${fox.livingActivity.elapsed.toFixed(2)}`);
+              assert.ok(!insideSurface(vertex, surface), `${kind}/${fox.livingActivity.phase}: ${mesh.parent.name} enters ${surface === head ? 'head' : 'torso'} at ${fox.livingActivity.elapsed.toFixed(2)}, vertex ${i}, restY ${rest.getY(i).toFixed(2)}, local ${surface.worldToLocal(vertex.clone()).toArray().map(n => n.toFixed(3))}`);
             }
           }
         }
@@ -240,6 +303,15 @@ test('living poses keep feet above the floor, sit on the cushion and clear movin
         // A muzzle can extend above a tabletop while the chin remains beside it.
         // Confirm broad-phase overlaps against the actual posed mesh surface.
         for (const blocker of blockers) if (box.intersectsBox(blocker.box)) {
+          if (blocker.name === 'SofaPillow') {
+            // The tilted pillow's world AABB contains empty corners beside the paw.
+            // Check its actual rounded surface when the character makes contact.
+            for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+              const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+              assert.ok(!insideSurface(point, blocker.object), `${fox.action}: ${object.parent?.name} enters pillow surface`);
+            }
+            continue;
+          }
           assert.ok(!meshHitsBox(object, blocker.box), `${fox.action}: ${object.parent?.name} hit ${blocker.name}`);
         }
       });
