@@ -9,10 +9,11 @@ import { gardenActions, gardenLabels, gardenDurations, type GardenAction } from 
 import { kitchenActions, kitchenLabels, kitchenDurations, type KitchenAction } from './KitchenActivity.ts';
 
 export type LifeAction = 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction | GardenAction | KitchenAction;
-export type MomentKind = LifeAction | 'Doze' | 'Stretch' | RoomId;
+export type MomentKind = LifeAction | 'Doze' | 'Stretch' | 'Pet' | 'PetShy' | RoomId;
 export type LifeSnapshot = Pick<Character, 'state' | 'action' | 'source' | 'targetLabel' |
   'sleepPhase' | 'sleepElapsed' | 'readPhase' | 'readElapsed' | 'eatPhase' | 'eatElapsed' | 'observeElapsed' |
-  'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>;
+  'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>
+  & Partial<Pick<Character, 'petReaction'>>;
 
 export const actionLabels: Record<LifeAction, string> = {
   Window: '看風景', Bed: '睡個覺', Bookshelf: '讀本書', Food: '吃點心',
@@ -100,6 +101,7 @@ export const momentText: Record<MomentKind, string> = {
   Bookshelf: '翻開一本書，走進新的故事。', Food: '到了點心時間，慢慢享受每一口。',
   Clean: '拿起小掃帚，仔仔細細地整理地毯。', Play: '發現一團毛線球，開心地撥來撥去。',
   Doze: '書還捧在手上，卻讀著讀著打起瞌睡。', Stretch: '停下腳步，舒舒服服地伸了個懶腰。',
+  Pet: '你伸手摸了摸牠的頭，小小的日常多了一點溫度。', PetShy: '被摸太多次，牠害羞地把頭轉開了。',
   Bedroom: '回到臥室，在熟悉的小角落停留了一會。', LivingRoom: '走進客廳，享受家裡另一個舒服的角落。',
   WatchTV: '窩在沙發上，看了一段自己喜歡的小節目。', SofaRest: '靠著柔軟的沙發，什麼也不趕地休息了一會。',
   Tea: '拿起茶杯，坐下來慢慢享受一杯熱茶。', Exercise: '抬手伸展、側彎身體，再精神地原地踏步。',
@@ -117,6 +119,7 @@ export class LifeJournal {
   readonly entries: LifeMoment[];
   private previous: MomentKind | null = null;
   private previousMicro: 'Doze' | 'Stretch' | null = null;
+  private previousPet: string | null = null;
   constructor(saved: unknown = []) {
     this.entries = Array.isArray(saved) ? saved.filter((item): item is LifeMoment =>
       item !== null && typeof item === 'object' && typeof item.kind === 'string' && Object.hasOwn(momentText, item.kind) &&
@@ -132,10 +135,15 @@ export class LifeJournal {
     this.previous = kind;
     const microChanged = fox.microEvent !== null && fox.microEvent !== this.previousMicro;
     this.previousMicro = fox.microEvent;
-    if (!changed && !microChanged) return false;
+    // A burst of taps is one line; turning away shyly gets its own.
+    const pet = fox.petReaction?.kind ?? null;
+    const petChanged = pet !== null && pet !== this.previousPet && (pet === 'shy' || this.previousPet === null);
+    this.previousPet = pet;
+    if (!changed && !microChanged && !petChanged) return false;
     const source = fox.source === 'Player Command' ? 'player' : 'autonomous';
     if (changed) this.entries.unshift({ kind: kind!, at: now, source });
     if (microChanged) this.entries.unshift({ kind: fox.microEvent!, at: now, source });
+    if (petChanged) this.entries.unshift({ kind: pet === 'shy' ? 'PetShy' : 'Pet', at: now, source: 'player' });
     this.entries.length = Math.min(this.entries.length, JOURNAL_LIMIT);
     return true;
   }

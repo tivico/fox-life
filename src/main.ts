@@ -32,7 +32,7 @@ function start() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.domElement.setAttribute('aria-label', '3D 小屋、陽台與廚房：拖曳環繞、滾輪縮放；點家具、花圃或料理檯，邀請狐狸開始一段日常');
+  renderer.domElement.setAttribute('aria-label', '3D 小屋、陽台與廚房：拖曳環繞、滾輪縮放；點家具、花圃或料理檯，邀請狐狸開始一段日常；點狐狸摸摸牠的頭');
   host.append(renderer.domElement);
   const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, roomTextures, atmosphere, livingRoom, balcony, kitchen } = createScene({ expanded: true, garden: true, kitchen: true });
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -75,6 +75,10 @@ function start() {
   const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
   const soundPanel = createSoundPanel(host, audio);
   const unbindClean = bindClickInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
+  // The fox itself, including anything it is holding, takes a pat instead of an invitation.
+  const foxParts: THREE.Object3D[] = [];
+  character.root.traverse(object => { if (object instanceof THREE.Mesh) foxParts.push(object); });
+  const unbindPet = bindClickInteraction(renderer.domElement, camera, scene, foxParts, () => life.petResult(character.pet()));
   const unbindEat = bindClickInteraction(renderer.domElement, camera, scene, foodParts, () => {
     eatHits++;
     request('Food');
@@ -167,6 +171,7 @@ function start() {
     unbindRead();
     unbindEat();
     unbindClean();
+    unbindPet();
     unbindLiving.forEach(unbind => unbind());
     unbindGarden.forEach(unbind => unbind());
     unbindKitchen.forEach(unbind => unbind());

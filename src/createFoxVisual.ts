@@ -12,6 +12,8 @@ import type { GardenSnapshot } from './GardenActivity.ts';
 import { createGardenVisual } from './GardenVisual.ts';
 import { createKitchenVisual } from './KitchenVisual.ts';
 import type { KitchenSnapshot } from './KitchenActivity.ts';
+import { createPetVisual } from './PetVisual.ts';
+import type { PetSnapshot } from './pet.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -286,6 +288,7 @@ export function createFoxVisual() {
   const livingVisual = createLivingVisual({ root, body, head, eyes, arms, legs, tail });
   const gardenVisual = createGardenVisual({ root, body, head, eyes, arms, legs, tail });
   const kitchenVisual = createKitchenVisual({ body, head, arms, legs });
+  const petVisual = createPetVisual({ body, head, eyes, ears, tail });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -325,7 +328,7 @@ export function createFoxVisual() {
     animate({ dt, time, distance, state, variation, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
       eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
-      cleanMode, cleanPark, cleanParkYaw = 0, living = null, garden = null, kitchen = null }: {
+      cleanMode, cleanPark, cleanParkYaw = 0, living = null, garden = null, kitchen = null, pet = null }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
@@ -336,10 +339,12 @@ export function createFoxVisual() {
       living?: LivingSnapshot | null;
       garden?: GardenSnapshot | null;
       kitchen?: KitchenSnapshot | null;
+      pet?: PetSnapshot | null;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
       const expression = performance.update(state, dt);
+      petVisual.restore();
       kitchenVisual.restore();
       gardenVisual.restore();
       livingVisual.restore();
@@ -513,6 +518,7 @@ export function createFoxVisual() {
       livingVisual.animate(living);
       gardenVisual.animate(garden);
       kitchenVisual.animate(kitchen);
+      petVisual.animate(pet);
     },
   };
 }

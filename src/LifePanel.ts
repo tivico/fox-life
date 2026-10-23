@@ -1,6 +1,7 @@
 import type { Character } from './Character.ts';
 import { actionLabels, roomActions, JOURNAL_KEY, LifeJournal, lifePresentation, momentText, type LifeAction } from './life.ts';
 import { homeRooms, roomAt } from './HomeNavigation.ts';
+import { petFeedback, type PetReaction } from './pet.ts';
 
 const drawings = {
   Kitchen: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5h1m4 0h1m4 0h1M6 11h12v7H6z"/>',
@@ -24,6 +25,8 @@ const drawings = {
   GardenRest: '<path d="M3 13h18v4H3v-4Zm2-7h14v7H5V6Zm0 11v4m14-4v4M8 3l2-2m6 2 2-2"/>',
   Balcony: '<path d="M3 21h18M5 21V11h14v10M5 15h14M9 11v10m6-10v10M12 9V4m0 3C7 7 6 4 7 2c4 0 5 3 5 5Zm0 0c5 0 6-3 5-5-4 0-5 3-5 5Z"/>',
   Doze: '<path d="M3 13h8l-8 8h8m3-18h7l-7 7h7"/>',
+  Pet: '<circle cx="12" cy="16" r="4"/><circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6" r="2"/><circle cx="14.5" cy="6" r="2"/><circle cx="18.5" cy="11" r="2"/>',
+  PetShy: '<circle cx="12" cy="16" r="4"/><circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6" r="2"/><circle cx="14.5" cy="6" r="2"/><circle cx="18.5" cy="11" r="2"/><path d="M20 18c-2 2-4 3-8 3"/>',
   Stretch: '<circle cx="12" cy="7" r="3"/><path d="m3 3 5 10h8l5-10m-9 10v8m-4 0 4-4 4 4"/>',
   Bedroom: '<path d="M3 11 12 3l9 8v10H3V11Zm5 10v-8h8v8"/>',
   LivingRoom: '<path d="M4 12V7h16v5M2 11h4v6h12v-6h4v9H2v-9Zm2 9v2m16-2v2"/>',
@@ -62,7 +65,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
       <div class="invitation"><span class="dock-room-label">臥室日常</span><p>也可以什麼都不做，讓日常自己發生。</p></div>
       <nav class="action-dock" aria-label="邀請狐狸做點什麼"></nav>
-      <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具，邀請牠開始下一段日常</p>
+      <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具邀請牠 <span>·</span> 點狐狸摸摸頭</p>
     </footer>
     <p class="feedback" role="status" hidden></p>
     <button class="quiet-exit" type="button" hidden>${icon('leaf')} 回到小屋介面 <kbd>Esc</kbd></button>
@@ -70,7 +73,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
       <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
-      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${character.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${character.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${character.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${character.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${character.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${character.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
       <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
     </dialog>
@@ -191,6 +194,10 @@ export function createLifePanel(host: HTMLElement, character: Character,
     update,
     visitResult(room: string, accepted: boolean) {
       notify(accepted ? `收到邀請了，去${room}待一會。` : '牠正在完成你的上一個邀請，等一下再邀請牠吧。');
+      update();
+    },
+    petResult(reaction: PetReaction) {
+      notify(petFeedback[reaction]);
       update();
     },
     commandResult(action: LifeAction, accepted: boolean) {

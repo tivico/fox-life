@@ -4,6 +4,7 @@ import { SLEEP, SleepActivity } from './sleep.ts';
 import { ReadActivity } from './read.ts';
 import { EatActivity } from './eat.ts';
 import { DailyActivity, type DailyKind } from './daily.ts';
+import { PET, type PetReaction, type PetSnapshot } from './pet.ts';
 import { homeRooms, homeRoute, isRoomId, type RoomId } from './HomeNavigation.ts';
 import { LivingActivity, isLivingAction, livingActions, type LivingAction } from './LivingActivity.ts';
 import { GardenActivity, isGardenAction, gardenActions, type GardenAction } from './GardenActivity.ts';
@@ -75,6 +76,8 @@ export class Character {
   private readingCount = 0;
   private roomWalkCount = 0;
   private stretchAfterWalk = false;
+  private petting: PetSnapshot | null = null;
+  private petTimes: number[] = [];
   private readonly direction = new THREE.Vector3();
   private readonly layout: CharacterLayout;
   private readonly random: () => number;
@@ -128,6 +131,19 @@ export class Character {
     return this.reading?.phase === 'read' && this.dozePose > .1 ? 'Doze' : null;
   }
   private get dozePose() { return this.reading?.dozePose ?? 0; }
+  get petReaction(): PetSnapshot | null { return this.petting; }
+  /** A tap on the fox itself: a reaction layered on whatever it is doing, never a new intent. */
+  pet(): PetReaction {
+    if (this.petting?.kind === 'shy') return 'shy';
+    this.petTimes = this.petTimes.filter(at => this.elapsed - at < PET.burstWindow);
+    this.petTimes.push(this.elapsed);
+    const kind: PetReaction = this.petTimes.length >= PET.shyAfter ? 'shy'
+      : (this.sleeping?.pose ?? 0) > 0 ? 'twitch'
+      : this.currentState === 'Idle' || this.currentState === 'Observe' ? 'nuzzle' : 'glance';
+    if (kind === 'shy') this.petTimes = [];
+    this.petting = { kind, time: 0 };
+    return kind;
+  }
   get action() {
     if (this.activity) return this.activity.label(this.afterExit);
     if (isRoomId(this.targetKind)) {
@@ -300,6 +316,10 @@ export class Character {
     dt = Math.min(dt, 0.05);
     this.elapsed += dt;
     for (const [kind, cooldown] of this.cooldowns) this.cooldowns.set(kind, Math.max(0, cooldown - dt));
+    if (this.petting) {
+      this.petting.time += dt;
+      if (this.petting.time >= PET.duration[this.petting.kind]) this.petting = null;
+    }
     let moved = 0;
     let lookHeading = this.root.rotation.y;
     const previousHeading = this.root.rotation.y;
@@ -403,6 +423,6 @@ export class Character {
       eatPose: this.eating?.pose ?? 0, eatTime: this.eating?.motionTime ?? 0,
       dailyKind: this.daily?.kind ?? null, dailyPose: this.daily?.pose ?? 0, dailyTime: this.daily?.motionTime ?? 0, dozePose: this.dozePose,
       cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y,
-      living: this.livingActivity, garden: this.gardenActivity, kitchen: this.kitchenActivity });
+      living: this.livingActivity, garden: this.gardenActivity, kitchen: this.kitchenActivity, pet: this.petting });
   }
 }

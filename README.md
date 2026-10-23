@@ -25,6 +25,7 @@
 
 ### 介面
 
+- **摸摸頭**：直接點狐狸，牠會依當下在做的事回應：閒著時靠過來瞇眼、忙著時抬頭看一眼、睡著時抖抖耳朵；8 秒內摸第 5 次會害羞轉頭。不中斷牠的生活，會寫進日記。
 - **鏡頭**：預設跟隨狐狸，也能固定查看全屋或單一房間；拖曳環繞、滾輪縮放、「重設視角」復原。手動選房間只改鏡頭，「邀請牠來」或「去○○ →」才會讓狐狸移動。
 - **近況與日記**：中文近況、生活片段進度，以及收到邀請／忙碌中的回饋。右上「生活日記」保存最近 40 則實際發生的片段，存在此瀏覽器的 localStorage。
 - **靜靜陪伴**：隱藏介面，按 `Esc` 或右下按鈕返回；「？」開啟玩法說明。
@@ -33,7 +34,7 @@
 
 ### 驗證與待辦
 
-- 2026-10-23：typecheck、115 項測試與正式建置全部通過。
+- 2026-10-23：typecheck、120 項測試與正式建置全部通過。
 - 推送到 `main` 後，GitHub Actions 會先跑測試再部署，測試或建置失敗就不部署。
 - 尚待人工驗收：獨立 Chrome 的背景與效能量測（[V0.1 Chrome 人工補驗](docs/V0_1_CHROME_MANUAL_ACCEPTANCE.md)），以及 V0.2 整體的 PO 驗收（[V0.2 整體驗收](docs/V0_2_OVERALL_ACCEPTANCE.md)）。
 - 尚未實作：需求值（Needs）、存檔／時間／離線模擬、多角色、居家布置。產品方向見 [PRODUCT](docs/PRODUCT.md)。
@@ -78,6 +79,9 @@ npm run dev -- --port 5173 --strictPort
 | `src/entry.ts` | 依 query 分流到主場景或造型預覽 |
 | `src/main.ts` | 啟動、渲染迴圈、事件綁定與資源清理 |
 | `src/Character.ts` | 狐狸的行為狀態機：自主生活、邀請、安全退出與移動 |
+| `src/sleep.ts`、`src/read.ts`、`src/eat.ts`、`src/daily.ts`、`src/*Activity.ts` | 各種生活活動的計時、階段與文字 |
+| `src/pet.ts`、`src/PetVisual.ts` | 摸摸頭的反應規則與動作 |
+| `src/ClickInteraction.ts` | 家具與狐狸的點擊判定 |
 | `src/scene.ts`、`src/*Visual.ts` | 房間、家具與道具幾何 |
 | `src/createFoxVisual.ts` | 程序化狐狸模型與動畫 |
 | `src/life.ts`、`src/LifePanel.ts`、`src/RoomPanel.ts` | 近況、日記、動作欄與房間面板 |
@@ -106,6 +110,7 @@ GitHub Pages 的 Source 設為 **GitHub Actions**（Settings → Pages）。推�
 
 | 文件 | 內容 | 日期 |
 | --- | --- | --- |
+| [摸摸頭](docs/PETTING.md) | 點狐狸的四種反應、害羞規則、日記 | 2026-10-23 |
 | [廚房與雙人床](docs/KITCHEN_EXPANSION.md) | 廚房三個料理動作、雙人床 | 2026-10-23 |
 | [陽台小花園](docs/GARDEN_EXPANSION.md) | 陽台三個動作、後續擴建方向 | 2026-10-23 |
 | [客廳生活動作](docs/LIVING_ROOM_ACTIONS.md) | 客廳六個動作、手臂接合修正 | 2026-10-18 |
