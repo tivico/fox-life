@@ -5,7 +5,7 @@ import { Character } from '../src/Character.ts';
 import { readLayout, createScene } from '../src/scene.ts';
 import { READ } from '../src/read.ts';
 import { FrameClock } from '../src/FrameClock.ts';
-import { bindReadInteraction } from '../src/ReadInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 const dt=1/60;
 const make=(random=()=>.3)=>new Character(readLayout,random);
@@ -174,7 +174,7 @@ test('SB-T08: only visible shelf/books hit; unrelated cabinet, occlusion, drag, 
   class Canvas extends EventTarget {getBoundingClientRect(){return {left:0,top:0,width:500,height:500};}}
   const canvas=new Canvas(),{scene,readingParts}=createScene();
   const camera=new THREE.PerspectiveCamera(45,1,.1,30);camera.position.set(0,1.2,-.3);camera.lookAt(3.5,1.2,-.3);camera.updateMatrixWorld();
-  let hits=0;const dispose=bindReadInteraction(canvas,camera,scene,readingParts,()=>hits++);
+  let hits=0;const dispose=bindClickInteraction(canvas,camera,scene,readingParts,()=>hits++);
   const event=(type,x,y)=>{const e=new Event(type);Object.assign(e,{clientX:x,clientY:y,button:0,isPrimary:true,pointerId:1});canvas.dispatchEvent(e);};
   function click(position,drag=false,cancel=false){const point=position.clone().project(camera),x=(point.x+1)*250,y=(1-point.y)*250;event('pointerdown',x,y);if(drag)event('pointermove',x+20,y);if(cancel)event('pointercancel',x,y);event('pointerup',x,y);}
   const book=readingParts.find(p=>p.name==='ShelfBook');

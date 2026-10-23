@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Character, ARRIVAL_DISTANCE } from '../src/Character.ts';
 import { characterLayout, createScene } from '../src/scene.ts';
 import { FrameClock } from '../src/FrameClock.ts';
-import { bindWindowInteraction } from '../src/WindowInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 const step = 1 / 60;
 function seeded(seed = 42) {
@@ -302,7 +302,7 @@ test('visible window frame/glass hit; occluder, drag, cancel, other surfaces do 
   frame.position.x = 0.58;
   scene.add(pane, frame);
   let hits = 0;
-  const dispose = bindWindowInteraction(canvas, camera, scene, [pane, frame], () => hits++);
+  const dispose = bindClickInteraction(canvas, camera, scene, [pane, frame], () => hits++);
   const event = (type, x, y, extra = {}) => {
     const value = new Event(type);
     Object.assign(value, { clientX: x, clientY: y, button: 0, pointerId: 1, isPrimary: true, ...extra });

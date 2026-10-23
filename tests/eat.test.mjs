@@ -5,7 +5,7 @@ import { Character } from '../src/Character.ts';
 import { eatLayout, createScene } from '../src/scene.ts';
 import { EAT } from '../src/eat.ts';
 import { FrameClock } from '../src/FrameClock.ts';
-import { bindEatInteraction } from '../src/EatInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 const dt=1/60;
 const make=(random=()=>.4)=>new Character(eatLayout,random);
@@ -270,7 +270,7 @@ test('SC-T08: food and designated surface only, occlusion, drag, cancel and clea
   class Canvas extends EventTarget {getBoundingClientRect(){return {left:0,top:0,width:500,height:500};}}
   const canvas=new Canvas(),{scene,foodParts,readingParts,bedParts}=createScene();
   const camera=new THREE.PerspectiveCamera(45,1,.1,30);camera.position.set(0,4,6);camera.lookAt(2,0,1);camera.updateMatrixWorld();
-  let hits=0;const dispose=bindEatInteraction(canvas,camera,scene,foodParts,()=>hits++);
+  let hits=0;const dispose=bindClickInteraction(canvas,camera,scene,foodParts,()=>hits++);
   const event=(type,x,y)=>{const e=new Event(type);Object.assign(e,{clientX:x,clientY:y,button:0,isPrimary:true,pointerId:1});canvas.dispatchEvent(e);};
   function click(position,drag=false,cancel=false){const p=position.clone().project(camera),x=(p.x+1)*250,y=(1-p.y)*250;event('pointerdown',x,y);if(drag)event('pointermove',x+20,y);if(cancel)event('pointercancel',x,y);event('pointerup',x,y);}
   click(foodParts[1].position);assert.equal(hits,1);

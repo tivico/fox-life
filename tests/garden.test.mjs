@@ -7,7 +7,7 @@ import { homeRooms, roomAt } from '../src/HomeNavigation.ts';
 import { createHomeView } from '../src/HomeView.ts';
 import { gardenActions, gardenDurations, CAN_PARK } from '../src/GardenActivity.ts';
 import { LifeJournal, roomActions, lifePresentation } from '../src/life.ts';
-import { bindWindowInteraction } from '../src/WindowInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 function until(fox, predicate, dt = .05, sample = () => {}, seconds = 150) {
   for (let i = 0; i < seconds / dt; i++) { fox.update(dt); sample(); if (predicate()) return; }
@@ -186,7 +186,7 @@ test('garden furniture clicks dispatch the correct invitation and reject draggin
   for (const [kind, name] of [['WaterPlants', 'GardenSoil'], ['WatchButterflies', 'ButterflyFlowerPot'], ['GardenRest', 'GardenBenchSeat']]) {
     const canvas = new Canvas(), object = scene.getObjectByName(name), point = object.getWorldPosition(new THREE.Vector3());
     const camera = new THREE.PerspectiveCamera(45, 1, .1, 30); camera.position.copy(point).add(new THREE.Vector3(0, 3, .3)); camera.lookAt(point); camera.updateMatrixWorld();
-    const received = [], unbinders = Object.entries(balcony.gardenParts).map(([action, parts]) => bindWindowInteraction(canvas, camera, scene, parts, () => received.push(action)));
+    const received = [], unbinders = Object.entries(balcony.gardenParts).map(([action, parts]) => bindClickInteraction(canvas, camera, scene, parts, () => received.push(action)));
     const emit = (type, x = 250) => { const event = new Event(type); Object.assign(event, { clientX: x, clientY: 250, button: 0, isPrimary: true, pointerId: 1 }); canvas.dispatchEvent(event); };
     emit('pointerdown'); emit('pointerup'); assert.deepEqual(received, [kind]);
     emit('pointerdown'); emit('pointermove', 280); emit('pointerup'); assert.equal(received.length, 1);

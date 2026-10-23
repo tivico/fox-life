@@ -5,7 +5,7 @@ import { Character } from '../src/Character.ts';
 import { sleepLayout, createScene } from '../src/scene.ts';
 import { SLEEP } from '../src/sleep.ts';
 import { FrameClock } from '../src/FrameClock.ts';
-import { bindBedInteraction } from '../src/BedInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 const dt = 1 / 60;
 const make = (random = () => 0.5) => new Character(sleepLayout, random);
@@ -194,7 +194,7 @@ test('SA-T08: bed parts click, drag/occlusion/other surface rejection and listen
   class Canvas extends EventTarget {getBoundingClientRect(){return {left:0,top:0,width:400,height:400};}}
   const canvas=new Canvas(), {scene,bedParts}=createScene();
   const camera=new THREE.PerspectiveCamera(45,1,.1,30);camera.position.set(-3.4,5,.5);camera.up.set(0,0,-1);camera.lookAt(-3.4,0,.5);camera.updateMatrixWorld();
-  let hits=0;const dispose=bindBedInteraction(canvas,camera,scene,bedParts,()=>hits++);
+  let hits=0;const dispose=bindClickInteraction(canvas,camera,scene,bedParts,()=>hits++);
   const event=(type,x=200,y=200)=>{const e=new Event(type);Object.assign(e,{clientX:x,clientY:y,button:0,isPrimary:true,pointerId:1});canvas.dispatchEvent(e);};
   event('pointerdown');event('pointerup');assert.equal(hits,1);
   event('pointerdown');event('pointermove',230);event('pointerup');assert.equal(hits,1);

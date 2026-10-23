@@ -6,7 +6,7 @@ import { createScene, kitchenHomeLayout, gardenHomeLayout } from '../src/scene.t
 import { homeRooms, roomAt } from '../src/HomeNavigation.ts';
 import { kitchenActions, kitchenDurations } from '../src/KitchenActivity.ts';
 import { LifeJournal, roomActions } from '../src/life.ts';
-import { bindWindowInteraction } from '../src/WindowInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 function until(fox, predicate, dt = .05, sample = () => {}, seconds = 180) {
   for (let i = 0; i < seconds / dt; i++) { fox.update(dt); sample(); if (predicate()) return; }
@@ -127,7 +127,7 @@ test('kitchen furniture dispatches its own action, rejects occlusion and draggin
   for (const [kind, name] of [['ChopVegetables', 'ChoppingBoard'], ['CookSoup', 'SoupSurface'], ['BakeCookies', 'OvenControls']]) {
     const canvas = new Canvas(), point = scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
     const camera = new THREE.PerspectiveCamera(45, 1, .1, 30); camera.position.copy(point).add(new THREE.Vector3(0, 1, 2)); camera.lookAt(point); camera.updateMatrixWorld();
-    const received = [], unbinders = Object.entries(kitchen.kitchenParts).map(([action, parts]) => bindWindowInteraction(canvas, camera, scene, parts, () => received.push(action)));
+    const received = [], unbinders = Object.entries(kitchen.kitchenParts).map(([action, parts]) => bindClickInteraction(canvas, camera, scene, parts, () => received.push(action)));
     const emit = (type, x = 250) => { const event = new Event(type); Object.assign(event,{clientX:x,clientY:250,button:0,isPrimary:true,pointerId:1}); canvas.dispatchEvent(event); };
     emit('pointerdown'); emit('pointerup'); assert.deepEqual(received, [kind]);
     emit('pointerdown'); emit('pointermove', 280); emit('pointerup'); assert.equal(received.length, 1);

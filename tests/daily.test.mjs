@@ -6,7 +6,7 @@ import { createScene, homeLayout } from '../src/scene.ts';
 import { DAILY, CLEAN_STORAGE } from '../src/daily.ts';
 import { FrameClock } from '../src/FrameClock.ts';
 import { LifeJournal, lifePresentation } from '../src/life.ts';
-import { bindWindowInteraction } from '../src/WindowInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 const requests = { Window: 'requestWindowObserve', Bed: 'requestSleep', Bookshelf: 'requestRead', Food: 'requestEat', Clean: 'requestClean', Play: 'requestPlay' };
 function seeded(seed = 42) { return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -238,7 +238,7 @@ test('room broom and yarn accept nearest visible clicks and reject drags, occlus
     const point = room[key][0].getWorldPosition(new THREE.Vector3());
     camera.position.copy(point).add(new THREE.Vector3(-1, 2, 4)); camera.lookAt(point); camera.updateMatrixWorld();
     let hits = 0;
-    const dispose = bindWindowInteraction(canvas, camera, room.scene, room[key], () => hits++);
+    const dispose = bindClickInteraction(canvas, camera, room.scene, room[key], () => hits++);
     const p = point.clone().project(camera), x = (p.x + 1) * 250, y = (1 - p.y) * 250;
     const event = (type, dx = 0) => { const e = new Event(type); Object.assign(e, { clientX: x + dx, clientY: y, button: 0, isPrimary: true, pointerId: 1 }); canvas.dispatchEvent(e); };
     event('pointerdown'); event('pointerup'); assert.equal(hits, 1, key);

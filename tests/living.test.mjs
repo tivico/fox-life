@@ -8,7 +8,7 @@ import { LifeJournal, roomActions, lifePresentation } from '../src/life.ts';
 import { SoundCues } from '../src/SoundCues.ts';
 import { soundSamples } from '../src/soundDesign.ts';
 import { FrameClock } from '../src/FrameClock.ts';
-import { bindWindowInteraction } from '../src/WindowInteraction.ts';
+import { bindClickInteraction } from '../src/ClickInteraction.ts';
 
 function until(fox, predicate, dt = .05, sample = () => {}, seconds = 150) {
   for (let frame = 0; frame < seconds / dt; frame++) {
@@ -333,7 +333,7 @@ test('all six living furniture targets dispatch their own action, reject occlusi
     const camera = new THREE.PerspectiveCamera(45, 1, .1, 30);
     camera.position.copy(point).add(new THREE.Vector3(0, 3, .3)); camera.lookAt(point); camera.updateMatrixWorld();
     const received = [];
-    const unbinders = Object.entries(room.livingRoom.livingParts).map(([action, parts]) => bindWindowInteraction(canvas, camera, room.scene, parts, () => received.push(action)));
+    const unbinders = Object.entries(room.livingRoom.livingParts).map(([action, parts]) => bindClickInteraction(canvas, camera, room.scene, parts, () => received.push(action)));
     const emit = (type, x = 250) => {
       const event = new Event(type); Object.assign(event, { clientX: x, clientY: 250, button: 0, isPrimary: true, pointerId: 1 }); canvas.dispatchEvent(event);
     };

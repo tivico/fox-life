@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
-export function bindBedInteraction(
+// One left click on any of the parts invites the fox; drags, other buttons and occluded parts do not.
+export function bindClickInteraction(
   canvas: HTMLCanvasElement, camera: THREE.Camera, scene: THREE.Scene,
-  bedParts: THREE.Object3D[], onHit: () => void,
+  parts: THREE.Object3D[], onHit: () => void,
 ) {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -26,9 +27,9 @@ export function bindBedInteraction(
     camera.updateMatrixWorld();
     scene.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
-    // Test the nearest visible surface so a character/wall can occlude the bed.
+    // Test the nearest visible surface so a character/wall can occlude the target.
     const hit = raycaster.intersectObjects(scene.children, true)[0];
-    if (hit && bedParts.includes(hit.object)) onHit();
+    if (hit && parts.includes(hit.object)) onHit();
   };
   canvas.addEventListener('pointerdown', down);
   canvas.addEventListener('pointermove', move);
@@ -41,4 +42,3 @@ export function bindBedInteraction(
     canvas.removeEventListener('pointercancel', cancel);
   };
 }
-

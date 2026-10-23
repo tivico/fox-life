@@ -7,11 +7,8 @@ import { homeRooms, type RoomId } from './HomeNavigation.ts';
 import { isLivingAction } from './LivingActivity.ts';
 import { isGardenAction } from './GardenActivity.ts';
 import { isKitchenAction } from './KitchenActivity.ts';
-import { bindEatInteraction } from './EatInteraction';
-import { bindReadInteraction } from './ReadInteraction';
-import { bindBedInteraction } from './BedInteraction';
 import { Character } from './Character.ts';
-import { bindWindowInteraction } from './WindowInteraction';
+import { bindClickInteraction } from './ClickInteraction';
 import { createDebugPanel } from './DebugPanel';
 import { FrameClock } from './FrameClock.ts';
 import { createPerformanceSample } from './PerformanceSample';
@@ -68,32 +65,32 @@ function start() {
   };
   const rooms = createRoomPanel(host, character, homeView, visit);
   const unbindLiving = Object.entries(livingRoom!.livingParts).map(([action, parts]) =>
-    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
+    bindClickInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
   const unbindGarden = Object.entries(balcony!.gardenParts).map(([action, parts]) =>
-    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isGardenAction(action)) request(action); }));
+    bindClickInteraction(renderer.domElement, camera, scene, parts, () => { if (isGardenAction(action)) request(action); }));
   const unbindKitchen = Object.entries(kitchen!.kitchenParts).map(([action, parts]) =>
-    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isKitchenAction(action)) request(action); }));
+    bindClickInteraction(renderer.domElement, camera, scene, parts, () => { if (isKitchenAction(action)) request(action); }));
   let savedAudio: unknown;
   try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? localStorage.getItem(LEGACY_AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
   const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
   const soundPanel = createSoundPanel(host, audio);
-  const unbindClean = bindWindowInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
-  const unbindEat = bindEatInteraction(renderer.domElement, camera, scene, foodParts, () => {
+  const unbindClean = bindClickInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
+  const unbindEat = bindClickInteraction(renderer.domElement, camera, scene, foodParts, () => {
     eatHits++;
     request('Food');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
-  const unbindRead = bindReadInteraction(renderer.domElement, camera, scene, readingParts, () => {
+  const unbindRead = bindClickInteraction(renderer.domElement, camera, scene, readingParts, () => {
     readHits++;
     request('Bookshelf');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
-  const unbindBed = bindBedInteraction(renderer.domElement, camera, scene, bedParts, () => {
+  const unbindBed = bindClickInteraction(renderer.domElement, camera, scene, bedParts, () => {
     bedHits++;
     request('Bed');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
   });
-  const unbind = bindWindowInteraction(renderer.domElement, camera, scene, windowParts, () => {
+  const unbind = bindClickInteraction(renderer.domElement, camera, scene, windowParts, () => {
     windowHits++;
     request('Window');
     debug.update(character, windowHits, width, height, bedHits, readHits, eatHits);
