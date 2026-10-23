@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { createFoxVisual } from './createFoxVisual.ts';
+import { createFoxVisual, type FoxLook } from './createFoxVisual.ts';
+import { Household, activityGroup } from './Household.ts';
 import { SLEEP, SleepActivity } from './sleep.ts';
 import { ReadActivity } from './read.ts';
 import { EatActivity } from './eat.ts';
@@ -24,6 +25,12 @@ export interface CharacterLayout {
   connectedRooms?: boolean;
   balcony?: boolean;
   kitchen?: boolean;
+}
+export interface CharacterOptions {
+  name?: string;
+  look?: FoxLook;
+  /** Shared by the foxes of one home so they do not use the same spot or prop at once. */
+  household?: Household;
 }
 export const OBSERVE_SECONDS = 4;
 export const ARRIVAL_DISTANCE = 0.035;
@@ -53,7 +60,10 @@ const walking = (phase: string) => phase === 'approach' || phase === 'carry' || 
 
 export class Character {
   readonly root = new THREE.Group();
-  private readonly visual = createFoxVisual();
+  readonly name: string | undefined;
+  private readonly visual: ReturnType<typeof createFoxVisual>;
+  private readonly household: Household | null;
+  private yielding: Character | null = null;
   private currentState: CharacterState = 'Idle';
   private commandActive = false;
   private destination: THREE.Vector3 | null = null;
@@ -82,7 +92,10 @@ export class Character {
   private readonly layout: CharacterLayout;
   private readonly random: () => number;
 
-  constructor(layout: CharacterLayout, random: () => number = Math.random) {
+  constructor(layout: CharacterLayout, random: () => number = Math.random, options: CharacterOptions = {}) {
+    this.visual = createFoxVisual(options.look);
+    this.name = options.name;
+    this.household = options.household ?? null;
     this.layout = { ...layout, windowPosition: layout.windowPosition.clone(), bounds: { ...layout.bounds } };
     if (layout.bed) this.layout.bed = { position: layout.bed.position.clone(), heading: layout.bed.heading, corner: layout.bed.corner.clone() };
     if (layout.reading) this.layout.reading = { position: layout.reading.position.clone(), heading: layout.reading.heading };
@@ -132,6 +145,19 @@ export class Character {
   }
   private get dozePose() { return this.reading?.dozePose ?? 0; }
   get petReaction(): PetSnapshot | null { return this.petting; }
+  /** This fox waits behind the given housemate instead of walking through it. */
+  yieldTo(other: Character | null) { this.yielding = other; }
+  /** Whether this fox is using the spot or prop that the given invitation needs. */
+  occupies(kind: ActionTarget) {
+    const group = activityGroup(kind);
+    return group !== null && !!this.activity && activityGroup(this.activity.kind) === group;
+  }
+  private blockedBy(other: Character) {
+    if (other.state !== 'Idle' && other.state !== 'Walk' && other.state !== 'Observe') return false;
+    const gap = other.root.position.clone().sub(this.root.position);
+    if (gap.length() > .85) return false;
+    return gap.normalize().dot(new THREE.Vector3(Math.sin(this.root.rotation.y), 0, Math.cos(this.root.rotation.y))) > .2;
+  }
   /** A tap on the fox itself: a reaction layered on whatever it is doing, never a new intent. */
   pet(): PetReaction {
     if (this.petting?.kind === 'shy') return 'shy';
@@ -202,11 +228,12 @@ export class Character {
   // One invitation at a time: a repeat is ignored and a started activity exits safely first.
   private requestActivity(kind: Exclude<ActivityKind, 'Stretch'>) {
     if (this.commandActive || this.activity?.kind === kind) return false;
+    if (this.household && !this.household.free(activityGroup(kind), this)) return false;
     if (this.exitFor(kind)) return true;
     this.begin(kind, true);
     return true;
   }
-  private clearActivity() { this.activity = null; }
+  private clearActivity() { this.activity = null; this.household?.release(this); }
   private create(kind: ActivityKind): Activity {
     if (kind === 'Bed') return new SleepActivity(this.layout.bed!);
     if (kind === 'Food') return new EatActivity(this.layout.dining!);
@@ -222,6 +249,7 @@ export class Character {
   }
   private begin(kind: ActivityKind, player: boolean) {
     this.activity = this.create(kind);
+    this.household?.claim(activityGroup(kind), this);
     this.commandActive = player;
     // A stretch starts in place; every other activity first walks to its spot.
     this.targetKind = kind === 'Stretch' ? null : kind;
@@ -335,7 +363,8 @@ export class Character {
     } else if (this.currentState === 'Idle') {
       this.idleRemaining -= dt;
       if (this.idleRemaining <= 0) {
-        const ready = (kind: ActivityKind) => this.completedWalk && this.cooldownLeft(kind) === 0;
+        const ready = (kind: ActivityKind) => this.completedWalk && this.cooldownLeft(kind) === 0
+          && (!this.household || this.household.free(activityGroup(kind), this));
         const eligible: ActivityKind[] = [];
         if (this.layout.bed && ready('Bed')) eligible.push('Bed');
         if (this.layout.reading && ready('Bookshelf')) eligible.push('Bookshelf');
@@ -386,7 +415,9 @@ export class Character {
         const angle = this.turnTo(lookHeading, dt);
         // Continuously feed forward motion into the turn; never travel sideways or backwards.
         const alignment = Math.pow(Math.max(0, Math.cos(angle)), 3);
-        const desiredSpeed = Math.min(1.05, distance * 2.6) * alignment;
+        let desiredSpeed = Math.min(1.05, distance * 2.6) * alignment;
+        // A trailing fox slows to a stop behind a housemate standing or walking just ahead.
+        if (this.yielding && this.blockedBy(this.yielding)) desiredSpeed = 0;
         this.speed = THREE.MathUtils.damp(this.speed, desiredSpeed, 6, dt);
         moved = Math.min(this.speed * dt * alignment, distance);
         this.direction.set(Math.sin(this.root.rotation.y), 0, Math.cos(this.root.rotation.y));

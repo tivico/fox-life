@@ -40,8 +40,13 @@ function icon(name: keyof typeof drawings) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${drawings[name]}</svg>`;
 }
 
-export function createLifePanel(host: HTMLElement, character: Character,
+export function createLifePanel(host: HTMLElement, foxes: { active: () => Character; all: readonly Character[] },
   request: (action: LifeAction) => void, resetCamera: () => void, viewChanged: () => void) {
+  // The panel talks to the active fox; names appear only once there is more than one fox.
+  const fox = () => foxes.active();
+  const primary = foxes.all[0]!;
+  const named = foxes.all.length > 1;
+  const label = (who: Character) => who.name ?? '狐狸';
   let saved: unknown = [];
   let storageAvailable = true;
   try {
@@ -59,7 +64,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
         <button type="button" data-tool="help" aria-label="怎麼玩">${icon('help')}</button>
       </nav>
     </header>
-    <div class="room-caption"><span></span> ${character.kitchenEnabled ? '有花香，也有飯香的小家' : character.gardenEnabled ? '有花園的小日子' : '兩間房的小日子'} <i>／</i> 自在生活中</div>
+    <div class="room-caption"><span></span> ${primary.kitchenEnabled ? '有花香，也有飯香的小家' : primary.gardenEnabled ? '有花園的小日子' : '兩間房的小日子'} <i>／</i> 自在生活中</div>
     <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
     <footer class="life-footer">
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
@@ -73,7 +78,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
       <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
-      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${character.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${character.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${character.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${primary.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${primary.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${primary.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
       <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
     </dialog>
@@ -128,7 +133,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
       const time = item.querySelector('time')!;
       time.dateTime = new Date(entry.at).toISOString();
       time.textContent = formatter.format(entry.at);
-      item.querySelector('p')!.textContent = momentText[entry.kind];
+      item.querySelector('p')!.textContent = (named && entry.who ? `${entry.who}：` : '') + momentText[entry.kind];
       item.querySelector('small')!.textContent = entry.source === 'player' ? '來自你的小邀請' : '牠自己的小日常';
       list.append(item);
     }
@@ -136,7 +141,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
     setText(count, String(journal.entries.length));
   }
   function update() {
-    const actions = roomActions(character), nextDockKey = actions.join(',');
+    const actions = roomActions(fox()), nextDockKey = (named ? label(fox()) + ':' : '') + actions.join(',');
     if (dockKey !== nextDockKey) {
       const dock = find('.action-dock');
       const hadFocus = dock.contains(document.activeElement);
@@ -145,11 +150,11 @@ export function createLifePanel(host: HTMLElement, character: Character,
       buttons = [...dock.querySelectorAll<HTMLButtonElement>('button')];
       if (hadFocus) buttons[0]?.focus();
       dockKey = nextDockKey;
-      setText(find('.dock-room-label'), `${homeRooms[roomAt(character.root.position)].label}日常 · 陪牠做點什麼`);
+      setText(find('.dock-room-label'), `${homeRooms[roomAt(fox().root.position)].label}日常 · 陪${named ? label(fox()) : '牠'}做點什麼`);
     }
-    const status = lifePresentation(character);
+    const status = lifePresentation(fox());
     setText(title, status.title);
-    setText(source, document.hidden ? '離開一下，日常暫停中' : status.source);
+    setText(source, document.hidden ? '離開一下，日常暫停中' : named ? `${label(fox())} · ${status.source}` : status.source);
     const nextSymbol = status.active ?? 'leaf';
     if (nextSymbol !== previousSymbol) { symbol.innerHTML = icon(nextSymbol); previousSymbol = nextSymbol; }
     progress.hidden = status.progress === null;
@@ -160,7 +165,9 @@ export function createLifePanel(host: HTMLElement, character: Character,
       if (button.getAttribute('aria-pressed') !== String(selected)) button.setAttribute('aria-pressed', String(selected));
       if (button.getAttribute('aria-disabled') !== String(disabled)) button.setAttribute('aria-disabled', String(disabled));
     }
-    if (journal.observe(character)) {
+    let recorded = false;
+    for (const each of foxes.all) if (journal.observe(each)) recorded = true;
+    if (recorded) {
       try {
         localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal.entries));
         storageAvailable = true;
@@ -183,7 +190,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
     if (event.key === 'Escape' && quiet) { setQuiet(false); return; }
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || quiet || ui.querySelector('dialog[open]') ||
       (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
-    const action = roomActions(character)[Number(event.key) - 1];
+    const action = roomActions(fox())[Number(event.key) - 1];
     if (action) { event.preventDefault(); request(action); }
   };
   ui.addEventListener('click', click);
@@ -196,13 +203,15 @@ export function createLifePanel(host: HTMLElement, character: Character,
       notify(accepted ? `收到邀請了，去${room}待一會。` : '牠正在完成你的上一個邀請，等一下再邀請牠吧。');
       update();
     },
-    petResult(reaction: PetReaction) {
-      notify(petFeedback[reaction]);
+    petResult(reaction: PetReaction, who: Character) {
+      notify(named ? `${label(who)}：${petFeedback[reaction]}` : petFeedback[reaction]);
       update();
     },
     commandResult(action: LifeAction, accepted: boolean) {
-      notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : character.source === 'Player Command' ?
-        '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : '牠已經在做這件事了，陪牠一會吧。');
+      const other = foxes.all.find(each => each !== fox() && each.occupies(action));
+      notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : fox().source === 'Player Command' ?
+        '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : other ? `${label(other)}正在那裡，等一下再邀請${label(fox())}吧。`
+        : '牠已經在做這件事了，陪牠一會吧。');
       update();
     },
     dispose() {

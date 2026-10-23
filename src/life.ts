@@ -13,7 +13,7 @@ export type MomentKind = LifeAction | 'Doze' | 'Stretch' | 'Pet' | 'PetShy' | Ro
 export type LifeSnapshot = Pick<Character, 'state' | 'action' | 'source' | 'targetLabel' |
   'sleepPhase' | 'sleepElapsed' | 'readPhase' | 'readElapsed' | 'eatPhase' | 'eatElapsed' | 'observeElapsed' |
   'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>
-  & Partial<Pick<Character, 'petReaction'>>;
+  & Partial<Pick<Character, 'petReaction' | 'name'>>;
 
 export const actionLabels: Record<LifeAction, string> = {
   Window: '看風景', Bed: '睡個覺', Bookshelf: '讀本書', Food: '吃點心',
@@ -95,7 +95,7 @@ export function lifePresentation(fox: LifeSnapshot) {
   };
 }
 
-export interface LifeMoment { kind: MomentKind; at: number; source: 'player' | 'autonomous' }
+export interface LifeMoment { kind: MomentKind; at: number; source: 'player' | 'autonomous'; who?: string }
 export const momentText: Record<MomentKind, string> = {
   Window: '在窗前停下來，看了一會風景。', Bed: '窩進柔軟的床，開始做一個小夢。',
   Bookshelf: '翻開一本書，走進新的故事。', Food: '到了點心時間，慢慢享受每一口。',
@@ -117,33 +117,33 @@ export const JOURNAL_LIMIT = 40;
 // Store observed moments only; no invented history or background simulation.
 export class LifeJournal {
   readonly entries: LifeMoment[];
-  private previous: MomentKind | null = null;
-  private previousMicro: 'Doze' | 'Stretch' | null = null;
-  private previousPet: string | null = null;
+  // One tracker per fox, keyed by name, so two foxes' moments do not cancel each other out.
+  private readonly trackers = new Map<string, { kind: MomentKind | null; micro: 'Doze' | 'Stretch' | null; pet: string | null }>();
   constructor(saved: unknown = []) {
     this.entries = Array.isArray(saved) ? saved.filter((item): item is LifeMoment =>
       item !== null && typeof item === 'object' && typeof item.kind === 'string' && Object.hasOwn(momentText, item.kind) &&
       typeof item.at === 'number' && Number.isFinite(item.at) && item.at > 0 && item.at <= 8.64e15 &&
       (item.source === 'player' || item.source === 'autonomous')).slice(0, JOURNAL_LIMIT)
-      .map(({ kind, at, source }) => ({ kind, at, source })) : [];
+      .map(({ kind, at, source, who }) => typeof who === 'string' ? { kind, at, source, who } : { kind, at, source }) : [];
   }
   observe(fox: LifeSnapshot, now = Date.now()): boolean {
     const kind = fox.kitchenActivity?.phase === 'active' ? fox.kitchenActivity.kind : fox.gardenActivity?.phase === 'active' ? fox.gardenActivity.kind : fox.livingActivity?.phase === 'active' ? fox.livingActivity.kind : fox.state === 'Observe' ? (isRoomId(fox.targetLabel) ? fox.targetLabel : 'Window') : fox.sleepPhase === 'sleep' ? 'Bed' :
       fox.readPhase === 'read' ? 'Bookshelf' : fox.eatPhase === 'eat' ? 'Food' :
       fox.activityPhase === 'active' && fox.activityKind !== 'Stretch' ? fox.activityKind : null;
-    const changed = kind !== null && kind !== this.previous;
-    this.previous = kind;
-    const microChanged = fox.microEvent !== null && fox.microEvent !== this.previousMicro;
-    this.previousMicro = fox.microEvent;
+    const key = fox.name ?? '';
+    const last = this.trackers.get(key) ?? { kind: null, micro: null, pet: null };
+    const changed = kind !== null && kind !== last.kind;
+    const microChanged = fox.microEvent !== null && fox.microEvent !== last.micro;
     // A burst of taps is one line; turning away shyly gets its own.
     const pet = fox.petReaction?.kind ?? null;
-    const petChanged = pet !== null && pet !== this.previousPet && (pet === 'shy' || this.previousPet === null);
-    this.previousPet = pet;
+    const petChanged = pet !== null && pet !== last.pet && (pet === 'shy' || last.pet === null);
+    this.trackers.set(key, { kind, micro: fox.microEvent, pet });
     if (!changed && !microChanged && !petChanged) return false;
     const source = fox.source === 'Player Command' ? 'player' : 'autonomous';
-    if (changed) this.entries.unshift({ kind: kind!, at: now, source });
-    if (microChanged) this.entries.unshift({ kind: fox.microEvent!, at: now, source });
-    if (petChanged) this.entries.unshift({ kind: pet === 'shy' ? 'PetShy' : 'Pet', at: now, source: 'player' });
+    const who = fox.name === undefined ? {} : { who: fox.name };
+    if (changed) this.entries.unshift({ kind: kind!, at: now, source, ...who });
+    if (microChanged) this.entries.unshift({ kind: fox.microEvent!, at: now, source, ...who });
+    if (petChanged) this.entries.unshift({ kind: pet === 'shy' ? 'PetShy' : 'Pet', at: now, source: 'player', ...who });
     this.entries.length = Math.min(this.entries.length, JOURNAL_LIMIT);
     return true;
   }

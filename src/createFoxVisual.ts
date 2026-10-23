@@ -15,19 +15,39 @@ import type { KitchenSnapshot } from './KitchenActivity.ts';
 import { createPetVisual } from './PetVisual.ts';
 import type { PetSnapshot } from './pet.ts';
 
+export interface FoxPalette { fur: string; cream: string; overalls: string; dark: string; pink: string }
+/** Palette plus the few proportions that make one fox read differently from another.
+ *  Both foxes stay gender-neutral: differences come from proportion and colour, never from dress or accessories. */
+export interface FoxLook {
+  palette: FoxPalette;
+  size?: number; head?: number; eyes?: number; earRound?: number; tailFluff?: number;
+  cheeks?: string;
+}
+export const foxPalettes = {
+  orange: { fur: '#bc713f', cream: '#eee1c5', overalls: '#647d57', dark: '#493c32', pink: '#bf8a70' },
+  // A warm white coat with mustard overalls so the two silhouettes read apart at a glance.
+  white: { fur: '#efe9e0', cream: '#fbf9f5', overalls: '#c9a35c', dark: '#4b4a52', pink: '#d6a89d' },
+} satisfies Record<string, FoxPalette>;
+export const foxLooks = {
+  orange: { palette: foxPalettes.orange },
+  // 小白: a little smaller and rounder, with bigger eyes, a hint of colour in the cheeks and a fluffier tail.
+  white: { palette: foxPalettes.white, size: .92, head: 1.1, eyes: 1.25, earRound: .5, tailFluff: 1.2, cheeks: '#ecc6b6' },
+} satisfies Record<string, FoxLook>;
+
 /** Fox-specific geometry; behavior only knows Character states. */
-export function createFoxVisual() {
+export function createFoxVisual(look: FoxLook = foxLooks.orange) {
+  const palette = look.palette;
   const root = new THREE.Group();
   root.name = 'FoxVisual';
   // Scale only the visual child: movement, targets and arrival tolerances stay in world units.
-  root.scale.setScalar(0.76);
+  root.scale.setScalar(0.76 * (look.size ?? 1));
   const body = new THREE.Group();
   root.add(body);
-  const fur = new THREE.MeshStandardMaterial({ color: '#bc713f', roughness: 0.93 });
-  const cream = new THREE.MeshStandardMaterial({ color: '#eee1c5', roughness: 0.95 });
-  const green = new THREE.MeshStandardMaterial({ color: '#647d57', roughness: 1 });
-  const dark = new THREE.MeshStandardMaterial({ color: '#493c32', roughness: 0.9 });
-  const pink = new THREE.MeshStandardMaterial({ color: '#bf8a70', roughness: 1 });
+  const fur = new THREE.MeshStandardMaterial({ color: palette.fur, roughness: 0.93 });
+  const cream = new THREE.MeshStandardMaterial({ color: palette.cream, roughness: 0.95 });
+  const green = new THREE.MeshStandardMaterial({ color: palette.overalls, roughness: 1 });
+  const dark = new THREE.MeshStandardMaterial({ color: palette.dark, roughness: 0.9 });
+  const pink = new THREE.MeshStandardMaterial({ color: palette.pink, roughness: 1 });
   const sphere = new THREE.SphereGeometry(1, 24, 18);
   const sleepBounds: Array<{ geometry: THREE.BufferGeometry; standing: THREE.Box3; sleeping: THREE.Box3 }> = [];
   function sleepMorph(geometry: THREE.BufferGeometry, positions: THREE.BufferAttribute) {
@@ -79,6 +99,7 @@ export function createFoxVisual() {
   const head = new THREE.Group();
   head.position.set(0, 1.14, 0.035);
   head.name = 'FoxHead';
+  head.scale.setScalar(look.head ?? 1);
   body.add(head);
   // Sculpt the muzzle into the head surface; cream is a color region, not attached cheeks.
   const headGeometry = sphere.clone();
@@ -101,15 +122,22 @@ export function createFoxVisual() {
   const eyes = new THREE.Group();
   eyes.name = 'FoxEyes';
   head.add(eyes);
+  const eye = look.eyes ?? 1;
   for (const x of [-0.145, 0.145]) {
-    ellipsoid(eyes, dark, [0.025, 0.033, 0.009], [x, 0.037, 0.298]);
-    // Small matte eyes; no separate sparkle or eyebrow geometry.
+    ellipsoid(eyes, dark, [0.025 * eye, 0.033 * eye, 0.009], [x, 0.037, 0.298]);
+    // Small matte eyes; only the rounder look gets a catchlight, and no eyebrow geometry.
+    if (eye > 1) ellipsoid(eyes, cream, [0.008, 0.010, 0.004], [x + 0.009, 0.048, 0.306]);
+  }
+  if (look.cheeks) {
+    const blush = new THREE.MeshStandardMaterial({ color: look.cheeks, roughness: 1 });
+    for (const x of [-0.19, 0.19]) ellipsoid(head, blush, [0.05, 0.03, 0.012], [x, -0.035, 0.265]);
   }
   const ears: THREE.Group[] = [];
   for (const sign of [-1, 1]) {
     const ear = new THREE.Group();
     ear.position.set(sign * 0.255, 0.20, -0.035);
     ear.rotation.z = -sign * 0.15;
+    ear.scale.set(1 + 0.18 * (look.earRound ?? 0), 1 - 0.22 * (look.earRound ?? 0), 1);
     // A soft triangular outline with depth, rather than a sharp three-sided cone.
     const outline = new THREE.Shape();
     outline.moveTo(-0.15, -0.025);
@@ -182,6 +210,7 @@ export function createFoxVisual() {
   tail.name = 'FoxTail';
   body.add(tail);
   // One continuous brush-shaped surface; the cream tip shares the same contour.
+  const fluff = look.tailFluff ?? 1;
   const tailPoints: number[] = [];
   const tailIndices: number[] = [];
   const rings = 20;
@@ -189,7 +218,7 @@ export function createFoxVisual() {
   const tailGeometry = new THREE.BufferGeometry();
   for (let ring = 0; ring <= rings; ring++) {
     const t = ring / rings;
-    const radius = ring === rings ? 0 : 0.14 * (1 - t) + 0.33 * Math.pow(Math.sin(Math.PI * t), 0.85);
+    const radius = ring === rings ? 0 : 0.14 * (1 - t) + 0.33 * fluff * Math.pow(Math.sin(Math.PI * t), 0.85);
     for (let side = 0; side < sides; side++) {
       const angle = side / sides * Math.PI * 2;
       tailPoints.push(0.16 * t + Math.cos(angle) * radius,
@@ -212,7 +241,7 @@ export function createFoxVisual() {
   const restingTail = tailGeometry.getAttribute('position').clone();
   for (let ring = 0; ring <= rings; ring++) {
     const t = ring / rings;
-    const radius = ring === rings ? 0 : 0.14 * (1 - t) + 0.33 * Math.pow(Math.sin(Math.PI * t), 0.85);
+    const radius = ring === rings ? 0 : 0.14 * (1 - t) + 0.33 * fluff * Math.pow(Math.sin(Math.PI * t), 0.85);
     for (let side = 0; side < sides; side++) {
       const angle = side / sides * Math.PI * 2;
       restingTail.setXYZ(ring * sides + side,

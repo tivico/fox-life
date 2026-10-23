@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, kitchenHomeLayout } from './scene';
+import { createScene, kitchenHomeLayout, companionLayout } from './scene';
+import { foxLooks } from './createFoxVisual.ts';
+import { Household } from './Household.ts';
 import { createHomeView } from './HomeView.ts';
 import { createRoomPanel } from './RoomPanel.ts';
 import { homeRooms, type RoomId } from './HomeNavigation.ts';
@@ -46,8 +48,15 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(kitchenHomeLayout);
-  scene.add(character.root);
+  // Prototype: two foxes share the home. Tapping a fox pets it and makes it the one you are talking to.
+  const household = new Household();
+  const orange = new Character(kitchenHomeLayout, Math.random, { name: '小橘', household });
+  const white = new Character(companionLayout, Math.random, { name: '小白', look: foxLooks.white, household });
+  white.root.position.set(-.9, 0, 5.6); white.root.rotation.y = Math.PI / 2;
+  white.yieldTo(orange);
+  scene.add(orange.root, white.root);
+  let character = orange;
+  const foxes = { active: () => character, all: [orange, white] as const };
   const homeView = createHomeView(camera, controls, character.root.position, () => reducedMotion.matches, true);
   const storedBroom = scene.getObjectByName('RoomBroom')!;
   let windowHits = 0;
@@ -58,12 +67,12 @@ function start() {
     const accepted = character.request(action);
     life.commandResult(action, accepted);
   };
-  const life = createLifePanel(host, character, request, () => homeView.reset(), () => resize());
+  const life = createLifePanel(host, foxes, request, () => homeView.reset(), () => resize());
   const visit = (room: RoomId) => {
     const accepted = character.requestRoomVisit(room);
     life.visitResult(homeRooms[room].label, accepted);
   };
-  const rooms = createRoomPanel(host, character, homeView, visit);
+  const rooms = createRoomPanel(host, foxes, homeView, visit);
   const unbindLiving = Object.entries(livingRoom!.livingParts).map(([action, parts]) =>
     bindClickInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
   const unbindGarden = Object.entries(balcony!.gardenParts).map(([action, parts]) =>
@@ -75,10 +84,16 @@ function start() {
   const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
   const soundPanel = createSoundPanel(host, audio);
   const unbindClean = bindClickInteraction(renderer.domElement, camera, scene, cleanParts, () => request('Clean'));
-  // The fox itself, including anything it is holding, takes a pat instead of an invitation.
-  const foxParts: THREE.Object3D[] = [];
-  character.root.traverse(object => { if (object instanceof THREE.Mesh) foxParts.push(object); });
-  const unbindPet = bindClickInteraction(renderer.domElement, camera, scene, foxParts, () => life.petResult(character.pet()));
+  // A fox itself, including anything it is holding, takes a pat instead of an invitation,
+  // and becomes the one the dock, room panel and camera talk to.
+  const unbindPets = foxes.all.map(fox => {
+    const parts: THREE.Object3D[] = [];
+    fox.root.traverse(object => { if (object instanceof THREE.Mesh) parts.push(object); });
+    return bindClickInteraction(renderer.domElement, camera, scene, parts, () => {
+      if (character !== fox) { character = fox; homeView.follow(fox.root.position); rooms.update(); }
+      life.petResult(fox.pet(), fox);
+    });
+  });
   const unbindEat = bindClickInteraction(renderer.domElement, camera, scene, foodParts, () => {
     eatHits++;
     request('Food');
@@ -143,15 +158,17 @@ function start() {
     const dt = frameClock.tick(now, document.hidden);
     performanceSample?.frame(now, document.hidden, character.state);
     if (document.hidden) return;
-    character.update(dt);
+    orange.update(dt);
+    white.update(dt);
     homeView.update(dt);
     frameCamera(dt);
     rooms.update();
     atmosphere.update(dt, reducedMotion.matches);
-    livingRoom!.update(dt, reducedMotion.matches, character.livingActivity);
-    balcony!.update(dt, reducedMotion.matches, character.gardenActivity);
-    kitchen!.update(dt, reducedMotion.matches, character.kitchenActivity);
-    storedBroom.visible = !character.cleanToolInUse;
+    // The household lets only one fox use each room's props at a time, so one snapshot per room suffices.
+    livingRoom!.update(dt, reducedMotion.matches, orange.livingActivity ?? white.livingActivity);
+    balcony!.update(dt, reducedMotion.matches, orange.gardenActivity ?? white.gardenActivity);
+    kitchen!.update(dt, reducedMotion.matches, orange.kitchenActivity ?? white.kitchenActivity);
+    storedBroom.visible = !(orange.cleanToolInUse || white.cleanToolInUse);
     life.update();
     controls.update();
     const right = camera.matrixWorld.elements;
@@ -171,7 +188,7 @@ function start() {
     unbindRead();
     unbindEat();
     unbindClean();
-    unbindPet();
+    unbindPets.forEach(unbind => unbind());
     unbindLiving.forEach(unbind => unbind());
     unbindGarden.forEach(unbind => unbind());
     unbindKitchen.forEach(unbind => unbind());
@@ -182,7 +199,8 @@ function start() {
     life.dispose();
     soundPanel.dispose();
     audio.dispose();
-    character.dispose();
+    orange.dispose();
+    white.dispose();
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
     scene.traverse(object => {

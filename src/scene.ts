@@ -41,6 +41,11 @@ export const expandedHomeLayout: CharacterLayout = {
 
 export const gardenHomeLayout: CharacterLayout = { ...expandedHomeLayout, balcony: true };
 export const kitchenHomeLayout: CharacterLayout = { ...gardenHomeLayout, kitchen: true };
+// The second fox sleeps on the pillow by the wall; the aisle-side approach and bed corner are shared.
+export const companionLayout: CharacterLayout = {
+  ...kitchenHomeLayout,
+  bed: { ...kitchenHomeLayout.bed!, position: new THREE.Vector3(-3.95, 0, 1.85) },
+};
 
 export function createScene({ expanded = false, garden = false, kitchen = false } = {}) {
   const scene = new THREE.Scene();

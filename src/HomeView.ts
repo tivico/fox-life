@@ -7,11 +7,12 @@ export type HomeViewMode = 'follow' | 'overview' | RoomId;
 export function createHomeView(camera: THREE.PerspectiveCamera, controls: OrbitControls, position: THREE.Vector3,
   reducedMotion: () => boolean, includeGarden = false) {
   let mode: HomeViewMode = 'follow';
-  let focusedRoom = roomAt(position);
+  let followed = position;
+  let focusedRoom = roomAt(followed);
   let transition: { target: THREE.Vector3; camera: THREE.Vector3 } | null = null;
   function focus(next: HomeViewMode) {
     mode = next;
-    focusedRoom = isRoomId(next) ? next : roomAt(position);
+    focusedRoom = isRoomId(next) ? next : roomAt(followed);
     const z = next === 'overview' ? 3.2 : homeRooms[focusedRoom].centerZ;
     const x = next === 'overview' ? includeGarden ? 2.2 : 0 : homeRooms[focusedRoom].centerX;
     transition = { target: new THREE.Vector3(x, .8, z), camera: next === 'overview'
@@ -22,8 +23,13 @@ export function createHomeView(camera: THREE.PerspectiveCamera, controls: OrbitC
   }
   const stopTransition = () => { transition = null; };
   controls.addEventListener('start', stopTransition);
+  // Switch which fox the follow mode tracks; the camera glides to its room.
+  function follow(next: THREE.Vector3) {
+    followed = next;
+    if (mode === 'follow') focus('follow');
+  }
   function update(dt: number) {
-    if (mode === 'follow' && focusedRoom !== roomAt(position)) focus('follow');
+    if (mode === 'follow' && focusedRoom !== roomAt(followed)) focus('follow');
     if (!transition) return;
     const alpha = reducedMotion() ? 1 : 1 - Math.exp(-Math.max(0, dt) * 5);
     const cameraAlpha = reducedMotion() ? 1 : Math.min(alpha, Math.max(0, dt) * 45 / Math.max(.001, camera.position.distanceTo(transition.camera)));
@@ -33,7 +39,7 @@ export function createHomeView(camera: THREE.PerspectiveCamera, controls: OrbitC
       camera.position.copy(transition.camera); controls.target.copy(transition.target); transition = null;
     }
   }
-  return { focus, update, reset: () => focus(mode),
+  return { focus, follow, update, reset: () => focus(mode),
     get mode() { return mode; }, get room() { return focusedRoom; },
     dispose: () => controls.removeEventListener('start', stopTransition) };
 }
