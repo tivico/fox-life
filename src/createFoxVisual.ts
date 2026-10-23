@@ -8,6 +8,10 @@ import type { CleanMode, DailyKind } from './daily.ts';
 import { createFoxPerformance } from './FoxPerformance.ts';
 import { createLivingVisual } from './LivingVisual.ts';
 import type { LivingSnapshot } from './LivingActivity.ts';
+import type { GardenSnapshot } from './GardenActivity.ts';
+import { createGardenVisual } from './GardenVisual.ts';
+import { createKitchenVisual } from './KitchenVisual.ts';
+import type { KitchenSnapshot } from './KitchenActivity.ts';
 
 /** Fox-specific geometry; behavior only knows Character states. */
 export function createFoxVisual() {
@@ -280,6 +284,8 @@ export function createFoxVisual() {
   const daily = createDailyVisual({ root, body, head, eyes, arms, legs, tail, book, page });
   const performance = createFoxPerformance();
   const livingVisual = createLivingVisual({ root, body, head, eyes, arms, legs, tail });
+  const gardenVisual = createGardenVisual({ root, body, head, eyes, arms, legs, tail });
+  const kitchenVisual = createKitchenVisual({ body, head, arms, legs });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -319,7 +325,7 @@ export function createFoxVisual() {
     animate({ dt, time, distance, state, variation, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
       eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
-      cleanMode, cleanPark, cleanParkYaw = 0, living = null }: {
+      cleanMode, cleanPark, cleanParkYaw = 0, living = null, garden = null, kitchen = null }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
@@ -328,10 +334,14 @@ export function createFoxVisual() {
       dailyKind?: DailyKind | null; dailyPose?: number; dailyTime?: number; dozePose?: number;
       cleanMode?: CleanMode; cleanPark?: THREE.Vector3; cleanParkYaw?: number;
       living?: LivingSnapshot | null;
+      garden?: GardenSnapshot | null;
+      kitchen?: KitchenSnapshot | null;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
       const expression = performance.update(state, dt);
+      kitchenVisual.restore();
+      gardenVisual.restore();
       livingVisual.restore();
       daily.restore();
       head.rotation.x -= eatOffsets.headX; head.rotation.y -= eatOffsets.headY;
@@ -501,6 +511,8 @@ export function createFoxVisual() {
       }
       daily.animate(dailyKind, dailyPose, dailyKind ? dailyTime : readTime, dozePose, dt, cleanMode, cleanPark, cleanParkYaw);
       livingVisual.animate(living);
+      gardenVisual.animate(garden);
+      kitchenVisual.animate(kitchen);
     },
   };
 }

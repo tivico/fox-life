@@ -3,6 +3,10 @@ import { actionLabels, roomActions, JOURNAL_KEY, LifeJournal, lifePresentation, 
 import { homeRooms, roomAt } from './HomeNavigation.ts';
 
 const drawings = {
+  Kitchen: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5h1m4 0h1m4 0h1M6 11h12v7H6z"/>',
+  ChopVegetables: '<path d="M3 20h18M6 17l9-12 5 4-9 8H6Zm9-12 2-3 5 4-2 3M5 11c-4-4-3-7 1-6l3 3"/>',
+  CookSoup: '<path d="M4 10h16v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-6ZM1 12h3m16 0h3M7 2c-2 2 2 3 0 5m5-5c-2 2 2 3 0 5m5-5c-2 2 2 3 0 5"/>',
+  BakeCookies: '<circle cx="12" cy="12" r="9"/><path d="M7 8h.01M14 6h.01M17 12h.01M10 13h.01M7 17h.01M14 18h.01" stroke-width="3"/>',
   Window: '<rect x="4" y="3" width="16" height="17" rx="2"/><path d="M12 3v17M4 11h16M2 21h20"/>',
   Bed: '<path d="M3 18V9m18 9V9M3 14h18v4H3m0-7V5h18v6M6 11V8h5v3m2 0V8h5v3"/>',
   Bookshelf: '<path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15M5 9h4m-4 4h4m6-4h4m-4 4h4"/>',
@@ -15,6 +19,10 @@ const drawings = {
   Exercise: '<circle cx="12" cy="5" r="3"/><path d="m3 7 5 5h8l5-5m-9 5v5m-5 5 5-5 5 5"/>',
   Music: '<path d="M9 18V5l12-3v13M9 9l12-3"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="18" cy="15" rx="3" ry="3"/>',
   TidySofa: '<rect x="3" y="8" width="15" height="13" rx="3"/><path d="m16 2 1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3ZM7 12l7 5m-7 0 7-5"/>',
+  WaterPlants: '<path d="M4 10h10v10H4V10Zm10 2 5-5 3 3-8 7M5 10V7a3 3 0 0 1 6 0v3M3 13H1v4h3"/>',
+  WatchButterflies: '<path d="M12 9C6-2 0 4 5 11c-6 6 1 12 7 3 6 9 13 3 7-3 5-7-1-13-7-2Zm0 0v9m0-9-3-5m3 5 3-5"/>',
+  GardenRest: '<path d="M3 13h18v4H3v-4Zm2-7h14v7H5V6Zm0 11v4m14-4v4M8 3l2-2m6 2 2-2"/>',
+  Balcony: '<path d="M3 21h18M5 21V11h14v10M5 15h14M9 11v10m6-10v10M12 9V4m0 3C7 7 6 4 7 2c4 0 5 3 5 5Zm0 0c5 0 6-3 5-5-4 0-5 3-5 5Z"/>',
   Doze: '<path d="M3 13h8l-8 8h8m3-18h7l-7 7h7"/>',
   Stretch: '<circle cx="12" cy="7" r="3"/><path d="m3 3 5 10h8l5-10m-9 10v8m-4 0 4-4 4 4"/>',
   Bedroom: '<path d="M3 11 12 3l9 8v10H3V11Zm5 10v-8h8v8"/>',
@@ -48,7 +56,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
         <button type="button" data-tool="help" aria-label="怎麼玩">${icon('help')}</button>
       </nav>
     </header>
-    <div class="room-caption"><span></span> 兩間房的小日子 <i>／</i> 自在生活中</div>
+    <div class="room-caption"><span></span> ${character.kitchenEnabled ? '有花香，也有飯香的小家' : character.gardenEnabled ? '有花園的小日子' : '兩間房的小日子'} <i>／</i> 自在生活中</div>
     <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
     <footer class="life-footer">
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
@@ -62,7 +70,7 @@ export function createLifePanel(host: HTMLElement, character: Character,
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
       <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
-      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具。房間面板的「去客廳／回臥室」可以邀請牠往返。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${character.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${character.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${character.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
       <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
     </dialog>

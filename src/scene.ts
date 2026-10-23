@@ -3,6 +3,8 @@ import type { CharacterLayout } from './Character.ts';
 import { dressRoom } from './roomDetails.ts';
 import { CLEAN_STORAGE } from './daily.ts';
 import { createLivingRoom } from './livingRoom.ts';
+import { createBalcony } from './balcony.ts';
+import { createKitchen } from './kitchen.ts';
 
 export const characterLayout: CharacterLayout = {
   windowPosition: new THREE.Vector3(0, 0, -1.4),
@@ -37,7 +39,10 @@ export const expandedHomeLayout: CharacterLayout = {
   leisure: { ...homeLayout.leisure!, play: new THREE.Vector3(.65, 0, 6.2) },
 };
 
-export function createScene({ expanded = false } = {}) {
+export const gardenHomeLayout: CharacterLayout = { ...expandedHomeLayout, balcony: true };
+export const kitchenHomeLayout: CharacterLayout = { ...gardenHomeLayout, kitchen: true };
+
+export function createScene({ expanded = false, garden = false, kitchen = false } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e9e6df');
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
@@ -62,23 +67,27 @@ export function createScene({ expanded = false } = {}) {
     room.add(mesh);
     return mesh;
   }
-  const floor = box(8.4, 0.3, 6.4, '#c2b5a3', 0, -0.15, 0);
+  // Extend the sleeping alcove outward so the double bed retains the clear aisle.
+  const floor = box(9.2, 0.3, 6.4, '#c2b5a3', -.4, -0.15, 0);
   // Low cutaway walls, no roof. The camera remains outside the room envelope.
-  box(8.4, 0.9, 0.18, '#a6b6ac', 0, 0.45, -3.1);
-  box(0.18, 0.9, 6.4, '#a6b6ac', -4.1, 0.45, 0);
-  if (!expanded) box(8.4, 0.18, 0.18, '#d6cbb9', 0, 0.09, 3.1);
-  box(0.18, 0.18, 6.4, '#d6cbb9', 4.1, 0.09, 0);
+  box(9.2, 0.9, 0.18, '#a6b6ac', -.4, 0.45, -3.1);
+  box(0.18, 0.9, 6.4, '#a6b6ac', -4.9, 0.45, 0);
+  if (!expanded) box(9.2, 0.18, 0.18, '#d6cbb9', -.4, 0.09, 3.1);
+  else box(.8, .18, .18, '#d6cbb9', -4.6, .09, 3.1);
+  if (garden) box(0.18, 0.18, 5.05, '#d6cbb9', 4.1, 0.09, -.675);
+  else box(0.18, 0.18, 6.4, '#d6cbb9', 4.1, 0.09, 0);
   // An inset rug avoids placing an elevated surface under the feet.
   const rug = box(3.7, 0.008, 2.9, '#d4b29b', 0, -0.003, 0.35);
 
-  // Decorative furniture only. Inner faces stay outside |x| = 2.9.
+  // Keep the existing sleeping berth and foot approach on the aisle side.
   const bedParts = [
-    box(0.85, 0.26, 1.9, '#aeb998', -3.4, 0.13, 0.5),
-    box(0.76, 0.22, 1.75, '#e5dfc9', -3.4, 0.37, 0.5),
+    box(1.65, 0.26, 1.9, '#aeb998', -3.8, 0.13, 0.5),
+    box(1.56, 0.22, 1.75, '#e5dfc9', -3.8, 0.37, 0.5),
     box(0.65, 0.15, 0.45, '#f2ebd6', -3.4, 0.55, -0.08),
-    box(0.85, 0.65, 0.12, '#aeb998', -3.4, 0.325, -0.52),
+    box(1.65, 0.65, 0.12, '#aeb998', -3.8, 0.325, -0.52),
+    box(0.65, 0.15, 0.45, '#f2ebd6', -4.2, 0.55, -0.08),
   ];
-  bedParts.forEach((part, index) => { part.name = ['BedFrame', 'Mattress', 'Pillow', 'Headboard'][index]!; });
+  bedParts.forEach((part, index) => { part.name = ['BedFrame', 'Mattress', 'Pillow', 'Headboard', 'Pillow'][index]!; });
   box(0.7, 0.72, 1.25, '#b0bcaa', 3.5, 0.36, -0.3);
   box(0.79, 0.08, 1.35, '#eee5d2', 3.5, 0.76, -0.3);
   // A small open bookshelf above the existing cabinet. The unrelated cabinet
@@ -122,7 +131,9 @@ export function createScene({ expanded = false } = {}) {
   const details = dressRoom(scene, { floor: floor.material, rug: rug.material,
     mattress: bedParts[1]!.material, window: windowPane.material });
   foodParts.push(...details.diningDetails);
-  const living = expanded ? createLivingRoom(scene, floor.material) : null;
+  const living = expanded ? createLivingRoom(scene, floor.material, kitchen) : null;
+  const balcony = garden ? createBalcony(scene) : null;
+  const cookingRoom = kitchen ? createKitchen(scene) : null;
   if (expanded) {
     // The live home's former yarn invitation is now exercise; historical previews keep their prop.
     const yarn = scene.getObjectByName('RoomYarn')!;
@@ -133,6 +144,7 @@ export function createScene({ expanded = false } = {}) {
     } });
     yarn.removeFromParent(); yarnGeometries.forEach(geometry => geometry.dispose()); yarnMaterials.forEach(material => material.dispose());
     sunlight.shadow.camera.bottom = -12;
+    if (garden || kitchen) sunlight.shadow.camera.right = 15;
     sunlight.shadow.camera.far = 35;
     sunlight.shadow.mapSize.set(2048, 2048);
     sunlight.shadow.camera.updateProjectionMatrix();
@@ -140,6 +152,6 @@ export function createScene({ expanded = false } = {}) {
   // Nested tool groups have world positions even before the first render/query.
   scene.updateMatrixWorld(true);
   return { scene, camera, windowParts, bedParts, readingParts, foodParts,
-    cleanParts: details.cleanParts, playParts: living?.livingParts.Exercise ?? details.playParts, roomTextures: [...details.textures, ...(living?.textures ?? [])],
-    atmosphere: details.atmosphere, loungeParts: living?.loungeParts ?? [], livingRoom: living };
+    cleanParts: details.cleanParts, playParts: living?.livingParts.Exercise ?? details.playParts, roomTextures: [...details.textures, ...(living?.textures ?? []), ...(cookingRoom?.textures ?? [])],
+    atmosphere: details.atmosphere, loungeParts: living?.loungeParts ?? [], livingRoom: living, balcony, kitchen: cookingRoom };
 }

@@ -1,20 +1,23 @@
 import * as THREE from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { homeRooms, roomAt, type RoomId } from './HomeNavigation.ts';
+import { homeRooms, roomAt, isRoomId, type RoomId } from './HomeNavigation.ts';
 
 export type HomeViewMode = 'follow' | 'overview' | RoomId;
 
 export function createHomeView(camera: THREE.PerspectiveCamera, controls: OrbitControls, position: THREE.Vector3,
-  reducedMotion: () => boolean) {
+  reducedMotion: () => boolean, includeGarden = false) {
   let mode: HomeViewMode = 'follow';
   let focusedRoom = roomAt(position);
   let transition: { target: THREE.Vector3; camera: THREE.Vector3 } | null = null;
   function focus(next: HomeViewMode) {
     mode = next;
-    focusedRoom = next === 'Bedroom' || next === 'LivingRoom' ? next : roomAt(position);
+    focusedRoom = isRoomId(next) ? next : roomAt(position);
     const z = next === 'overview' ? 3.2 : homeRooms[focusedRoom].centerZ;
-    transition = { target: new THREE.Vector3(0, .8, z), camera: next === 'overview'
-      ? new THREE.Vector3(12, 12, 20) : focusedRoom === 'LivingRoom'
+    const x = next === 'overview' ? includeGarden ? 2.2 : 0 : homeRooms[focusedRoom].centerX;
+    transition = { target: new THREE.Vector3(x, .8, z), camera: next === 'overview'
+      ? includeGarden ? new THREE.Vector3(16, 15, 23) : new THREE.Vector3(12, 12, 20) : focusedRoom === 'Balcony'
+        ? new THREE.Vector3(x + 7, 7.5, 10) : focusedRoom === 'Kitchen'
+        ? new THREE.Vector3(x + 6.5, 7.5, z + 9.5) : focusedRoom === 'LivingRoom'
         ? new THREE.Vector3(-6, 8, z + 10) : new THREE.Vector3(8, 7, z + 10) };
   }
   const stopTransition = () => { transition = null; };

@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CUP_PARK, type LivingAction, type LivingSnapshot } from './LivingActivity.ts';
 import { createTeaCup, createRemote, REMOTE_PARK } from './LivingVisual.ts';
 
-export function createLivingRoom(scene: THREE.Scene, floor: THREE.MeshStandardMaterial) {
+export function createLivingRoom(scene: THREE.Scene, floor: THREE.MeshStandardMaterial, kitchen = false) {
   const room = new THREE.Group(); room.name = 'LivingRoom'; scene.add(room);
   const materials = new Map<string, THREE.MeshStandardMaterial>();
   const material = (color: string) => {
@@ -44,7 +44,8 @@ export function createLivingRoom(scene: THREE.Scene, floor: THREE.MeshStandardMa
   box('DoorwayThreshold', [2.84, .006, .23], [0, -.004, 3.2], '#d8c5a1');
   box('LivingLeftWall', [.18, .9, 6.3], [-4.1, .45, 6.4], '#c1b4a2');
   box('LivingWallCap', [.24, .08, 6.3], [-4.1, .94, 6.4], '#e9e2cb');
-  box('LivingRightEdge', [.18, .18, 6.3], [4.1, .09, 6.4], '#d6cbb9');
+  if (kitchen) box('LivingRightEdge', [.18, .18, 4.45], [4.1, .09, 5.475], '#d6cbb9');
+  else box('LivingRightEdge', [.18, .18, 6.3], [4.1, .09, 6.4], '#d6cbb9');
   box('LivingFrontEdge', [8.4, .18, .18], [0, .09, 9.5], '#d6cbb9');
 
   const loungeParts: THREE.Object3D[] = [];

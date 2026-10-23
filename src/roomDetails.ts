@@ -105,12 +105,12 @@ export function dressRoom(scene: THREE.Scene, surfaces: {
   }
 
   // Wainscot trim and a soft plaster cap retain the open dollhouse silhouette.
-  box('BackWallCap', 8.35, .08, .24, '#e9e2cb', 0, .94, -3.1);
-  box('LeftWallCap', .16, .08, 6.3, '#e9e2cb', -4.1, .94, 0);
-  box('BackSkirting', 8.0, .09, .04, '#ddd9bf', 0, .08, -2.99);
-  box('LeftSkirting', .025, .09, 6.0, '#ddd9bf', -4.04, .08, 0);
-  for (let x = -3.7; x < 4; x += .65) box('WallPanel', .025, .69, .025, '#9eae93', x, .46, -2.99, .005);
-  for (let z = -2.6; z < 3; z += .65) box('WallPanel', .025, .69, .025, '#9eae93', -4.04, .46, z, .005);
+  box('BackWallCap', 9.15, .08, .24, '#e9e2cb', -.4, .94, -3.1);
+  box('LeftWallCap', .16, .08, 6.3, '#e9e2cb', -4.9, .94, 0);
+  box('BackSkirting', 8.8, .09, .04, '#ddd9bf', -.4, .08, -2.99);
+  box('LeftSkirting', .025, .09, 6.0, '#ddd9bf', -4.84, .08, 0);
+  for (let x = -4.5; x < 4; x += .65) box('WallPanel', .025, .69, .025, '#9eae93', x, .46, -2.99, .005);
+  for (let z = -2.6; z < 3; z += .65) box('WallPanel', .025, .69, .025, '#9eae93', -4.84, .46, z, .005);
 
   // Linen curtains frame the window without entering its clickable glass.
   const rod = cylinder('CurtainRail', '#988365', 0, 2.84, -2.91, .035, 3.68);

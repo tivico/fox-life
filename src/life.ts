@@ -4,20 +4,26 @@ import { READ } from './read.ts';
 import { EAT } from './eat.ts';
 import { DAILY } from './daily.ts';
 import { livingActions, livingLabels, livingDurations, type LivingAction } from './LivingActivity.ts';
-import { roomAt } from './HomeNavigation.ts';
+import { roomAt, isRoomId, type RoomId } from './HomeNavigation.ts';
+import { gardenActions, gardenLabels, gardenDurations, type GardenAction } from './GardenActivity.ts';
+import { kitchenActions, kitchenLabels, kitchenDurations, type KitchenAction } from './KitchenActivity.ts';
 
-export type LifeAction = 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction;
-export type MomentKind = LifeAction | 'Doze' | 'Stretch' | 'Bedroom' | 'LivingRoom';
+export type LifeAction = 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction | GardenAction | KitchenAction;
+export type MomentKind = LifeAction | 'Doze' | 'Stretch' | RoomId;
 export type LifeSnapshot = Pick<Character, 'state' | 'action' | 'source' | 'targetLabel' |
   'sleepPhase' | 'sleepElapsed' | 'readPhase' | 'readElapsed' | 'eatPhase' | 'eatElapsed' | 'observeElapsed' |
-  'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity'>;
+  'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>;
 
 export const actionLabels: Record<LifeAction, string> = {
   Window: '看風景', Bed: '睡個覺', Bookshelf: '讀本書', Food: '吃點心',
   Clean: '掃掃地', Play: '玩毛線',
   ...livingLabels,
+  ...gardenLabels,
+  ...kitchenLabels,
 };
 export function roomActions(fox: Pick<Character, 'root'>): LifeAction[] {
+  if (roomAt(fox.root.position) === 'Kitchen') return [...kitchenActions];
+  if (roomAt(fox.root.position) === 'Balcony') return [...gardenActions];
   return roomAt(fox.root.position) === 'LivingRoom' ? [...livingActions] : ['Window', 'Bed', 'Bookshelf', 'Food', 'Clean'];
 }
 const descriptions: Record<string, string> = {
@@ -40,20 +46,38 @@ const descriptions: Record<string, string> = {
   'Finishing stretch': '伸完懶腰，精神又回來了',
   'Walk to Bedroom': '穿過門口，回臥室待一會', 'Visit Bedroom': '回到臥室，享受安靜的小角落',
   'Walk to LivingRoom': '穿過門口，去客廳看看', 'Visit LivingRoom': '在客廳停下來，慢慢看看自己的小家',
+  'Walk to Balcony': '穿過玻璃門，去陽台看看', 'Visit Balcony': '來到陽台，感受花草與微風',
+  'Walk to Kitchen': '穿過客廳，去廚房看看', 'Visit Kitchen': '來到廚房，聞聞今天的好味道',
 };
 
 export function lifePresentation(fox: LifeSnapshot) {
   const target = fox.targetLabel === 'DiningArea' ? 'Food' : fox.targetLabel;
   const active = target && target in actionLabels ? target as LifeAction : null;
   let progress: number | null = null;
-  if (fox.livingActivity?.phase === 'active') progress = fox.livingActivity.elapsed / livingDurations[fox.livingActivity.kind];
+  if (fox.kitchenActivity?.phase === 'active') progress = fox.kitchenActivity.elapsed / kitchenDurations[fox.kitchenActivity.kind];
+  else if (fox.gardenActivity?.phase === 'active') progress = fox.gardenActivity.elapsed / gardenDurations[fox.gardenActivity.kind];
+  else if (fox.livingActivity?.phase === 'active') progress = fox.livingActivity.elapsed / livingDurations[fox.livingActivity.kind];
   else if (fox.state === 'Observe') progress = fox.observeElapsed / 4;
   else if (fox.sleepPhase === 'sleep') progress = fox.sleepElapsed / SLEEP.duration;
   else if (fox.readPhase === 'read') progress = fox.readElapsed / READ.duration;
   else if (fox.eatPhase === 'eat') progress = fox.eatElapsed / EAT.duration;
   else if (fox.activityKind && fox.activityPhase === 'active') progress = fox.activityElapsed / DAILY[fox.activityKind].duration;
   const living = fox.livingActivity;
-  const title = living ? living.phase === 'approach' ? `去客廳${livingLabels[living.kind]}`
+  const garden = fox.gardenActivity;
+  const kitchen = fox.kitchenActivity;
+  const title = kitchen ? kitchen.phase === 'approach' ? `去廚房${kitchenLabels[kitchen.kind]}`
+    : kitchen.phase === 'settle' ? '在料理檯前站好，準備開始'
+    : kitchen.phase === 'finish' ? '放好手邊的工具，整理料理檯'
+    : kitchen.phase === 'retreat' ? '退開一步，再繼續小日常'
+    : kitchen.kind === 'ChopVegetables' ? '一小段、一小段，慢慢切好蔬菜'
+    : kitchen.kind === 'CookSoup' ? '輕輕攪拌，煮一鍋暖暖的湯'
+    : kitchen.motionTime < 1.7 ? '轉好烤箱旋鈕，開始烤餅乾'
+    : kitchen.motionTime < 10.5 ? '等著餅乾慢慢變成金黃色' : '餅乾烤好了，聞起來好香'
+    : garden ? garden.phase === 'approach' ? `去陽台${gardenLabels[garden.kind]}`
+    : garden.phase === 'settle' ? garden.kind === 'WaterPlants' ? '從掛架拿起小水壺' : garden.kind === 'GardenRest' ? '慢慢坐到長椅上' : '站好腳步，找找小蝴蝶'
+    : garden.phase === 'finish' ? garden.kind === 'WaterPlants' ? '把水壺放回掛架，再繼續小日常' : '慢慢收尾，準備繼續生活'
+    : { WaterPlants: '扶好水壺，慢慢為花朵澆水', WatchButterflies: '看著小蝴蝶，在花叢間輕輕飛', GardenRest: '坐在長椅上，感受葉子與微風' }[garden.kind]
+    : living ? living.phase === 'approach' ? `去客廳${livingLabels[living.kind]}`
     : living.phase === 'pickup' ? '從電視櫃拿起杯子，準備坐下喝茶'
     : living.phase === 'carry' ? '拿好茶杯，走到沙發邊'
     : living.phase === 'return' ? '拿著杯子，慢慢走回電視櫃'
@@ -80,6 +104,10 @@ export const momentText: Record<MomentKind, string> = {
   WatchTV: '窩在沙發上，看了一段自己喜歡的小節目。', SofaRest: '靠著柔軟的沙發，什麼也不趕地休息了一會。',
   Tea: '拿起茶杯，坐下來慢慢享受一杯熱茶。', Exercise: '抬手伸展、側彎身體，再精神地原地踏步。',
   Music: '聽著小音響的旋律，跟著節奏輕輕晃動。', TidySofa: '拍鬆抱枕、整理毯子，讓沙發又舒服了。',
+  Balcony: '穿過玻璃門，走進有花草和微風的陽台。', WaterPlants: '拿起小水壺，慢慢照顧陽台上的花。',
+  WatchButterflies: '停下腳步，看小蝴蝶在花叢間飛舞。', GardenRest: '坐到陽台長椅上，讓微風陪自己休息。',
+  Kitchen: '走進廚房，看看今天想做什麼好吃的。', ChopVegetables: '在砧板上慢慢切好蔬菜，準備一頓小料理。',
+  CookSoup: '輕輕攪著湯鍋，讓暖暖的香氣飄進小家。', BakeCookies: '轉好烤箱，陪餅乾慢慢烤成金黃色。',
 };
 export const JOURNAL_KEY = 'fox-life.moments.v1';
 export const JOURNAL_LIMIT = 40;
@@ -97,7 +125,7 @@ export class LifeJournal {
       .map(({ kind, at, source }) => ({ kind, at, source })) : [];
   }
   observe(fox: LifeSnapshot, now = Date.now()): boolean {
-    const kind = fox.livingActivity?.phase === 'active' ? fox.livingActivity.kind : fox.state === 'Observe' ? (fox.targetLabel === 'Bedroom' || fox.targetLabel === 'LivingRoom' ? fox.targetLabel : 'Window') : fox.sleepPhase === 'sleep' ? 'Bed' :
+    const kind = fox.kitchenActivity?.phase === 'active' ? fox.kitchenActivity.kind : fox.gardenActivity?.phase === 'active' ? fox.gardenActivity.kind : fox.livingActivity?.phase === 'active' ? fox.livingActivity.kind : fox.state === 'Observe' ? (isRoomId(fox.targetLabel) ? fox.targetLabel : 'Window') : fox.sleepPhase === 'sleep' ? 'Bed' :
       fox.readPhase === 'read' ? 'Bookshelf' : fox.eatPhase === 'eat' ? 'Food' :
       fox.activityPhase === 'active' && fox.activityKind !== 'Stretch' ? fox.activityKind : null;
     const changed = kind !== null && kind !== this.previous;

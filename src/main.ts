@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createScene, expandedHomeLayout } from './scene';
+import { createScene, kitchenHomeLayout } from './scene';
 import { createHomeView } from './HomeView.ts';
 import { createRoomPanel } from './RoomPanel.ts';
 import { homeRooms, type RoomId } from './HomeNavigation.ts';
 import { isLivingAction } from './LivingActivity.ts';
+import { isGardenAction } from './GardenActivity.ts';
+import { isKitchenAction } from './KitchenActivity.ts';
 import { bindEatInteraction } from './EatInteraction';
 import { bindReadInteraction } from './ReadInteraction';
 import { bindBedInteraction } from './BedInteraction';
@@ -33,9 +35,9 @@ function start() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.domElement.setAttribute('aria-label', '3D 小屋：拖曳環繞、滾輪縮放；點臥室家具，或客廳的電視、沙發、茶杯、運動墊、小音響與抱枕');
+  renderer.domElement.setAttribute('aria-label', '3D 小屋、陽台與廚房：拖曳環繞、滾輪縮放；點家具、花圃或料理檯，邀請狐狸開始一段日常');
   host.append(renderer.domElement);
-  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, roomTextures, atmosphere, livingRoom } = createScene({ expanded: true });
+  const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, roomTextures, atmosphere, livingRoom, balcony, kitchen } = createScene({ expanded: true, garden: true, kitchen: true });
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
@@ -47,16 +49,16 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  const character = new Character(expandedHomeLayout);
+  const character = new Character(kitchenHomeLayout);
   scene.add(character.root);
-  const homeView = createHomeView(camera, controls, character.root.position, () => reducedMotion.matches);
+  const homeView = createHomeView(camera, controls, character.root.position, () => reducedMotion.matches, true);
   const storedBroom = scene.getObjectByName('RoomBroom')!;
   let windowHits = 0;
   let bedHits = 0;
   let readHits = 0;
   let eatHits = 0;
   const request = (action: LifeAction) => {
-    const accepted = isLivingAction(action) ? character.requestLivingAction(action) : action === 'Window' ? character.requestWindowObserve() :
+    const accepted = isKitchenAction(action) ? character.requestKitchenAction(action) : isGardenAction(action) ? character.requestGardenAction(action) : isLivingAction(action) ? character.requestLivingAction(action) : action === 'Window' ? character.requestWindowObserve() :
       action === 'Bed' ? character.requestSleep() : action === 'Bookshelf' ? character.requestRead() :
       action === 'Food' ? character.requestEat() : action === 'Clean' ? character.requestClean() : character.requestPlay();
     life.commandResult(action, accepted);
@@ -69,6 +71,10 @@ function start() {
   const rooms = createRoomPanel(host, character, homeView, visit);
   const unbindLiving = Object.entries(livingRoom!.livingParts).map(([action, parts]) =>
     bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
+  const unbindGarden = Object.entries(balcony!.gardenParts).map(([action, parts]) =>
+    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isGardenAction(action)) request(action); }));
+  const unbindKitchen = Object.entries(kitchen!.kitchenParts).map(([action, parts]) =>
+    bindWindowInteraction(renderer.domElement, camera, scene, parts, () => { if (isKitchenAction(action)) request(action); }));
   let savedAudio: unknown;
   try { savedAudio = JSON.parse(localStorage.getItem(AUDIO_KEY) ?? localStorage.getItem(LEGACY_AUDIO_KEY) ?? 'null'); } catch { /* Use quiet defaults. */ }
   const audio = new HomeAudio(audioPreferences(savedAudio), homeAudioAssets);
@@ -97,14 +103,26 @@ function start() {
   const debug = createDebugPanel(host);
   let width = 0;
   let height = 0;
+  let frameOffsetY = 0;
+  const frameCamera = (dt = Infinity) => {
+    const phoneGarden = width <= 650 && (homeView.room === 'Balcony' || homeView.room === 'Kitchen') && homeView.mode !== 'overview';
+    const zoom = Math.min(1, camera.aspect / (phoneGarden ? .95 : 1.25));
+    // The narrow balcony fits between the mobile room panel and invitation dock.
+    const offsetY = host.classList.contains('quiet-mode') ? 0 : phoneGarden ? -height * .04 : Math.min(100, height * .14);
+    const alpha = !Number.isFinite(dt) || reducedMotion.matches ? 1 : 1 - Math.exp(-Math.max(0, dt) * 5);
+    const nextZoom = THREE.MathUtils.lerp(camera.zoom, zoom, alpha);
+    const nextOffsetY = THREE.MathUtils.lerp(frameOffsetY, offsetY, alpha);
+    if (Math.abs(camera.zoom - zoom) < .00001 && Math.abs(frameOffsetY - offsetY) < .01 && camera.view?.fullWidth === width && camera.view?.fullHeight === height) return;
+    camera.zoom = Math.abs(nextZoom - zoom) < .00001 ? zoom : nextZoom;
+    frameOffsetY = Math.abs(nextOffsetY - offsetY) < .01 ? offsetY : nextOffsetY;
+    camera.setViewOffset(width, height, 0, frameOffsetY, width, height);
+    camera.updateProjectionMatrix();
+  };
   const resize = () => {
     width = Math.max(1, host.clientWidth);
     height = Math.max(1, host.clientHeight);
     camera.aspect = width / Math.max(height, 1);
-    // Keep the home above the invitation dock and fit its width on narrow screens.
-    camera.zoom = Math.min(1, camera.aspect / 1.25);
-    camera.setViewOffset(width, height, 0, host.classList.contains('quiet-mode') ? 0 : Math.min(100, height * 0.14), width, height);
-    camera.updateProjectionMatrix();
+    frameCamera();
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
   };
@@ -128,9 +146,12 @@ function start() {
     if (document.hidden) return;
     character.update(dt);
     homeView.update(dt);
+    frameCamera(dt);
     rooms.update();
     atmosphere.update(dt, reducedMotion.matches);
     livingRoom!.update(dt, reducedMotion.matches, character.livingActivity);
+    balcony!.update(dt, reducedMotion.matches, character.gardenActivity);
+    kitchen!.update(dt, reducedMotion.matches, character.kitchenActivity);
     storedBroom.visible = !character.cleanToolInUse;
     life.update();
     controls.update();
@@ -152,6 +173,8 @@ function start() {
     unbindEat();
     unbindClean();
     unbindLiving.forEach(unbind => unbind());
+    unbindGarden.forEach(unbind => unbind());
+    unbindKitchen.forEach(unbind => unbind());
     rooms.dispose();
     homeView.dispose();
     controls.dispose();
