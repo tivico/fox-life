@@ -19,17 +19,21 @@ export class GardenActivity implements GardenSnapshot {
   readonly destination: THREE.Vector3; readonly heading: number;
   private finishFrom = 0;
   readonly kind: GardenAction;
+  readonly cooldown = 65;
   constructor(kind: GardenAction) {
     this.kind = kind;
     this.destination = gardenStations[kind].position.clone(); this.heading = gardenStations[kind].heading;
   }
+  get state(): 'Walk' | 'Living' { return this.phase === 'approach' ? 'Walk' : 'Living'; }
+  label() { return `${this.kind}/${this.phase}`; }
+  needsSafeExit() { return this.phase !== 'approach' && this.pose > 0; }
   arrive() { this.phase = 'settle'; this.elapsed = 0; }
   finish() {
     if (this.phase === 'finish') return;
     this.finishFrom = this.pose; this.phase = 'finish'; this.elapsed = 0;
   }
-  update(dt: number) {
-    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return false;
+  update(dt: number): 'done' | null {
+    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return null;
     this.elapsed += Math.min(dt, .05);
     if (this.phase === 'settle') {
       this.pose = Math.min(1, this.elapsed / 1.5);
@@ -39,8 +43,8 @@ export class GardenActivity implements GardenSnapshot {
       if (this.elapsed >= gardenDurations[this.kind]) this.finish();
     } else {
       this.pose = this.finishFrom * Math.max(0, 1 - this.elapsed / 1.5);
-      if (this.elapsed >= 1.5) return true;
+      if (this.elapsed >= 1.5) return 'done';
     }
-    return false;
+    return null;
   }
 }

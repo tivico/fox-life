@@ -6,6 +6,8 @@ export type EatPhase = 'approach' | 'settle' | 'eat' | 'finish';
 
 // The meal clock owns settle, bites and a finish that starts from the current pose.
 export class EatActivity {
+  readonly kind = 'Food';
+  readonly cooldown = EAT.cooldown;
   phase: EatPhase = 'approach';
   elapsed = 0;
   motionTime = 0;
@@ -16,13 +18,17 @@ export class EatActivity {
   constructor(dining: { position: THREE.Vector3; heading: number }) {
     this.destination = dining.position.clone(); this.heading = dining.heading;
   }
+  // Settling at the table keeps the arrival Walk state; bites and finish read as Eat.
+  get state(): 'Walk' | 'Eat' { return this.phase === 'eat' || this.phase === 'finish' ? 'Eat' : 'Walk'; }
+  label() { return { approach: 'Walk to dining area', settle: 'Smelling food', eat: 'Eating', finish: 'Finishing meal' }[this.phase]; }
+  needsSafeExit() { return this.pose > 0; }
   arrive() { this.phase = 'settle'; this.elapsed = 0; }
   finish() {
     if (this.phase === 'finish') return;
     this.finishFrom = this.pose; this.phase = 'finish'; this.elapsed = 0;
   }
-  update(dt: number) {
-    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return false;
+  update(dt: number): 'done' | null {
+    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return null;
     this.elapsed += Math.min(dt, .05);
     if (this.phase === 'settle') {
       this.pose = Math.min(1, this.elapsed / EAT.settle);
@@ -32,8 +38,8 @@ export class EatActivity {
       if (this.elapsed >= EAT.duration) this.finish();
     } else {
       this.pose = this.finishFrom * (1 - Math.min(1, this.elapsed / EAT.finish));
-      if (this.elapsed >= EAT.finish) return true;
+      if (this.elapsed >= EAT.finish) return 'done';
     }
-    return false;
+    return null;
   }
 }

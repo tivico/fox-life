@@ -29,12 +29,17 @@ export class LivingActivity implements LivingSnapshot {
   private finishFrom = 0;
   private finishAfterPickup = false;
   readonly kind: LivingAction;
+  readonly cooldown = 45;
   constructor(kind: LivingAction) {
     this.kind = kind;
     this.destination = kind === 'Tea' ? CUP_APPROACH.clone() : kind === 'Exercise' ? new THREE.Vector3(.35, 0, 6.35)
       : kind === 'TidySofa' ? new THREE.Vector3(-1.65, 0, 7.15) : SOFA_APPROACH.clone();
     this.heading = kind === 'TidySofa' ? -Math.PI / 2 : kind === 'Exercise' ? .25 : Math.PI / 2;
   }
+  // A cup already on its way back keeps walking toward its table.
+  get state(): 'Walk' | 'Living' { return ['approach', 'carry', 'return'].includes(this.phase) ? 'Walk' : 'Living'; }
+  label() { return `${this.kind}/${this.phase}`; }
+  needsSafeExit() { return this.phase !== 'approach'; }
   arrive() {
     this.phase = this.phase === 'return' ? 'putdown' : this.kind === 'Tea' && this.phase === 'approach' ? 'pickup' : 'settle';
     this.elapsed = 0;

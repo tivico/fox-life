@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { createFoxVisual } from './createFoxVisual.ts';
 import { SLEEP, SleepActivity } from './sleep.ts';
-import { READ, ReadActivity } from './read.ts';
-import { EAT, EatActivity } from './eat.ts';
-import { DAILY, DailyActivity, type DailyKind } from './daily.ts';
+import { ReadActivity } from './read.ts';
+import { EatActivity } from './eat.ts';
+import { DailyActivity, type DailyKind } from './daily.ts';
 import { homeRooms, homeRoute, isRoomId, type RoomId } from './HomeNavigation.ts';
 import { LivingActivity, isLivingAction, livingActions, type LivingAction } from './LivingActivity.ts';
 import { GardenActivity, isGardenAction, gardenActions, type GardenAction } from './GardenActivity.ts';
@@ -29,6 +29,27 @@ export const ARRIVAL_DISTANCE = 0.035;
 const TURN_SPEED = 3.6;
 const angleDifference = (to: number, from: number) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
+type ActivityKind = 'Bed' | 'Bookshelf' | 'Food' | DailyKind | LivingAction | GardenAction | KitchenAction;
+type ActionTarget = 'Window' | Exclude<ActivityKind, 'Stretch'>;
+// Each life activity owns its clock, props, labels and safe exit; Character walks, chooses and dispatches.
+interface Activity {
+  readonly kind: ActivityKind;
+  readonly phase: string;
+  readonly pose: number;
+  readonly destination: THREE.Vector3 | null;
+  readonly heading: number;
+  readonly state: CharacterState;
+  readonly cooldown: number;
+  label(next: string | null): string;
+  needsSafeExit(position: THREE.Vector3): boolean;
+  arrive(): void;
+  finish(): 'move' | null | void;
+  update(dt: number): 'move' | 'done' | null;
+  stepBack?(position: THREE.Vector3, dt: number): number;
+}
+// Approaching, carrying and returning are walks; every other phase runs the activity clock.
+const walking = (phase: string) => phase === 'approach' || phase === 'carry' || phase === 'return';
+
 export class Character {
   readonly root = new THREE.Group();
   private readonly visual = createFoxVisual();
@@ -42,28 +63,15 @@ export class Character {
   private speed = 0;
   private turnVelocity = 0;
   private arrivalSettle = 0;
-  private targetKind: 'Room' | 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | RoomId | LivingAction | GardenAction | KitchenAction | null = null;
-  private sleeping: SleepActivity | null = null;
-  private sleepCooldown = 0;
+  private targetKind: 'Room' | ActionTarget | RoomId | null = null;
+  private activity: Activity | null = null;
+  private readonly cooldowns = new Map<ActivityKind, number>();
   private completedWalk = false;
   private consecutiveWalks = 0;
   private corner: THREE.Vector3 | null = null;
   private route: THREE.Vector3[] = [];
   // One replacement during a safe exit, shared by the actual anchored actions.
-  private afterExit: 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | RoomId | LivingAction | GardenAction | KitchenAction | null = null;
-  private living: LivingActivity | null = null;
-  private garden: GardenActivity | null = null;
-  private readonly gardenCooldowns = new Map<GardenAction, number>();
-  private kitchen: KitchenActivity | null = null;
-  private readonly kitchenCooldowns = new Map<KitchenAction, number>();
-  private readonly livingCooldowns = new Map<LivingAction, number>();
-  private reading: ReadActivity | null = null;
-  private readCooldown = 0;
-  private eating: EatActivity | null = null;
-  private eatCooldown = 0;
-  private daily: DailyActivity | null = null;
-  private cleanCooldown = 0;
-  private playCooldown = 0;
+  private afterExit: ActionTarget | RoomId | null = null;
   private readingCount = 0;
   private roomWalkCount = 0;
   private stretchAfterWalk = false;
@@ -90,58 +98,38 @@ export class Character {
   get idleVariation() { return this.variation; }
   get observeElapsed() { return this.observeTime; }
   get targetLabel() { return this.targetKind === 'Food' && this.eating?.phase !== 'approach' ? 'DiningArea' : this.targetKind; }
+  private get sleeping() { return this.activity instanceof SleepActivity ? this.activity : null; }
+  private get reading() { return this.activity instanceof ReadActivity ? this.activity : null; }
+  private get eating() { return this.activity instanceof EatActivity ? this.activity : null; }
+  private get daily() { return this.activity instanceof DailyActivity ? this.activity : null; }
+  private cooldownLeft(kind: ActivityKind) { return this.cooldowns.get(kind) ?? 0; }
   get sleepPhase() { return this.sleeping?.phase ?? null; }
   get sleepElapsed() { return this.sleeping?.elapsed ?? 0; }
-  get sleepCooldownRemaining() { return this.sleepCooldown; }
+  get sleepCooldownRemaining() { return this.cooldownLeft('Bed'); }
   get readPhase() { return this.reading?.phase ?? null; }
   get readElapsed() { return this.reading?.elapsed ?? 0; }
-  get readCooldownRemaining() { return this.readCooldown; }
+  get readCooldownRemaining() { return this.cooldownLeft('Bookshelf'); }
   get eatPhase() { return this.eating?.phase ?? null; }
   get eatElapsed() { return this.eating?.elapsed ?? 0; }
-  get eatCooldownRemaining() { return this.eatCooldown; }
+  get eatCooldownRemaining() { return this.cooldownLeft('Food'); }
   get activityKind() { return this.daily?.kind ?? null; }
   get activityPhase() { return this.daily?.phase ?? null; }
   get activityElapsed() { return this.daily?.elapsed ?? 0; }
-  get livingActivity() { return this.living; }
-  get gardenActivity() { return this.garden; }
+  get livingActivity() { return this.activity instanceof LivingActivity ? this.activity : null; }
+  get gardenActivity() { return this.activity instanceof GardenActivity ? this.activity : null; }
   get gardenEnabled() { return this.layout.balcony === true; }
-  get kitchenActivity() { return this.kitchen; }
+  get kitchenActivity() { return this.activity instanceof KitchenActivity ? this.activity : null; }
   get kitchenEnabled() { return this.layout.kitchen === true; }
   get cleanToolInUse() { return this.daily?.kind === 'Clean' && this.daily.pose > 0; }
-  get cleanCooldownRemaining() { return this.cleanCooldown; }
-  get playCooldownRemaining() { return this.playCooldown; }
+  get cleanCooldownRemaining() { return this.cooldownLeft('Clean'); }
+  get playCooldownRemaining() { return this.cooldownLeft('Play'); }
   get microEvent(): 'Doze' | 'Stretch' | null {
     if (this.daily?.kind === 'Stretch' && this.daily.phase === 'active') return 'Stretch';
     return this.reading?.phase === 'read' && this.dozePose > .1 ? 'Doze' : null;
   }
   private get dozePose() { return this.reading?.dozePose ?? 0; }
   get action() {
-    if (this.kitchen) return `${this.kitchen.kind}/${this.kitchen.phase}`;
-    if (this.garden) return `${this.garden.kind}/${this.garden.phase}`;
-    if (this.living) return `${this.living.kind}/${this.living.phase}`;
-    if (this.daily) {
-      const { kind, phase } = this.daily;
-      if (phase === 'carry') return 'Carry broom to rug';
-      if (phase === 'return') return 'Return broom';
-      if (phase === 'approach') return kind === 'Clean' ? 'Walk to broom' : 'Walk to play';
-      if (phase === 'finish' && kind === 'Clean') return 'Putting broom back';
-      if (phase === 'finish') return kind === 'Stretch' ? 'Finishing stretch' : 'Putting activity away';
-      if (phase === 'settle') return kind === 'Clean' ? 'Getting broom' : kind === 'Play' ? 'Getting yarn' : 'Preparing stretch';
-      return kind === 'Clean' ? 'Sweeping' : kind === 'Play' ? 'Playing with yarn' : 'Stretching';
-    }
-    if (this.microEvent === 'Doze') return 'Dozing over book';
-    if (this.eating?.phase === 'finish') return 'Finishing meal';
-    if (this.eating?.phase === 'eat') return 'Eating';
-    if (this.eating?.phase === 'settle') return 'Smelling food';
-    if (this.targetKind === 'Food') return 'Walk to dining area';
-    if (this.reading?.phase === 'finish') return 'Putting book away';
-    if (this.reading?.phase === 'read') return 'Reading';
-    if (this.reading?.phase === 'settle') return 'Opening book';
-    if (this.targetKind === 'Bookshelf') return 'Walk to reading area';
-    if (this.sleeping?.phase === 'wake') return this.afterExit === 'Window' ? 'Waking up for window' : this.afterExit === 'Bookshelf' ? 'Waking up for reading' : 'Waking up';
-    if (this.sleeping?.phase === 'sleep') return 'Sleeping';
-    if (this.sleeping?.phase === 'settle') return 'Settle into bed';
-    if (this.targetKind === 'Bed') return 'Walk to bed';
+    if (this.activity) return this.activity.label(this.afterExit);
     if (isRoomId(this.targetKind)) {
       return this.currentState === 'Observe' ? `Visit ${this.targetKind}` : `Walk to ${this.targetKind}`;
     }
@@ -149,10 +137,22 @@ export class Character {
     if (this.currentState === 'Walk') return this.commandActive ? 'Walk to window' : 'Autonomous walk';
     return 'Autonomous idle';
   }
+  /** Routes any life invitation, from the UI or after a safe exit, to its request. */
+  request(action: ActionTarget): boolean {
+    if (action === 'Window') return this.requestWindowObserve();
+    if (action === 'Bed') return this.requestSleep();
+    if (action === 'Bookshelf') return this.requestRead();
+    if (action === 'Food') return this.requestEat();
+    if (action === 'Clean') return this.requestClean();
+    if (action === 'Play') return this.requestPlay();
+    if (isLivingAction(action)) return this.requestLivingAction(action);
+    if (isGardenAction(action)) return this.requestGardenAction(action);
+    return this.requestKitchenAction(action);
+  }
   requestWindowObserve(): boolean {
     if (this.commandActive) return false;
     if (this.exitFor('Window')) return true;
-    this.clearDaily();
+    this.clearActivity();
     this.commandActive = true;
     this.targetKind = 'Window';
     this.arrivalSettle = 0;
@@ -162,66 +162,19 @@ export class Character {
     this.routePastBed();
     return true;
   }
-  requestSleep(): boolean {
-    if (!this.layout.bed || this.commandActive || this.targetKind === 'Bed') return false;
-    if (this.exitFor('Bed')) return true;
-    this.beginSleep(true);
-    return true;
-  }
-  requestRead(): boolean {
-    if (!this.layout.reading || this.commandActive || this.targetKind === 'Bookshelf') return false;
-    if (this.exitFor('Bookshelf')) return true;
-    this.beginRead(true);
-    return true;
-  }
-  requestEat(): boolean {
-    if (!this.layout.dining || this.commandActive || this.targetKind === 'Food') return false;
-    if (this.exitFor('Food')) return true;
-    this.beginEat(true);
-    return true;
-  }
-  requestClean(): boolean { return this.requestDaily('Clean'); }
-  requestPlay(): boolean { return this.layout.connectedRooms ? this.requestLivingAction('Exercise') : this.requestDaily('Play'); }
-  requestLivingAction(kind: LivingAction): boolean {
-    if (!this.layout.connectedRooms || !isLivingAction(kind) || this.commandActive || this.living?.kind === kind) return false;
-    if (this.exitFor(kind)) return true;
-    this.beginLiving(kind, true);
-    return true;
-  }
-  private beginLiving(kind: LivingAction, player: boolean) {
-    this.clearDaily();
-    this.living = new LivingActivity(kind);
-    this.commandActive = player; this.targetKind = kind;
-    this.destination = this.living.destination.clone(); this.arrivalSettle = 0;
-    this.currentState = 'Walk'; this.routePastBed();
-  }
-  requestGardenAction(kind: GardenAction): boolean {
-    if (!this.layout.balcony || !isGardenAction(kind) || this.commandActive || this.garden?.kind === kind) return false;
-    if (this.exitFor(kind)) return true;
-    this.beginGarden(kind, true); return true;
-  }
-  private beginGarden(kind: GardenAction, player: boolean) {
-    this.clearDaily();
-    this.garden = new GardenActivity(kind); this.commandActive = player; this.targetKind = kind;
-    this.destination = this.garden.destination.clone(); this.arrivalSettle = 0;
-    this.currentState = 'Walk'; this.routePastBed();
-  }
-  requestKitchenAction(kind: KitchenAction): boolean {
-    if (!this.layout.kitchen || !isKitchenAction(kind) || this.commandActive || this.kitchen?.kind === kind) return false;
-    if (this.exitFor(kind)) return true;
-    this.beginKitchen(kind, true); return true;
-  }
-  private beginKitchen(kind: KitchenAction, player: boolean) {
-    this.clearDaily();
-    this.kitchen = new KitchenActivity(kind); this.commandActive = player; this.targetKind = kind;
-    this.destination = this.kitchen.destination.clone(); this.arrivalSettle = 0;
-    this.currentState = 'Walk'; this.routePastBed();
-  }
+  requestSleep(): boolean { return !!this.layout.bed && this.requestActivity('Bed'); }
+  requestRead(): boolean { return !!this.layout.reading && this.requestActivity('Bookshelf'); }
+  requestEat(): boolean { return !!this.layout.dining && this.requestActivity('Food'); }
+  requestClean(): boolean { return !!this.layout.leisure && this.requestActivity('Clean'); }
+  requestPlay(): boolean { return this.layout.connectedRooms ? this.requestLivingAction('Exercise') : !!this.layout.leisure && this.requestActivity('Play'); }
+  requestLivingAction(kind: LivingAction): boolean { return !!this.layout.connectedRooms && isLivingAction(kind) && this.requestActivity(kind); }
+  requestGardenAction(kind: GardenAction): boolean { return !!this.layout.balcony && isGardenAction(kind) && this.requestActivity(kind); }
+  requestKitchenAction(kind: KitchenAction): boolean { return !!this.layout.kitchen && isKitchenAction(kind) && this.requestActivity(kind); }
   requestRoomVisit(room: RoomId): boolean {
     if (!this.layout.connectedRooms || this.commandActive || !isRoomId(room) || room === 'Balcony' && !this.layout.balcony) return false;
     if (room === 'Kitchen' && !this.layout.kitchen) return false;
     if (this.exitFor(room)) return true;
-    this.clearDaily();
+    this.clearActivity();
     this.commandActive = true;
     this.targetKind = room;
     this.destination = new THREE.Vector3(homeRooms[room].centerX, 0, room === 'Bedroom' ? .25 : room === 'LivingRoom' ? 6.2 : homeRooms[room].centerZ);
@@ -230,77 +183,49 @@ export class Character {
     this.routePastBed();
     return true;
   }
-  private requestDaily(kind: 'Clean' | 'Play') {
-    if (!this.layout.leisure || this.commandActive || this.daily?.kind === kind) return false;
+  // One invitation at a time: a repeat is ignored and a started activity exits safely first.
+  private requestActivity(kind: Exclude<ActivityKind, 'Stretch'>) {
+    if (this.commandActive || this.activity?.kind === kind) return false;
     if (this.exitFor(kind)) return true;
-    this.beginDaily(kind, true);
+    this.begin(kind, true);
     return true;
   }
-  private clearDaily() {
-    this.kitchen = null;
-    this.garden = null;
-    this.living = null;
-    this.eating = null;
-    this.reading = null;
-    this.sleeping = null;
-    this.daily = null;
-  }
-  private beginDaily(kind: DailyKind, player: boolean) {
-    this.clearDaily();
-    this.commandActive = player;
-    this.daily = new DailyActivity(kind, this.layout.leisure!);
-    this.arrivalSettle = 0;
-    if (kind === 'Stretch') {
-      this.destination = null;
-      this.targetKind = null;
-      this.currentState = 'Stretch';
-    } else {
-      this.destination = this.daily.destination!.clone();
-      this.targetKind = kind;
-      this.currentState = 'Walk';
-      this.routePastBed();
+  private clearActivity() { this.activity = null; }
+  private create(kind: ActivityKind): Activity {
+    if (kind === 'Bed') return new SleepActivity(this.layout.bed!);
+    if (kind === 'Food') return new EatActivity(this.layout.dining!);
+    if (kind === 'Bookshelf') {
+      // Every other read in the daily-life home nods off once.
+      this.readingCount++;
+      return new ReadActivity(this.layout.reading!, !!this.layout.leisure && this.readingCount % 2 === 1);
     }
+    if (isLivingAction(kind)) return new LivingActivity(kind);
+    if (isGardenAction(kind)) return new GardenActivity(kind);
+    if (isKitchenAction(kind)) return new KitchenActivity(kind);
+    return new DailyActivity(kind, this.layout.leisure!);
   }
-  // The broom walks to the rug after pickup and back to its rack when cleaning ends.
-  private followDaily() {
-    this.destination = this.daily!.destination!.clone(); this.arrivalSettle = 0;
+  private begin(kind: ActivityKind, player: boolean) {
+    this.activity = this.create(kind);
+    this.commandActive = player;
+    // A stretch starts in place; every other activity first walks to its spot.
+    this.targetKind = kind === 'Stretch' ? null : kind;
+    this.destination = this.activity.destination?.clone() ?? null;
+    this.arrivalSettle = 0;
+    this.currentState = this.activity.state;
+    if (this.destination) this.routePastBed();
+  }
+  // Props lead the fox onward: the cup to the sofa and back, the broom to the rug and back.
+  private follow() {
+    this.destination = this.activity!.destination!.clone(); this.arrivalSettle = 0;
     this.currentState = 'Walk'; this.routePastBed();
   }
-  private beginEat(player: boolean) {
-    this.clearDaily();
-    this.commandActive = player;
-    this.targetKind = 'Food';
-    this.eating = new EatActivity(this.layout.dining!);
-    this.destination = this.eating.destination.clone();
-    this.arrivalSettle = 0;
-    this.currentState = 'Walk';
-    this.routePastBed();
-  }
-  private exitFor(target: NonNullable<Character['afterExit']>) {
-    if (this.kitchen && (this.kitchen.phase !== 'approach' || this.root.position.x > 4.2 && this.root.position.z < 5.65)) {
-      this.commandActive = true; this.afterExit = target;
-      this.kitchen.finish(); this.currentState = 'Living'; return true;
-    }
-    if (this.garden && this.garden.phase !== 'approach' && this.garden.pose > 0) {
-      this.commandActive = true; this.afterExit = target;
-      this.garden.finish(); this.currentState = 'Living'; return true;
-    }
-    if (this.living && this.living.phase !== 'approach') {
-      this.commandActive = true; this.afterExit = target;
-      this.living.finish(); this.currentState = 'Living';
-      // A cup already on its way back must keep walking toward its table.
-      if (this.living.phase === 'return') this.currentState = 'Walk';
-      return true;
-    }
-    const sleepPose = this.sleeping?.pose ?? 0, readPose = this.reading?.pose ?? 0, eatPose = this.eating?.pose ?? 0;
-    if (sleepPose <= 0 && readPose <= 0 && eatPose <= 0 && (this.daily?.pose ?? 0) <= 0) return false;
+  private exitFor(target: ActionTarget | RoomId) {
+    const activity = this.activity;
+    if (!activity?.needsSafeExit(this.root.position)) return false;
     this.commandActive = true;
     this.afterExit = target;
-    if (sleepPose > 0) { this.sleeping!.finish(); this.currentState = 'Sleep'; }
-    else if (readPose > 0) { this.reading!.finish(); this.currentState = 'Read'; }
-    else if (eatPose > 0) { this.eating!.finish(); this.currentState = 'Eat'; }
-    else if (this.daily!.finish() === 'move') this.followDaily();
-    else if (this.daily!.phase === 'finish') this.currentState = this.daily!.kind;
+    if (activity.finish() === 'move') this.follow();
+    else this.currentState = activity.state;
     return true;
   }
   private completeExit() {
@@ -309,38 +234,8 @@ export class Character {
     this.afterExit = null;
     this.consecutiveWalks = 0;
     this.enterIdle();
-    if (next === 'Window') this.requestWindowObserve();
-    else if (next === 'Bed') this.requestSleep();
-    else if (next === 'Bookshelf') this.requestRead();
-    else if (next === 'Food') this.requestEat();
-    else if (next === 'Clean') this.requestClean();
-    else if (next === 'Play') this.requestPlay();
-    else if (isRoomId(next)) this.requestRoomVisit(next);
-    else if (isLivingAction(next)) this.requestLivingAction(next);
-    else if (isGardenAction(next)) this.requestGardenAction(next);
-    else if (isKitchenAction(next)) this.requestKitchenAction(next);
-  }
-  private beginRead(player: boolean) {
-    this.clearDaily();
-    this.readingCount++;
-    this.commandActive = player;
-    this.targetKind = 'Bookshelf';
-    // Every other read in the daily-life home nods off once.
-    this.reading = new ReadActivity(this.layout.reading!, !!this.layout.leisure && this.readingCount % 2 === 1);
-    this.destination = this.reading.destination.clone();
-    this.arrivalSettle = 0;
-    this.currentState = 'Walk';
-    this.routePastBed();
-  }
-  private beginSleep(player: boolean) {
-    this.clearDaily();
-    this.commandActive = player;
-    this.targetKind = 'Bed';
-    this.sleeping = new SleepActivity(this.layout.bed!);
-    this.destination = this.sleeping.destination.clone();
-    this.arrivalSettle = 0;
-    this.currentState = 'Walk';
-    this.routePastBed();
+    if (isRoomId(next)) this.requestRoomVisit(next);
+    else if (next) this.request(next);
   }
   private routePastBed() {
     const bed = this.layout.bed;
@@ -357,7 +252,7 @@ export class Character {
   }
   private nextIdleDuration() { return 2.5 + this.random() * 2.7; }
   private enterIdle() {
-    this.clearDaily();
+    this.clearActivity();
     this.currentState = 'Idle';
     this.commandActive = false;
     this.destination = null;
@@ -404,82 +299,36 @@ export class Character {
     if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.05);
     this.elapsed += dt;
-    this.sleepCooldown = Math.max(0, this.sleepCooldown - dt);
-    this.readCooldown = Math.max(0, this.readCooldown - dt);
-    this.eatCooldown = Math.max(0, this.eatCooldown - dt);
-    this.cleanCooldown = Math.max(0, this.cleanCooldown - dt);
-    this.playCooldown = Math.max(0, this.playCooldown - dt);
-    for (const [kind, cooldown] of this.livingCooldowns) this.livingCooldowns.set(kind, Math.max(0, cooldown - dt));
-    for (const [kind, cooldown] of this.gardenCooldowns) this.gardenCooldowns.set(kind, Math.max(0, cooldown - dt));
-    for (const [kind, cooldown] of this.kitchenCooldowns) this.kitchenCooldowns.set(kind, Math.max(0, cooldown - dt));
+    for (const [kind, cooldown] of this.cooldowns) this.cooldowns.set(kind, Math.max(0, cooldown - dt));
     let moved = 0;
     let lookHeading = this.root.rotation.y;
     const previousHeading = this.root.rotation.y;
-    if (this.kitchen && this.currentState === 'Living') {
-      if (this.kitchen.update(dt)) { this.kitchenCooldowns.set(this.kitchen.kind, 70); this.completeExit(); }
-      else if (this.kitchen.phase === 'retreat') {
-        moved = Math.min(.7 * dt, Math.max(0, 5.65 - this.root.position.z));
-        this.root.position.z += moved;
+    const activity = this.activity;
+    if (activity && !walking(activity.phase)) {
+      const result = activity.update(dt);
+      if (result === 'done') { this.cooldowns.set(activity.kind, activity.cooldown); this.completeExit(); }
+      else {
+        this.currentState = activity.state;
+        if (result === 'move') this.follow();
+        moved = activity.stepBack?.(this.root.position, dt) ?? 0;
       }
-    } else if (this.garden && this.currentState === 'Living') {
-      if (this.garden.update(dt)) { this.gardenCooldowns.set(this.garden.kind, 65); this.completeExit(); }
-    } else if (this.living && this.currentState === 'Living') {
-      const result = this.living.update(dt);
-      if (result === 'move') {
-        this.destination = this.living.destination.clone(); this.arrivalSettle = 0;
-        this.currentState = 'Walk'; this.routePastBed();
-      } else if (result === 'done') {
-        this.livingCooldowns.set(this.living.kind, 45); this.completeExit();
-      }
-    } else if (this.daily && (this.daily.phase === 'settle' || this.daily.phase === 'active' || this.daily.phase === 'finish')) {
-      // Clean and play settle in their arrival Walk state; a stretch settles as Stretch.
-      const result = this.daily.update(dt);
-      if (result === 'move') this.followDaily();
-      else if (result === 'done') {
-        if (this.daily.kind === 'Clean') this.cleanCooldown = DAILY.Clean.cooldown;
-        if (this.daily.kind === 'Play') this.playCooldown = DAILY.Play.cooldown;
-        this.completeExit();
-      } else if (this.daily.phase !== 'settle') this.currentState = this.daily.kind;
-    } else if (this.eating && this.eating.phase !== 'approach') {
-      // Settle keeps the arrival Walk state; bites and finish read as Eat.
-      if (this.eating.update(dt)) { this.eatCooldown = EAT.cooldown; this.completeExit(); }
-      else if (this.eating.phase !== 'settle') this.currentState = 'Eat';
-    } else if (this.reading && this.reading.phase !== 'approach') {
-      // Opening the book keeps the arrival Walk state, like settling at the table.
-      if (this.reading.update(dt)) { this.readCooldown = READ.cooldown; this.completeExit(); }
-      else if (this.reading.phase !== 'settle') this.currentState = 'Read';
-    } else if (this.sleeping && this.sleeping.phase !== 'approach') {
-      // Settling into bed keeps the arrival Walk state; sleeping and waking read as Sleep.
-      if (this.sleeping.update(dt)) { this.sleepCooldown = SLEEP.cooldown; this.completeExit(); }
-      else if (this.sleeping.phase !== 'settle') this.currentState = 'Sleep';
     } else if (this.currentState === 'Idle') {
       this.idleRemaining -= dt;
       if (this.idleRemaining <= 0) {
-        const eligible: Array<'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction | GardenAction | KitchenAction> = [];
-        if (this.completedWalk && this.layout.bed && this.sleepCooldown === 0) eligible.push('Bed');
-        if (this.completedWalk && this.layout.reading && this.readCooldown === 0) eligible.push('Bookshelf');
-        if (this.completedWalk && this.layout.dining && this.eatCooldown === 0) eligible.push('Food');
-        if (this.completedWalk && this.layout.leisure && this.cleanCooldown === 0) eligible.push('Clean');
-        if (!this.layout.connectedRooms && this.completedWalk && this.layout.leisure && this.playCooldown === 0) eligible.push('Play');
-        if (this.layout.connectedRooms && this.completedWalk) {
-          for (const kind of livingActions) if (!(this.livingCooldowns.get(kind) ?? 0)) eligible.push(kind);
-        }
-        if (this.layout.balcony && this.completedWalk) {
-          for (const kind of gardenActions) if (!(this.gardenCooldowns.get(kind) ?? 0)) eligible.push(kind);
-        }
-        if (this.layout.kitchen && this.completedWalk) {
-          for (const kind of kitchenActions) if (!(this.kitchenCooldowns.get(kind) ?? 0)) eligible.push(kind);
-        }
+        const ready = (kind: ActivityKind) => this.completedWalk && this.cooldownLeft(kind) === 0;
+        const eligible: ActivityKind[] = [];
+        if (this.layout.bed && ready('Bed')) eligible.push('Bed');
+        if (this.layout.reading && ready('Bookshelf')) eligible.push('Bookshelf');
+        if (this.layout.dining && ready('Food')) eligible.push('Food');
+        if (this.layout.leisure && ready('Clean')) eligible.push('Clean');
+        if (!this.layout.connectedRooms && this.layout.leisure && ready('Play')) eligible.push('Play');
+        if (this.layout.connectedRooms) eligible.push(...livingActions.filter(ready));
+        if (this.layout.balcony) eligible.push(...gardenActions.filter(ready));
+        if (this.layout.kitchen) eligible.push(...kitchenActions.filter(ready));
         // Enabled life actions have weight 1; Walk has weight 3.
         const choice = eligible.length && !this.stretchAfterWalk ? Math.floor(this.random() * (eligible.length + (this.consecutiveWalks >= 3 ? 0 : SLEEP.walkWeight))) : -1;
-        if (eligible[choice] === 'Bed') this.beginSleep(false);
-        else if (eligible[choice] === 'Bookshelf') this.beginRead(false);
-        else if (eligible[choice] === 'Food') this.beginEat(false);
-        else if (eligible[choice] === 'Clean') this.beginDaily('Clean', false);
-        else if (eligible[choice] === 'Play') this.beginDaily('Play', false);
-        else if (isLivingAction(eligible[choice])) this.beginLiving(eligible[choice] as LivingAction, false);
-        else if (isGardenAction(eligible[choice])) this.beginGarden(eligible[choice] as GardenAction, false);
-        else if (isKitchenAction(eligible[choice])) this.beginKitchen(eligible[choice] as KitchenAction, false);
+        const kind = eligible[choice];
+        if (kind) this.begin(kind, false);
         else {
           this.destination = this.chooseDestination();
           this.targetKind = 'Room';
@@ -492,11 +341,7 @@ export class Character {
       this.direction.subVectors(this.corner ?? this.destination, this.root.position);
       const distance = this.direction.length();
       if (distance <= ARRIVAL_DISTANCE) {
-        lookHeading = this.kitchen ? this.kitchen.heading : this.garden ? this.garden.heading : this.living ? this.living.heading : this.sleeping ? this.sleeping.heading
-          : this.reading ? this.reading.heading
-          : this.eating ? this.eating.heading
-          : this.daily ? this.daily.heading
-          : this.targetKind === 'LivingRoom' ? 0 : this.layout.windowHeading;
+        lookHeading = this.activity ? this.activity.heading : this.targetKind === 'LivingRoom' ? 0 : this.layout.windowHeading;
         this.speed = 0;
         if (this.corner) this.corner = this.route.shift() ?? null;
         else if (this.targetKind === 'Room') {
@@ -505,20 +350,14 @@ export class Character {
           this.enterIdle();
           if (this.layout.leisure && (this.stretchAfterWalk || this.roomWalkCount % 4 === 0)) {
             this.stretchAfterWalk = false;
-            this.beginDaily('Stretch', false);
+            this.begin('Stretch', false);
           }
         }
         else if (this.turnTo(lookHeading, dt) <= 0.025) {
           // A short foreground settle belongs to the existing approach, not a new State.
           this.arrivalSettle += dt;
           if (this.arrivalSettle >= 0.18) {
-            if (this.kitchen) { this.kitchen.arrive(); this.currentState = 'Living'; }
-            else if (this.garden) { this.garden.arrive(); this.currentState = 'Living'; }
-            else if (this.living) { this.living.arrive(); this.currentState = 'Living'; }
-            else if (this.sleeping) this.sleeping.arrive();
-            else if (this.reading) this.reading.arrive();
-            else if (this.eating) this.eating.arrive();
-            else if (this.daily) { this.daily.arrive(); if (this.daily.phase !== 'settle') this.currentState = this.daily.kind; }
+            if (this.activity) { this.activity.arrive(); this.currentState = this.activity.state; }
             else { this.currentState = 'Observe'; this.observeTime = 0; }
           }
         }
@@ -563,6 +402,7 @@ export class Character {
       readPose: this.reading?.pose ?? 0, readPhase: this.reading?.phase ?? null, readTime: this.reading?.elapsed ?? 0,
       eatPose: this.eating?.pose ?? 0, eatTime: this.eating?.motionTime ?? 0,
       dailyKind: this.daily?.kind ?? null, dailyPose: this.daily?.pose ?? 0, dailyTime: this.daily?.motionTime ?? 0, dozePose: this.dozePose,
-      cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y, living: this.living, garden: this.garden, kitchen: this.kitchen });
+      cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y,
+      living: this.livingActivity, garden: this.gardenActivity, kitchen: this.kitchenActivity });
   }
 }

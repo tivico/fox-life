@@ -32,6 +32,23 @@ export class DailyActivity {
     this.destination = kind === 'Stretch' ? null : (kind === 'Clean' ? spots.storage.position : spots.play).clone();
   }
   get heading() { return this.kind === 'Clean' && this.phase !== 'carry' ? this.spots.storage.heading : this.spots.heading; }
+  get cooldown() { return DAILY[this.kind].cooldown; }
+  // Clean and play settle in their arrival Walk state; a stretch never walks.
+  get state(): 'Walk' | DailyKind {
+    if (this.kind === 'Stretch') return 'Stretch';
+    return this.phase === 'active' || this.phase === 'finish' ? this.kind : 'Walk';
+  }
+  label() {
+    const { kind, phase } = this;
+    if (phase === 'carry') return 'Carry broom to rug';
+    if (phase === 'return') return 'Return broom';
+    if (phase === 'approach') return kind === 'Clean' ? 'Walk to broom' : 'Walk to play';
+    if (phase === 'finish' && kind === 'Clean') return 'Putting broom back';
+    if (phase === 'finish') return kind === 'Stretch' ? 'Finishing stretch' : 'Putting activity away';
+    if (phase === 'settle') return kind === 'Clean' ? 'Getting broom' : kind === 'Play' ? 'Getting yarn' : 'Preparing stretch';
+    return kind === 'Clean' ? 'Sweeping' : kind === 'Play' ? 'Playing with yarn' : 'Stretching';
+  }
+  needsSafeExit() { return this.pose > 0; }
   get cleanMode(): CleanMode | undefined {
     if (this.kind !== 'Clean') return undefined;
     return this.phase === 'settle' ? 'pickup' : this.phase === 'active' ? 'sweep' : this.phase === 'finish' ? 'stow' : 'carry';

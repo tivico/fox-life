@@ -5,6 +5,8 @@ export type ReadPhase = 'approach' | 'settle' | 'read' | 'finish';
 
 // The reading clock owns the book pose and an optional doze that fades out with it.
 export class ReadActivity {
+  readonly kind = 'Bookshelf';
+  readonly cooldown = READ.cooldown;
   phase: ReadPhase = 'approach';
   elapsed = 0;
   pose = 0;
@@ -23,13 +25,20 @@ export class ReadActivity {
     if (this.phase !== 'read') return 0;
     return THREE.MathUtils.smootherstep(this.elapsed, 2.1, 2.8) * (1 - THREE.MathUtils.smootherstep(this.elapsed, 4.2, 4.9));
   }
+  // Opening the book keeps the arrival Walk state, like settling at the table.
+  get state(): 'Walk' | 'Read' { return this.phase === 'read' || this.phase === 'finish' ? 'Read' : 'Walk'; }
+  label() {
+    if (this.phase === 'read') return this.dozePose > .1 ? 'Dozing over book' : 'Reading';
+    return { approach: 'Walk to reading area', settle: 'Opening book', finish: 'Putting book away' }[this.phase];
+  }
+  needsSafeExit() { return this.pose > 0; }
   arrive() { this.phase = 'settle'; this.elapsed = 0; }
   finish() {
     if (this.phase === 'finish') return;
     this.dozeFrom = this.dozePose; this.finishFrom = this.pose; this.phase = 'finish'; this.elapsed = 0;
   }
-  update(dt: number) {
-    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return false;
+  update(dt: number): 'done' | null {
+    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return null;
     this.elapsed += Math.min(dt, .05);
     if (this.phase === 'settle') {
       this.pose = Math.min(1, this.elapsed / READ.settle);
@@ -38,8 +47,8 @@ export class ReadActivity {
       if (this.elapsed >= READ.duration) this.finish();
     } else {
       this.pose = this.finishFrom * (1 - Math.min(1, this.elapsed / READ.finish));
-      if (this.elapsed >= READ.finish) return true;
+      if (this.elapsed >= READ.finish) return 'done';
     }
-    return false;
+    return null;
   }
 }

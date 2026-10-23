@@ -58,9 +58,7 @@ function start() {
   let readHits = 0;
   let eatHits = 0;
   const request = (action: LifeAction) => {
-    const accepted = isKitchenAction(action) ? character.requestKitchenAction(action) : isGardenAction(action) ? character.requestGardenAction(action) : isLivingAction(action) ? character.requestLivingAction(action) : action === 'Window' ? character.requestWindowObserve() :
-      action === 'Bed' ? character.requestSleep() : action === 'Bookshelf' ? character.requestRead() :
-      action === 'Food' ? character.requestEat() : action === 'Clean' ? character.requestClean() : character.requestPlay();
+    const accepted = character.request(action);
     life.commandResult(action, accepted);
   };
   const life = createLifePanel(host, character, request, () => homeView.reset(), () => resize());

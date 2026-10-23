@@ -16,14 +16,26 @@ export interface KitchenSnapshot { kind: KitchenAction; phase: 'approach' | 'set
 export class KitchenActivity implements KitchenSnapshot {
   phase: KitchenSnapshot['phase'] = 'approach'; elapsed = 0; motionTime = 0; pose = 0;
   readonly kind: KitchenAction; readonly destination: THREE.Vector3; readonly heading: number;
+  readonly cooldown = 70;
   private finishFrom = 0;
   constructor(kind: KitchenAction) {
     this.kind = kind; this.destination = kitchenStations[kind].position.clone(); this.heading = kitchenStations[kind].heading;
   }
+  get state(): 'Walk' | 'Living' { return this.phase === 'approach' ? 'Walk' : 'Living'; }
+  label() { return `${this.kind}/${this.phase}`; }
+  // An approach that already reached the counter area finishes in place as well.
+  needsSafeExit(position: THREE.Vector3) { return this.phase !== 'approach' || position.x > 4.2 && position.z < 5.65; }
   arrive() { this.phase = 'settle'; this.elapsed = 0; }
   finish() { if (this.phase === 'finish' || this.phase === 'retreat') return; this.finishFrom = this.pose; this.phase = 'finish'; this.elapsed = 0; }
-  update(dt: number) {
-    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return false;
+  // The retreat steps back from the counter by itself; returns the distance moved.
+  stepBack(position: THREE.Vector3, dt: number) {
+    if (this.phase !== 'retreat') return 0;
+    const moved = Math.min(.7 * dt, Math.max(0, 5.65 - position.z));
+    position.z += moved;
+    return moved;
+  }
+  update(dt: number): 'done' | null {
+    if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return null;
     this.elapsed += Math.min(dt, .05);
     if (this.phase === 'settle') {
       this.pose = Math.min(1, this.elapsed / 1.4);
@@ -34,8 +46,8 @@ export class KitchenActivity implements KitchenSnapshot {
     } else if (this.phase === 'finish') {
       this.pose = this.finishFrom * Math.max(0, 1 - this.elapsed / 1.4);
       if (this.elapsed >= 1.4) { this.phase = 'retreat'; this.elapsed = 0; }
-    } else if (this.elapsed >= 1.2) return true;
-    return false;
+    } else if (this.elapsed >= 1.2) return 'done';
+    return null;
   }
 }
 
