@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createFoxVisual } from './createFoxVisual.ts';
 import { SLEEP, type SleepPhase } from './sleep.ts';
-import { READ, type ReadPhase } from './read.ts';
+import { READ, ReadActivity } from './read.ts';
 import { EAT, EatActivity } from './eat.ts';
 import { DAILY, type DailyKind, type DailyPhase } from './daily.ts';
 import { homeRooms, homeRoute, isRoomId, type RoomId } from './HomeNavigation.ts';
@@ -60,10 +60,7 @@ export class Character {
   private kitchen: KitchenActivity | null = null;
   private readonly kitchenCooldowns = new Map<KitchenAction, number>();
   private readonly livingCooldowns = new Map<LivingAction, number>();
-  private readingPhase: ReadPhase | null = null;
-  private readingTime = 0;
-  private readingPose = 0;
-  private finishFrom = 1;
+  private reading: ReadActivity | null = null;
   private readCooldown = 0;
   private eating: EatActivity | null = null;
   private eatCooldown = 0;
@@ -76,7 +73,6 @@ export class Character {
   private cleanCooldown = 0;
   private playCooldown = 0;
   private readingCount = 0;
-  private dozeFinishFrom = 0;
   private roomWalkCount = 0;
   private stretchAfterWalk = false;
   private readonly direction = new THREE.Vector3();
@@ -105,8 +101,8 @@ export class Character {
   get sleepPhase() { return this.bedPhase; }
   get sleepElapsed() { return this.bedTime; }
   get sleepCooldownRemaining() { return this.sleepCooldown; }
-  get readPhase() { return this.readingPhase; }
-  get readElapsed() { return this.readingTime; }
+  get readPhase() { return this.reading?.phase ?? null; }
+  get readElapsed() { return this.reading?.elapsed ?? 0; }
   get readCooldownRemaining() { return this.readCooldown; }
   get eatPhase() { return this.eating?.phase ?? null; }
   get eatElapsed() { return this.eating?.elapsed ?? 0; }
@@ -124,14 +120,9 @@ export class Character {
   get playCooldownRemaining() { return this.playCooldown; }
   get microEvent(): 'Doze' | 'Stretch' | null {
     if (this.dailyKind === 'Stretch' && this.dailyPhase === 'active') return 'Stretch';
-    return this.readingPhase === 'read' && this.dozePose > .1 ? 'Doze' : null;
+    return this.reading?.phase === 'read' && this.dozePose > .1 ? 'Doze' : null;
   }
-  private get dozePose() {
-    if (!this.layout.leisure || this.readingCount % 2 !== 1) return 0;
-    if (this.readingPhase === 'finish') return this.dozeFinishFrom * this.readingPose;
-    if (this.readingPhase !== 'read') return 0;
-    return THREE.MathUtils.smootherstep(this.readingTime, 2.1, 2.8) * (1 - THREE.MathUtils.smootherstep(this.readingTime, 4.2, 4.9));
-  }
+  private get dozePose() { return this.reading?.dozePose ?? 0; }
   get action() {
     if (this.kitchen) return `${this.kitchen.kind}/${this.kitchen.phase}`;
     if (this.garden) return `${this.garden.kind}/${this.garden.phase}`;
@@ -150,9 +141,9 @@ export class Character {
     if (this.eating?.phase === 'eat') return 'Eating';
     if (this.eating?.phase === 'settle') return 'Smelling food';
     if (this.targetKind === 'Food') return 'Walk to dining area';
-    if (this.readingPhase === 'finish') return 'Putting book away';
-    if (this.readingPhase === 'read') return 'Reading';
-    if (this.readingPhase === 'settle') return 'Opening book';
+    if (this.reading?.phase === 'finish') return 'Putting book away';
+    if (this.reading?.phase === 'read') return 'Reading';
+    if (this.reading?.phase === 'settle') return 'Opening book';
     if (this.targetKind === 'Bookshelf') return 'Walk to reading area';
     if (this.bedPhase === 'wake') return this.afterExit === 'Window' ? 'Waking up for window' : this.afterExit === 'Bookshelf' ? 'Waking up for reading' : 'Waking up';
     if (this.bedPhase === 'sleep') return 'Sleeping';
@@ -170,7 +161,6 @@ export class Character {
     if (this.exitFor('Window')) return true;
     this.clearDaily();
     this.bedPhase = null;
-    this.readingPhase = null;
     this.commandActive = true;
     this.targetKind = 'Window';
     this.arrivalSettle = 0;
@@ -208,8 +198,8 @@ export class Character {
   }
   private beginLiving(kind: LivingAction, player: boolean) {
     this.clearDaily();
-    this.bedPhase = this.readingPhase = null;
-    this.bedPose = this.readingPose = 0;
+    this.bedPhase = null;
+    this.bedPose = 0;
     this.living = new LivingActivity(kind);
     this.commandActive = player; this.targetKind = kind;
     this.destination = this.living.destination.clone(); this.arrivalSettle = 0;
@@ -221,8 +211,8 @@ export class Character {
     this.beginGarden(kind, true); return true;
   }
   private beginGarden(kind: GardenAction, player: boolean) {
-    this.clearDaily(); this.bedPhase = this.readingPhase = null;
-    this.bedPose = this.readingPose = 0;
+    this.clearDaily(); this.bedPhase = null;
+    this.bedPose = 0;
     this.garden = new GardenActivity(kind); this.commandActive = player; this.targetKind = kind;
     this.destination = this.garden.destination.clone(); this.arrivalSettle = 0;
     this.currentState = 'Walk'; this.routePastBed();
@@ -233,8 +223,8 @@ export class Character {
     this.beginKitchen(kind, true); return true;
   }
   private beginKitchen(kind: KitchenAction, player: boolean) {
-    this.clearDaily(); this.bedPhase = this.readingPhase = null;
-    this.bedPose = this.readingPose = 0;
+    this.clearDaily(); this.bedPhase = null;
+    this.bedPose = 0;
     this.kitchen = new KitchenActivity(kind); this.commandActive = player; this.targetKind = kind;
     this.destination = this.kitchen.destination.clone(); this.arrivalSettle = 0;
     this.currentState = 'Walk'; this.routePastBed();
@@ -244,7 +234,7 @@ export class Character {
     if (room === 'Kitchen' && !this.layout.kitchen) return false;
     if (this.exitFor(room)) return true;
     this.clearDaily();
-    this.bedPhase = this.readingPhase = null;
+    this.bedPhase = null;
     this.commandActive = true;
     this.targetKind = room;
     this.destination = new THREE.Vector3(homeRooms[room].centerX, 0, room === 'Bedroom' ? .25 : room === 'LivingRoom' ? 6.2 : homeRooms[room].centerZ);
@@ -264,13 +254,14 @@ export class Character {
     this.garden = null;
     this.living = null;
     this.eating = null;
+    this.reading = null;
     this.dailyKind = this.dailyPhase = null;
     this.dailyPose = this.dailyTime = this.dailyMotionTime = 0;
   }
   private beginDaily(kind: DailyKind, player: boolean) {
     this.clearDaily();
-    this.bedPhase = this.readingPhase = null;
-    this.bedPose = this.readingPose = 0;
+    this.bedPhase = null;
+    this.bedPose = 0;
     this.commandActive = player;
     this.dailyKind = kind;
     this.arrivalSettle = 0;
@@ -307,7 +298,7 @@ export class Character {
   private beginEat(player: boolean) {
     this.clearDaily();
     this.commandActive = player;
-    this.bedPhase = this.readingPhase = null;
+    this.bedPhase = null;
     this.targetKind = 'Food';
     this.eating = new EatActivity(this.layout.dining!);
     this.destination = this.eating.destination.clone();
@@ -331,12 +322,12 @@ export class Character {
       if (this.living.phase === 'return') this.currentState = 'Walk';
       return true;
     }
-    const eatPose = this.eating?.pose ?? 0;
-    if (this.bedPose <= 0 && this.readingPose <= 0 && eatPose <= 0 && this.dailyPose <= 0) return false;
+    const readPose = this.reading?.pose ?? 0, eatPose = this.eating?.pose ?? 0;
+    if (this.bedPose <= 0 && readPose <= 0 && eatPose <= 0 && this.dailyPose <= 0) return false;
     this.commandActive = true;
     this.afterExit = target;
     if (this.bedPose > 0) this.beginWake();
-    else if (this.readingPose > 0) this.beginFinish();
+    else if (readPose > 0) { this.reading!.finish(); this.currentState = 'Read'; }
     else if (eatPose > 0) { this.eating!.finish(); this.currentState = 'Eat'; }
     else this.finishDaily();
     return true;
@@ -361,28 +352,19 @@ export class Character {
   private beginRead(player: boolean) {
     this.clearDaily();
     this.readingCount++;
-    this.dozeFinishFrom = 0;
     this.commandActive = player;
     this.bedPhase = null;
     this.targetKind = 'Bookshelf';
-    this.destination = this.layout.reading!.position.clone();
-    this.readingPhase = 'approach';
-    this.readingTime = this.readingPose = this.arrivalSettle = 0;
+    // Every other read in the daily-life home nods off once.
+    this.reading = new ReadActivity(this.layout.reading!, !!this.layout.leisure && this.readingCount % 2 === 1);
+    this.destination = this.reading.destination.clone();
+    this.arrivalSettle = 0;
     this.currentState = 'Walk';
     this.routePastBed();
-  }
-  private beginFinish() {
-    if (this.readingPhase === 'finish') return;
-    this.dozeFinishFrom = this.dozePose;
-    this.finishFrom = this.readingPose;
-    this.readingPhase = 'finish';
-    this.readingTime = 0;
-    this.currentState = 'Read';
   }
   private beginSleep(player: boolean) {
     this.clearDaily();
     this.commandActive = player;
-    this.readingPhase = null;
     this.targetKind = 'Bed';
     this.destination = this.layout.bed!.position.clone();
     this.bedPhase = 'approach';
@@ -421,8 +403,6 @@ export class Character {
     this.route = [];
     this.bedPhase = null;
     this.bedPose = this.bedTime = 0;
-    this.readingPhase = null;
-    this.readingPose = this.readingTime = 0;
     this.observeTime = 0;
     this.speed = 0;
     this.turnVelocity = 0;
@@ -519,20 +499,10 @@ export class Character {
       // Settle keeps the arrival Walk state; bites and finish read as Eat.
       if (this.eating.update(dt)) { this.eatCooldown = EAT.cooldown; this.completeExit(); }
       else if (this.eating.phase !== 'settle') this.currentState = 'Eat';
-    } else if (this.readingPhase === 'settle' || this.readingPhase === 'read' || this.readingPhase === 'finish') {
-      this.readingTime += dt;
-      if (this.readingPhase === 'settle') {
-        this.readingPose = Math.min(1, this.readingTime / READ.settle);
-        if (this.readingTime >= READ.settle) { this.readingPhase = 'read'; this.readingTime = 0; this.currentState = 'Read'; }
-      } else if (this.readingPhase === 'read') {
-        if (this.readingTime >= READ.duration) this.beginFinish();
-      } else {
-        this.readingPose = this.finishFrom * (1 - Math.min(1, this.readingTime / READ.finish));
-        if (this.readingTime >= READ.finish) {
-          this.readCooldown = READ.cooldown;
-          this.completeExit();
-        }
-      }
+    } else if (this.reading && this.reading.phase !== 'approach') {
+      // Opening the book keeps the arrival Walk state, like settling at the table.
+      if (this.reading.update(dt)) { this.readCooldown = READ.cooldown; this.completeExit(); }
+      else if (this.reading.phase !== 'settle') this.currentState = 'Read';
     } else if (this.bedPhase === 'settle' || this.bedPhase === 'sleep' || this.bedPhase === 'wake') {
       this.bedTime += dt;
       if (this.bedPhase === 'settle') {
@@ -588,7 +558,7 @@ export class Character {
       const distance = this.direction.length();
       if (distance <= ARRIVAL_DISTANCE) {
         lookHeading = this.kitchen ? this.kitchen.heading : this.garden ? this.garden.heading : this.living ? this.living.heading : this.targetKind === 'Bed' ? this.layout.bed!.heading
-          : this.targetKind === 'Bookshelf' ? this.layout.reading!.heading
+          : this.reading ? this.reading.heading
           : this.eating ? this.eating.heading
           : this.targetKind === 'Clean' && this.dailyPhase !== 'carry' ? this.layout.leisure!.storage.heading
           : this.targetKind === 'Clean' || this.targetKind === 'Play' ? this.layout.leisure!.heading
@@ -612,7 +582,7 @@ export class Character {
             else if (this.garden) { this.garden.arrive(); this.currentState = 'Living'; }
             else if (this.living) { this.living.arrive(); this.currentState = 'Living'; }
             else if (this.targetKind === 'Bed') { this.bedPhase = 'settle'; this.bedTime = 0; }
-            else if (this.targetKind === 'Bookshelf') { this.readingPhase = 'settle'; this.readingTime = 0; }
+            else if (this.reading) this.reading.arrive();
             else if (this.eating) this.eating.arrive();
             else if (this.targetKind === 'Clean' && this.dailyPhase === 'carry') {
               this.dailyPhase = 'active'; this.dailyTime = this.dailyMotionTime = 0; this.currentState = 'Clean';
@@ -661,7 +631,7 @@ export class Character {
       preparingObserve: this.commandActive && this.currentState === 'Walk'
         && this.targetKind === 'Window' && !this.bedPhase && this.root.position.distanceTo(this.layout.windowPosition) < 0.14,
       sleepPose: this.bedPose, sleepPhase: this.bedPhase, sleepTime: this.bedTime,
-      readPose: this.readingPose, readPhase: this.readingPhase, readTime: this.readingTime,
+      readPose: this.reading?.pose ?? 0, readPhase: this.reading?.phase ?? null, readTime: this.reading?.elapsed ?? 0,
       eatPose: this.eating?.pose ?? 0, eatTime: this.eating?.motionTime ?? 0,
       dailyKind: this.dailyKind, dailyPose: this.dailyPose, dailyTime: this.dailyMotionTime, dozePose: this.dozePose,
       cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y, living: this.living, garden: this.garden, kitchen: this.kitchen });
