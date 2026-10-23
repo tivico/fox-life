@@ -14,6 +14,8 @@ import { createKitchenVisual } from './KitchenVisual.ts';
 import type { KitchenSnapshot } from './KitchenActivity.ts';
 import { createPetVisual } from './PetVisual.ts';
 import type { PetSnapshot } from './pet.ts';
+import { createPairVisual } from './PairVisual.ts';
+import type { PairPose } from './Pair.ts';
 
 export interface FoxPalette { fur: string; cream: string; overalls: string; dark: string; pink: string }
 /** Palette plus the few proportions that make one fox read differently from another.
@@ -318,6 +320,7 @@ export function createFoxVisual(look: FoxLook = foxLooks.orange) {
   const gardenVisual = createGardenVisual({ root, body, head, eyes, arms, legs, tail });
   const kitchenVisual = createKitchenVisual({ body, head, arms, legs });
   const petVisual = createPetVisual({ body, head, eyes, ears, tail });
+  const pairVisual = createPairVisual({ root, body, head, eyes, ears, arms, tail });
   root.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = true; });
   let gait = 0;
   let walkBlend = 0;
@@ -357,7 +360,7 @@ export function createFoxVisual(look: FoxLook = foxLooks.orange) {
     animate({ dt, time, distance, state, variation, turnRate = 0, headingError = 0, preparingObserve = false,
       sleepPose = 0, sleepPhase = null, sleepTime = 0, readPose = 0, readPhase = null, readTime = 0,
       eatPose = 0, eatTime = 0, dailyKind = null, dailyPose = 0, dailyTime = 0, dozePose = 0,
-      cleanMode, cleanPark, cleanParkYaw = 0, living = null, garden = null, kitchen = null, pet = null }: {
+      cleanMode, cleanPark, cleanParkYaw = 0, living = null, garden = null, kitchen = null, pet = null, pair = null }: {
       dt: number; time: number; distance: number; state: CharacterState;
       variation: IdleVariation; observeTime: number; turnRate?: number; headingError?: number; preparingObserve?: boolean;
       sleepPose?: number; sleepPhase?: SleepPhase | null; sleepTime?: number;
@@ -369,11 +372,14 @@ export function createFoxVisual(look: FoxLook = foxLooks.orange) {
       garden?: GardenSnapshot | null;
       kitchen?: KitchenSnapshot | null;
       pet?: PetSnapshot | null;
+      pair?: PairPose | null;
     }) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       dt = Math.min(dt, 0.05);
       const expression = performance.update(state, dt);
+      // Overlays come off in the reverse order they went on.
       petVisual.restore();
+      pairVisual.restore();
       kitchenVisual.restore();
       gardenVisual.restore();
       livingVisual.restore();
@@ -547,6 +553,7 @@ export function createFoxVisual(look: FoxLook = foxLooks.orange) {
       livingVisual.animate(living);
       gardenVisual.animate(garden);
       kitchenVisual.animate(kitchen);
+      pairVisual.animate(pair);
       petVisual.animate(pet);
     },
   };

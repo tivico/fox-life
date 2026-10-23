@@ -7,13 +7,14 @@ import { livingActions, livingLabels, livingDurations, type LivingAction } from 
 import { roomAt, isRoomId, type RoomId } from './HomeNavigation.ts';
 import { gardenActions, gardenLabels, gardenDurations, type GardenAction } from './GardenActivity.ts';
 import { kitchenActions, kitchenLabels, kitchenDurations, type KitchenAction } from './KitchenActivity.ts';
+import { PAIR, pairLabels, type PairAction } from './Pair.ts';
 
-export type LifeAction = 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction | GardenAction | KitchenAction;
+export type LifeAction = 'Window' | 'Bed' | 'Bookshelf' | 'Food' | 'Clean' | 'Play' | LivingAction | GardenAction | KitchenAction | PairAction;
 export type MomentKind = LifeAction | 'Doze' | 'Stretch' | 'Pet' | 'PetShy' | RoomId;
 export type LifeSnapshot = Pick<Character, 'state' | 'action' | 'source' | 'targetLabel' |
   'sleepPhase' | 'sleepElapsed' | 'readPhase' | 'readElapsed' | 'eatPhase' | 'eatElapsed' | 'observeElapsed' |
   'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>
-  & Partial<Pick<Character, 'petReaction' | 'name'>>;
+  & Partial<Pick<Character, 'petReaction' | 'name' | 'together'>>;
 
 export const actionLabels: Record<LifeAction, string> = {
   Window: '看風景', Bed: '睡個覺', Bookshelf: '讀本書', Food: '吃點心',
@@ -21,6 +22,7 @@ export const actionLabels: Record<LifeAction, string> = {
   ...livingLabels,
   ...gardenLabels,
   ...kitchenLabels,
+  ...pairLabels,
 };
 export function roomActions(fox: Pick<Character, 'root'>): LifeAction[] {
   if (roomAt(fox.root.position) === 'Kitchen') return [...kitchenActions];
@@ -51,10 +53,28 @@ const descriptions: Record<string, string> = {
   'Walk to Kitchen': '穿過客廳，去廚房看看', 'Visit Kitchen': '來到廚房，聞聞今天的好味道',
 };
 
+// A pair reads the same for both foxes, each naming the other one.
+function pairTitle(pair: NonNullable<LifeSnapshot['together']>) {
+  const { kind, phase, partner } = pair;
+  if (phase === 'approach') return kind === 'Boop' ? `走向${partner}，打個招呼` : `和${partner}一起去窗邊`;
+  if (phase === 'wait') return `等${partner}過來`;
+  if (phase === 'finish') return kind === 'Boop' ? '打完招呼，繼續各自的小日常' : '看完風景，慢慢走開';
+  return kind === 'Boop' ? `和${partner}碰碰鼻子` : `和${partner}並肩看著窗外`;
+}
+
 export function lifePresentation(fox: LifeSnapshot) {
   const target = fox.targetLabel === 'DiningArea' ? 'Food' : fox.targetLabel;
   const active = target && target in actionLabels ? target as LifeAction : null;
   let progress: number | null = null;
+  const pair = fox.together;
+  if (pair) {
+    return {
+      title: pairTitle(pair), active,
+      source: fox.source === 'Player Command' ? '回應你的邀請' : '自己的小日常',
+      locked: fox.source === 'Player Command',
+      progress: pair.phase === 'active' ? Math.round(Math.min(1, pair.motionTime / PAIR[pair.kind].duration) * 100) : null,
+    };
+  }
   if (fox.kitchenActivity?.phase === 'active') progress = fox.kitchenActivity.elapsed / kitchenDurations[fox.kitchenActivity.kind];
   else if (fox.gardenActivity?.phase === 'active') progress = fox.gardenActivity.elapsed / gardenDurations[fox.gardenActivity.kind];
   else if (fox.livingActivity?.phase === 'active') progress = fox.livingActivity.elapsed / livingDurations[fox.livingActivity.kind];
@@ -110,6 +130,7 @@ export const momentText: Record<MomentKind, string> = {
   WatchButterflies: '停下腳步，看小蝴蝶在花叢間飛舞。', GardenRest: '坐到陽台長椅上，讓微風陪自己休息。',
   Kitchen: '走進廚房，看看今天想做什麼好吃的。', ChopVegetables: '在砧板上慢慢切好蔬菜，準備一頓小料理。',
   CookSoup: '輕輕攪著湯鍋，讓暖暖的香氣飄進小家。', BakeCookies: '轉好烤箱，陪餅乾慢慢烤成金黃色。',
+  Boop: '面對面碰了碰鼻子，互相打了聲招呼。', GazeTogether: '並肩站在窗前，一起看了一會風景。',
 };
 export const JOURNAL_KEY = 'fox-life.moments.v1';
 export const JOURNAL_LIMIT = 40;
@@ -127,7 +148,10 @@ export class LifeJournal {
       .map(({ kind, at, source, who }) => typeof who === 'string' ? { kind, at, source, who } : { kind, at, source }) : [];
   }
   observe(fox: LifeSnapshot, now = Date.now()): boolean {
-    const kind = fox.kitchenActivity?.phase === 'active' ? fox.kitchenActivity.kind : fox.gardenActivity?.phase === 'active' ? fox.gardenActivity.kind : fox.livingActivity?.phase === 'active' ? fox.livingActivity.kind : fox.state === 'Observe' ? (isRoomId(fox.targetLabel) ? fox.targetLabel : 'Window') : fox.sleepPhase === 'sleep' ? 'Bed' :
+    // A pair is one line, written by the fox who started it and naming both.
+    const pair = fox.together;
+    const kind = pair ? pair.phase === 'active' && pair.lead ? pair.kind : null
+      : fox.kitchenActivity?.phase === 'active' ? fox.kitchenActivity.kind : fox.gardenActivity?.phase === 'active' ? fox.gardenActivity.kind : fox.livingActivity?.phase === 'active' ? fox.livingActivity.kind : fox.state === 'Observe' ? (isRoomId(fox.targetLabel) ? fox.targetLabel : 'Window') : fox.sleepPhase === 'sleep' ? 'Bed' :
       fox.readPhase === 'read' ? 'Bookshelf' : fox.eatPhase === 'eat' ? 'Food' :
       fox.activityPhase === 'active' && fox.activityKind !== 'Stretch' ? fox.activityKind : null;
     const key = fox.name ?? '';
@@ -141,7 +165,7 @@ export class LifeJournal {
     if (!changed && !microChanged && !petChanged) return false;
     const source = fox.source === 'Player Command' ? 'player' : 'autonomous';
     const who = fox.name === undefined ? {} : { who: fox.name };
-    if (changed) this.entries.unshift({ kind: kind!, at: now, source, ...who });
+    if (changed) this.entries.unshift({ kind: kind!, at: now, source, ...(pair ? { who: pair.who } : who) });
     if (microChanged) this.entries.unshift({ kind: fox.microEvent!, at: now, source, ...who });
     if (petChanged) this.entries.unshift({ kind: pet === 'shy' ? 'PetShy' : 'Pet', at: now, source: 'player', ...who });
     this.entries.length = Math.min(this.entries.length, JOURNAL_LIMIT);

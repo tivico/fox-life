@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { createFoxVisual, type FoxLook } from './createFoxVisual.ts';
+import { createFoxVisual, foxLooks, type FoxLook } from './createFoxVisual.ts';
 import { Household, activityGroup } from './Household.ts';
 import { SLEEP, SleepActivity } from './sleep.ts';
 import { ReadActivity } from './read.ts';
 import { EatActivity } from './eat.ts';
 import { DailyActivity, type DailyKind } from './daily.ts';
 import { PET, type PetReaction, type PetSnapshot } from './pet.ts';
+import { NOSE, PAW, PairActivity, type Muzzle, type PairAction, type PairSnapshot, type Shoulder } from './Pair.ts';
 import { homeRooms, homeRoute, isRoomId, type RoomId } from './HomeNavigation.ts';
 import { LivingActivity, isLivingAction, livingActions, type LivingAction } from './LivingActivity.ts';
 import { GardenActivity, isGardenAction, gardenActions, type GardenAction } from './GardenActivity.ts';
@@ -37,8 +38,9 @@ export const ARRIVAL_DISTANCE = 0.035;
 const TURN_SPEED = 3.6;
 const angleDifference = (to: number, from: number) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
-type ActivityKind = 'Bed' | 'Bookshelf' | 'Food' | DailyKind | LivingAction | GardenAction | KitchenAction;
-type ActionTarget = 'Window' | Exclude<ActivityKind, 'Stretch'>;
+type SoloKind = 'Bed' | 'Bookshelf' | 'Food' | DailyKind | LivingAction | GardenAction | KitchenAction;
+type ActivityKind = SoloKind | PairAction;
+type ActionTarget = 'Window' | Exclude<SoloKind, 'Stretch'>;
 // Each life activity owns its clock, props, labels and safe exit; Character walks, chooses and dispatches.
 interface Activity {
   readonly kind: ActivityKind;
@@ -54,6 +56,11 @@ interface Activity {
   finish(): 'move' | null | void;
   update(dt: number): 'move' | 'done' | null;
   stepBack?(position: THREE.Vector3, dt: number): number;
+  /** Shared by both foxes of a pair, so neither waits behind the other on the way. */
+  readonly together?: object;
+  /** The activity ended elsewhere before it began here: stop and carry on. */
+  readonly abandoned?: boolean;
+  leave?(): void;
 }
 // Approaching, carrying and returning are walks; every other phase runs the activity clock.
 const walking = (phase: string) => phase === 'approach' || phase === 'carry' || phase === 'return';
@@ -61,6 +68,12 @@ const walking = (phase: string) => phase === 'approach' || phase === 'carry' || 
 export class Character {
   readonly root = new THREE.Group();
   readonly name: string | undefined;
+  /** The fur colour, so the interface can mark which fox is which. */
+  readonly coat: string;
+  /** Where the nose tip sits when standing: how far in front of the feet, and how high. */
+  readonly muzzle: Muzzle;
+  /** The right shoulder when standing (the left one mirrors x), and how far the paw hangs from it. */
+  readonly shoulder: Shoulder;
   private readonly visual: ReturnType<typeof createFoxVisual>;
   private readonly household: Household | null;
   private yielding: Character | null = null;
@@ -74,7 +87,7 @@ export class Character {
   private speed = 0;
   private turnVelocity = 0;
   private arrivalSettle = 0;
-  private targetKind: 'Room' | ActionTarget | RoomId | null = null;
+  private targetKind: 'Room' | ActionTarget | RoomId | PairAction | null = null;
   private activity: Activity | null = null;
   private readonly cooldowns = new Map<ActivityKind, number>();
   private completedWalk = false;
@@ -83,6 +96,8 @@ export class Character {
   private route: THREE.Vector3[] = [];
   // One replacement during a safe exit, shared by the actual anchored actions.
   private afterExit: ActionTarget | RoomId | null = null;
+  // A pair waiting for this fox to finish what it was doing.
+  private pendingJoin: { activity: PairActivity; player: boolean } | null = null;
   private readingCount = 0;
   private roomWalkCount = 0;
   private stretchAfterWalk = false;
@@ -95,6 +110,7 @@ export class Character {
   constructor(layout: CharacterLayout, random: () => number = Math.random, options: CharacterOptions = {}) {
     this.visual = createFoxVisual(options.look);
     this.name = options.name;
+    this.coat = (options.look ?? foxLooks.orange).palette.fur;
     this.household = options.household ?? null;
     this.layout = { ...layout, windowPosition: layout.windowPosition.clone(), bounds: { ...layout.bounds } };
     if (layout.bed) this.layout.bed = { position: layout.bed.position.clone(), heading: layout.bed.heading, corner: layout.bed.corner.clone() };
@@ -106,6 +122,11 @@ export class Character {
     this.idleRemaining = this.nextIdleDuration();
     this.root.name = 'Character';
     this.root.add(this.visual.root);
+    this.root.updateWorldMatrix(false, true);
+    const nose = this.root.getObjectByName('FoxHead')!.localToWorld(NOSE.clone());
+    this.muzzle = { reach: nose.z, height: nose.y };
+    const arm = this.root.getObjectByName('FoxArmR')!, shoulder = arm.getWorldPosition(new THREE.Vector3());
+    this.shoulder = { position: shoulder, arm: arm.localToWorld(PAW.clone()).distanceTo(shoulder) };
   }
   get state() { return this.currentState; }
   dispose() { this.visual.dispose(); }
@@ -145,6 +166,26 @@ export class Character {
   }
   private get dozePose() { return this.reading?.dozePose ?? 0; }
   get petReaction(): PetSnapshot | null { return this.petting; }
+  get together(): PairSnapshot | null { return this.activity instanceof PairActivity ? this.activity.snapshot : null; }
+  get windowSpot() { return this.layout.windowPosition.clone(); }
+  /** Free for an autonomous pair: idling or wandering, with nothing under way and no invitation of yours to finish. */
+  get free() { return (this.currentState === 'Idle' || this.currentState === 'Walk') && !this.activity && !this.commandActive; }
+  /** A pair invitation can include this fox unless it is still finishing one of your invitations. */
+  get canJoin() { return !this.commandActive; }
+  /** Join a pair, after safely finishing whatever is under way, the same way an invitation would. */
+  join(activity: PairActivity, player: boolean): boolean {
+    if (this.commandActive) return false;
+    const current = this.activity;
+    if (current?.needsSafeExit(this.root.position)) {
+      this.commandActive = true; this.afterExit = null; this.pendingJoin = { activity, player };
+      if (current.finish() === 'move') this.follow();
+      else this.currentState = current.state;
+      return true;
+    }
+    this.clearActivity();
+    this.start(activity, player);
+    return true;
+  }
   /** This fox waits behind the given housemate instead of walking through it. */
   yieldTo(other: Character | null) { this.yielding = other; }
   /** Whether this fox is using the spot or prop that the given invitation needs. */
@@ -226,15 +267,15 @@ export class Character {
     return true;
   }
   // One invitation at a time: a repeat is ignored and a started activity exits safely first.
-  private requestActivity(kind: Exclude<ActivityKind, 'Stretch'>) {
+  private requestActivity(kind: Exclude<SoloKind, 'Stretch'>) {
     if (this.commandActive || this.activity?.kind === kind) return false;
     if (this.household && !this.household.free(activityGroup(kind), this)) return false;
     if (this.exitFor(kind)) return true;
     this.begin(kind, true);
     return true;
   }
-  private clearActivity() { this.activity = null; this.household?.release(this); }
-  private create(kind: ActivityKind): Activity {
+  private clearActivity() { this.activity?.leave?.(); this.activity = null; this.household?.release(this); }
+  private create(kind: SoloKind): Activity {
     if (kind === 'Bed') return new SleepActivity(this.layout.bed!);
     if (kind === 'Food') return new EatActivity(this.layout.dining!);
     if (kind === 'Bookshelf') {
@@ -247,8 +288,12 @@ export class Character {
     if (isKitchenAction(kind)) return new KitchenActivity(kind);
     return new DailyActivity(kind, this.layout.leisure!);
   }
-  private begin(kind: ActivityKind, player: boolean) {
-    this.activity = this.create(kind);
+  private begin(kind: SoloKind, player: boolean) { this.start(this.create(kind), player); }
+  private start(activity: Activity, player: boolean) {
+    const kind = activity.kind;
+    // Let go of whatever came before, so its spot and any pair it belonged to are released at once.
+    this.clearActivity();
+    this.activity = activity;
     this.household?.claim(activityGroup(kind), this);
     this.commandActive = player;
     // A stretch starts in place; every other activity first walks to its spot.
@@ -273,12 +318,14 @@ export class Character {
     return true;
   }
   private completeExit() {
-    const next = this.afterExit;
-    if (!next && this.sleeping?.phase === 'wake' && this.layout.leisure) this.stretchAfterWalk = true;
+    const next = this.afterExit, join = this.pendingJoin;
+    if (!next && !join && this.sleeping?.phase === 'wake' && this.layout.leisure) this.stretchAfterWalk = true;
     this.afterExit = null;
+    this.pendingJoin = null;
     this.consecutiveWalks = 0;
     this.enterIdle();
-    if (isRoomId(next)) this.requestRoomVisit(next);
+    if (join) { if (!join.activity.abandoned) this.start(join.activity, join.player); }
+    else if (isRoomId(next)) this.requestRoomVisit(next);
     else if (next) this.request(next);
   }
   private routePastBed() {
@@ -344,6 +391,7 @@ export class Character {
     dt = Math.min(dt, 0.05);
     this.elapsed += dt;
     for (const [kind, cooldown] of this.cooldowns) this.cooldowns.set(kind, Math.max(0, cooldown - dt));
+    if (this.activity?.abandoned) this.enterIdle();
     if (this.petting) {
       this.petting.time += dt;
       if (this.petting.time >= PET.duration[this.petting.kind]) this.petting = null;
@@ -363,9 +411,9 @@ export class Character {
     } else if (this.currentState === 'Idle') {
       this.idleRemaining -= dt;
       if (this.idleRemaining <= 0) {
-        const ready = (kind: ActivityKind) => this.completedWalk && this.cooldownLeft(kind) === 0
+        const ready = (kind: SoloKind) => this.completedWalk && this.cooldownLeft(kind) === 0
           && (!this.household || this.household.free(activityGroup(kind), this));
-        const eligible: ActivityKind[] = [];
+        const eligible: SoloKind[] = [];
         if (this.layout.bed && ready('Bed')) eligible.push('Bed');
         if (this.layout.reading && ready('Bookshelf')) eligible.push('Bookshelf');
         if (this.layout.dining && ready('Food')) eligible.push('Food');
@@ -416,8 +464,10 @@ export class Character {
         // Continuously feed forward motion into the turn; never travel sideways or backwards.
         const alignment = Math.pow(Math.max(0, Math.cos(angle)), 3);
         let desiredSpeed = Math.min(1.05, distance * 2.6) * alignment;
-        // A trailing fox slows to a stop behind a housemate standing or walking just ahead.
-        if (this.yielding && this.blockedBy(this.yielding)) desiredSpeed = 0;
+        // A trailing fox slows to a stop behind a housemate standing or walking just ahead,
+        // except on the way to a spot beside that same housemate.
+        const sharing = !!this.activity?.together && this.activity.together === this.yielding?.activity?.together;
+        if (this.yielding && !sharing && this.blockedBy(this.yielding)) desiredSpeed = 0;
         this.speed = THREE.MathUtils.damp(this.speed, desiredSpeed, 6, dt);
         moved = Math.min(this.speed * dt * alignment, distance);
         this.direction.set(Math.sin(this.root.rotation.y), 0, Math.cos(this.root.rotation.y));
@@ -454,6 +504,7 @@ export class Character {
       eatPose: this.eating?.pose ?? 0, eatTime: this.eating?.motionTime ?? 0,
       dailyKind: this.daily?.kind ?? null, dailyPose: this.daily?.pose ?? 0, dailyTime: this.daily?.motionTime ?? 0, dozePose: this.dozePose,
       cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y,
-      living: this.livingActivity, garden: this.gardenActivity, kitchen: this.kitchenActivity, pet: this.petting });
+      living: this.livingActivity, garden: this.gardenActivity, kitchen: this.kitchenActivity, pet: this.petting,
+      pair: this.activity instanceof PairActivity ? this.activity.visual() : null });
   }
 }

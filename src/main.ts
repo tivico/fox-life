@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createScene, kitchenHomeLayout, companionLayout } from './scene';
 import { foxLooks } from './createFoxVisual.ts';
 import { Household } from './Household.ts';
+import { PairPlanner, isPairAction } from './Pair.ts';
 import { createHomeView } from './HomeView.ts';
 import { createRoomPanel } from './RoomPanel.ts';
 import { homeRooms, type RoomId } from './HomeNavigation.ts';
@@ -48,13 +49,14 @@ function start() {
   controls.maxPolarAngle = Math.PI / 2.5;
   controls.update();
   controls.saveState();
-  // Prototype: two foxes share the home. Tapping a fox pets it and makes it the one you are talking to.
+  // Two foxes share the home. Choosing a fox, by its chip or by petting it, makes it the one you are talking to.
   const household = new Household();
   const orange = new Character(kitchenHomeLayout, Math.random, { name: '小橘', household });
   const white = new Character(companionLayout, Math.random, { name: '小白', look: foxLooks.white, household });
   white.root.position.set(-.9, 0, 5.6); white.root.rotation.y = Math.PI / 2;
   white.yieldTo(orange);
   scene.add(orange.root, white.root);
+  const pairs = new PairPlanner([orange, white]);
   let character = orange;
   const foxes = { active: () => character, all: [orange, white] as const };
   const homeView = createHomeView(camera, controls, character.root.position, () => reducedMotion.matches, true);
@@ -64,6 +66,7 @@ function start() {
   let readHits = 0;
   let eatHits = 0;
   const request = (action: LifeAction) => {
+    if (isPairAction(action)) { life.pairResult(action, pairs.invite(action, character)); return; }
     const accepted = character.request(action);
     life.commandResult(action, accepted);
   };
@@ -72,7 +75,14 @@ function start() {
     const accepted = character.requestRoomVisit(room);
     life.visitResult(homeRooms[room].label, accepted);
   };
-  const rooms = createRoomPanel(host, foxes, homeView, visit);
+  // The room panel's fox chips switch who you are with and bring the camera back to following them.
+  const select = (fox: Character) => {
+    character = fox;
+    homeView.follow(fox.root.position);
+    homeView.focus('follow');
+    life.update();
+  };
+  const rooms = createRoomPanel(host, foxes, homeView, visit, select);
   const unbindLiving = Object.entries(livingRoom!.livingParts).map(([action, parts]) =>
     bindClickInteraction(renderer.domElement, camera, scene, parts, () => { if (isLivingAction(action)) request(action); }));
   const unbindGarden = Object.entries(balcony!.gardenParts).map(([action, parts]) =>
@@ -160,6 +170,7 @@ function start() {
     if (document.hidden) return;
     orange.update(dt);
     white.update(dt);
+    pairs.update(dt);
     homeView.update(dt);
     frameCamera(dt);
     rooms.update();

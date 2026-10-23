@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Character } from '../src/Character.ts';
 import { createScene, gardenHomeLayout, expandedHomeLayout } from '../src/scene.ts';
 import { homeRooms, roomAt } from '../src/HomeNavigation.ts';
-import { createHomeView } from '../src/HomeView.ts';
+import { createHomeView, FOLLOW_BIAS } from '../src/HomeView.ts';
 import { gardenActions, gardenDurations, CAN_PARK } from '../src/GardenActivity.ts';
 import { LifeJournal, roomActions, lifePresentation } from '../src/life.ts';
 import { bindClickInteraction } from '../src/ClickInteraction.ts';
@@ -118,7 +118,9 @@ test('camera follows garden crossings, manual selection stays independent and re
   view.focus('Balcony'); for (let i = 0; i < 180; i++) view.update(1 / 60);
   assert.ok(Math.abs(controls.target.x - 6.7) < .01); assert.ok(Math.abs(controls.target.z) < .01);
   view.focus('LivingRoom'); position.set(6, 0, 0); view.update(.05); assert.equal(view.room, 'LivingRoom');
-  reduced = true; view.focus('follow'); view.update(.05); assert.equal(view.room, 'Balcony'); assert.equal(controls.target.x, 6.7);
+  // Following leans the view from the balcony's centre toward the fox.
+  reduced = true; view.focus('follow'); view.update(.05); assert.equal(view.room, 'Balcony');
+  assert.ok(Math.abs(controls.target.x - (6.7 + FOLLOW_BIAS * (6 - 6.7))) < 1e-9);
   view.dispose();
 });
 

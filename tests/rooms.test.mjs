@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Character } from '../src/Character.ts';
 import { createScene, expandedHomeLayout } from '../src/scene.ts';
 import { roomAt } from '../src/HomeNavigation.ts';
-import { createHomeView } from '../src/HomeView.ts';
+import { createHomeView, FOLLOW_BIAS } from '../src/HomeView.ts';
 import { LifeJournal } from '../src/life.ts';
 import { SoundCues } from '../src/SoundCues.ts';
 
@@ -128,13 +128,14 @@ test('camera smoothly follows room crossings, manual views stay selected and red
   position.z = 6.2; const before = camera.position.clone(); view.update(1 / 60);
   assert.equal(view.room, 'LivingRoom'); assert.ok(camera.position.distanceTo(before) > 0);
   assert.ok(camera.position.distanceTo(before) < 1, 'no camera snap');
+  // Following leans the view from the room's centre toward the fox.
   for (let i = 0; i < 120; i++) view.update(1 / 60);
-  assert.ok(Math.abs(controls.target.z - 6.4) < .01);
+  assert.ok(Math.abs(controls.target.z - (6.4 + FOLLOW_BIAS * (6.2 - 6.4))) < .01);
   view.focus('Bedroom'); position.z = 6.8;
   for (let i = 0; i < 120; i++) view.update(1 / 60);
   assert.equal(view.mode, 'Bedroom'); assert.ok(Math.abs(controls.target.z) < .01);
   reduced = true; view.focus('follow'); view.update(1 / 60);
-  assert.equal(controls.target.z, 6.4);
+  assert.ok(Math.abs(controls.target.z - (6.4 + FOLLOW_BIAS * (6.8 - 6.4))) < 1e-9);
   view.focus('overview'); view.update(1 / 60); assert.equal(controls.target.z, 3.2);
   view.dispose();
 });

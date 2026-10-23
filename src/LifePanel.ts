@@ -2,6 +2,7 @@ import type { Character } from './Character.ts';
 import { actionLabels, roomActions, JOURNAL_KEY, LifeJournal, lifePresentation, momentText, type LifeAction } from './life.ts';
 import { homeRooms, roomAt } from './HomeNavigation.ts';
 import { petFeedback, type PetReaction } from './pet.ts';
+import { isPairAction, pairActions, pairLabels, type PairAction, type PairInvite } from './Pair.ts';
 
 const drawings = {
   Kitchen: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5h1m4 0h1m4 0h1M6 11h12v7H6z"/>',
@@ -25,6 +26,8 @@ const drawings = {
   GardenRest: '<path d="M3 13h18v4H3v-4Zm2-7h14v7H5V6Zm0 11v4m14-4v4M8 3l2-2m6 2 2-2"/>',
   Balcony: '<path d="M3 21h18M5 21V11h14v10M5 15h14M9 11v10m6-10v10M12 9V4m0 3C7 7 6 4 7 2c4 0 5 3 5 5Zm0 0c5 0 6-3 5-5-4 0-5 3-5 5Z"/>',
   Doze: '<path d="M3 13h8l-8 8h8m3-18h7l-7 7h7"/>',
+  Boop: '<circle cx="6.5" cy="14" r="4.5"/><circle cx="17.5" cy="14" r="4.5"/><path d="M3.5 10.5 3 5l4 3m13.5 2.5L21 5l-4 3M11 14h2"/>',
+  GazeTogether: '<rect x="4" y="2" width="16" height="11" rx="2"/><path d="M12 2v11M4 7.5h16"/><circle cx="8.5" cy="19" r="2.5"/><circle cx="15.5" cy="19" r="2.5"/>',
   Pet: '<circle cx="12" cy="16" r="4"/><circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6" r="2"/><circle cx="14.5" cy="6" r="2"/><circle cx="18.5" cy="11" r="2"/>',
   PetShy: '<circle cx="12" cy="16" r="4"/><circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6" r="2"/><circle cx="14.5" cy="6" r="2"/><circle cx="18.5" cy="11" r="2"/><path d="M20 18c-2 2-4 3-8 3"/>',
   Stretch: '<circle cx="12" cy="7" r="3"/><path d="m3 3 5 10h8l5-10m-9 10v8m-4 0 4-4 4 4"/>',
@@ -68,7 +71,10 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
     <footer class="life-footer">
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
-      <div class="invitation"><span class="dock-room-label">臥室日常</span><p>也可以什麼都不做，讓日常自己發生。</p></div>
+      <div class="invitation"><span class="dock-room-label">臥室日常</span>${named
+        ? `<div class="pair-actions" role="group" aria-label="兩隻一起"><span class="pair-with"></span>${pairActions.map(kind =>
+          `<button type="button" data-pair="${kind}" aria-pressed="false">${icon(kind)}<span>${pairLabels[kind]}</span></button>`).join('')}</div>`
+        : '<p>也可以什麼都不做，讓日常自己發生。</p>'}</div>
       <nav class="action-dock" aria-label="邀請狐狸做點什麼"></nav>
       <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具邀請牠 <span>·</span> 點狐狸摸摸頭</p>
     </footer>
@@ -78,7 +84,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
       <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
-      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${primary.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${primary.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${primary.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
+      <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${primary.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${primary.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${primary.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。${named ? `點房間面板上的${foxes.all.map(label).join('或')}，就換成陪牠，鏡頭也偏向牠；動作欄旁可以邀請兩隻${pairActions.map(kind => `「${pairLabels[kind]}」`).join('或')}。` : ''}</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
       <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
     </dialog>
@@ -97,6 +103,8 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
   const list = find<HTMLOListElement>('.moment-list');
   const count = find('.moment-count');
   let buttons: HTMLButtonElement[] = [];
+  const pairButtons = [...ui.querySelectorAll<HTMLButtonElement>('[data-pair]')];
+  const pairWith = ui.querySelector<HTMLElement>('.pair-with');
   let dockKey = '';
   const help = find<HTMLDialogElement>('[data-dialog="help"]');
   const diary = find<HTMLDialogElement>('[data-dialog="journal"]');
@@ -159,12 +167,14 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     if (nextSymbol !== previousSymbol) { symbol.innerHTML = icon(nextSymbol); previousSymbol = nextSymbol; }
     progress.hidden = status.progress === null;
     if (status.progress !== null && progress.value !== status.progress) progress.value = status.progress;
-    for (const button of buttons) {
-      const selected = button.dataset.action === status.active;
+    for (const button of [...buttons, ...pairButtons]) {
+      const selected = (button.dataset.action ?? button.dataset.pair) === status.active;
       const disabled = status.locked || selected;
       if (button.getAttribute('aria-pressed') !== String(selected)) button.setAttribute('aria-pressed', String(selected));
       if (button.getAttribute('aria-disabled') !== String(disabled)) button.setAttribute('aria-disabled', String(disabled));
     }
+    const partner = foxes.all.find(each => each !== fox());
+    if (pairWith && partner) setText(pairWith, `和${label(partner)}`);
     let recorded = false;
     for (const each of foxes.all) if (journal.observe(each)) recorded = true;
     if (recorded) {
@@ -179,6 +189,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     const target = (event.target as Element).closest<HTMLButtonElement>('button');
     if (!target) return;
     if (target.dataset.action) request(target.dataset.action as LifeAction);
+    else if (target.dataset.pair) request(target.dataset.pair as PairAction);
     else if (target.dataset.tool === 'reset') { resetCamera(); notify('回到熟悉的小屋視角。'); }
     else if (target.dataset.tool === 'quiet') setQuiet(true);
     else if (target.classList.contains('quiet-exit')) setQuiet(false);
@@ -207,8 +218,15 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       notify(named ? `${label(who)}：${petFeedback[reaction]}` : petFeedback[reaction]);
       update();
     },
+    pairResult(kind: PairAction, result: PairInvite) {
+      const partner = foxes.all.find(each => each !== fox())!;
+      notify(result === 'accepted' ? `收到邀請了，${label(fox())}和${label(partner)}要${pairLabels[kind]}了。`
+        : result === 'same' ? '牠們已經在做這件事了，陪牠們一會吧。'
+        : `${label(result === 'self-busy' ? fox() : partner)}正在完成你的上一個邀請，等一下再邀請牠們吧。`);
+      update();
+    },
     commandResult(action: LifeAction, accepted: boolean) {
-      const other = foxes.all.find(each => each !== fox() && each.occupies(action));
+      const other = isPairAction(action) ? undefined : foxes.all.find(each => each !== fox() && each.occupies(action));
       notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : fox().source === 'Player Command' ?
         '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : other ? `${label(other)}正在那裡，等一下再邀請${label(fox())}吧。`
         : '牠已經在做這件事了，陪牠一會吧。');

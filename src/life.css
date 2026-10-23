@@ -149,3 +149,35 @@
   .room-panel { top: 88px; width: 180px; padding: 10px; } .room-hint, .room-eyebrow { display: none; }
   .room-heading { margin-bottom: 7px; } .room-heading h2 { font-size: 13px; } .room-views button { padding: 7px; }
 }
+
+/* Folding the room panel, choosing which fox you are with, and the "together" invitations. */
+.room-heading h2 { flex: 1; }
+.room-collapse { flex: none; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 1px solid #d6dacb; border-radius: 50%; background: #f4f2e8; color: #6f7c63; }
+.room-collapse svg { width: 14px; height: 14px; transform: rotate(180deg); transition: transform .2s; }
+.room-panel[data-collapsed="true"] .room-collapse svg { transform: none; }
+.room-panel[data-collapsed="true"] .room-body, .room-panel[data-collapsed="true"] .room-eyebrow { display: none; }
+.room-panel[data-collapsed="true"] .room-heading { margin-bottom: 0; }
+.room-panel[data-collapsed="true"] .fox-switch { margin: 11px 0 0; }
+.fox-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+.fox-switch button { display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid transparent; background: #efeee4; border-radius: 10px; padding: 9px 5px; font-size: 11px; }
+.fox-switch button:hover { border-color: #c2ceb3; }
+.fox-switch button[aria-pressed="true"] { background: #e2e9d9; border-color: #c2ceb3; color: #526a49; }
+.fox-switch button[aria-pressed="true"][data-following="false"] { background: #f5f4ec; }
+.fox-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--coat); box-shadow: inset 0 0 0 1px #3b40362a; }
+.room-views[data-named="true"] [data-view="overview"] { grid-column: 1 / -1; }
+.pair-actions { display: flex; align-items: center; gap: 5px; }
+.pair-with { font-size: 10px; color: #7c8275; margin-right: 2px; }
+.pair-actions button { display: flex; align-items: center; gap: 5px; border: 1px solid #d3d8c5; background: #faf8f0e6; border-radius: 999px; padding: 4px 10px 4px 7px; font-size: 10px; color: #5d6c53; transition: background .2s; }
+.pair-actions button svg { width: 15px; height: 15px; color: #8a7659; }
+.pair-actions button:hover { background: #eeebdf; }
+.pair-actions button[aria-pressed="true"] { background: #e8eddf; border-color: #c8d2b9; color: #4e6549; }
+.pair-actions button[aria-disabled="true"]:not([aria-pressed="true"]) { color: #96998e; }
+@media (max-width: 650px) {
+  .room-collapse { width: 28px; height: 28px; }
+  .fox-switch { gap: 4px; margin-bottom: 7px; } .fox-switch button { padding: 7px 4px; font-size: 10px; }
+  .room-panel[data-collapsed="true"] .fox-switch { margin-top: 8px; }
+  .room-views[data-named="true"] { grid-template-columns: repeat(5, 1fr); }
+  .room-views[data-named="true"] [data-view="overview"] { grid-column: auto; }
+  .pair-with { display: none; } .pair-actions button { min-height: 30px; padding: 5px 10px 5px 8px; font-size: 10px; } .pair-actions button svg { width: 14px; height: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .room-collapse svg, .pair-actions button { transition: none; } }
