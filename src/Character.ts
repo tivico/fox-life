@@ -3,7 +3,7 @@ import { createFoxVisual } from './createFoxVisual.ts';
 import { SLEEP, SleepActivity } from './sleep.ts';
 import { READ, ReadActivity } from './read.ts';
 import { EAT, EatActivity } from './eat.ts';
-import { DAILY, type DailyKind, type DailyPhase } from './daily.ts';
+import { DAILY, DailyActivity, type DailyKind } from './daily.ts';
 import { homeRooms, homeRoute, isRoomId, type RoomId } from './HomeNavigation.ts';
 import { LivingActivity, isLivingAction, livingActions, type LivingAction } from './LivingActivity.ts';
 import { GardenActivity, isGardenAction, gardenActions, type GardenAction } from './GardenActivity.ts';
@@ -61,12 +61,7 @@ export class Character {
   private readCooldown = 0;
   private eating: EatActivity | null = null;
   private eatCooldown = 0;
-  private dailyKind: DailyKind | null = null;
-  private dailyPhase: DailyPhase | null = null;
-  private dailyTime = 0;
-  private dailyPose = 0;
-  private dailyMotionTime = 0;
-  private dailyFinishFrom = 1;
+  private daily: DailyActivity | null = null;
   private cleanCooldown = 0;
   private playCooldown = 0;
   private readingCount = 0;
@@ -104,19 +99,19 @@ export class Character {
   get eatPhase() { return this.eating?.phase ?? null; }
   get eatElapsed() { return this.eating?.elapsed ?? 0; }
   get eatCooldownRemaining() { return this.eatCooldown; }
-  get activityKind() { return this.dailyKind; }
-  get activityPhase() { return this.dailyPhase; }
-  get activityElapsed() { return this.dailyTime; }
+  get activityKind() { return this.daily?.kind ?? null; }
+  get activityPhase() { return this.daily?.phase ?? null; }
+  get activityElapsed() { return this.daily?.elapsed ?? 0; }
   get livingActivity() { return this.living; }
   get gardenActivity() { return this.garden; }
   get gardenEnabled() { return this.layout.balcony === true; }
   get kitchenActivity() { return this.kitchen; }
   get kitchenEnabled() { return this.layout.kitchen === true; }
-  get cleanToolInUse() { return this.dailyKind === 'Clean' && this.dailyPose > 0; }
+  get cleanToolInUse() { return this.daily?.kind === 'Clean' && this.daily.pose > 0; }
   get cleanCooldownRemaining() { return this.cleanCooldown; }
   get playCooldownRemaining() { return this.playCooldown; }
   get microEvent(): 'Doze' | 'Stretch' | null {
-    if (this.dailyKind === 'Stretch' && this.dailyPhase === 'active') return 'Stretch';
+    if (this.daily?.kind === 'Stretch' && this.daily.phase === 'active') return 'Stretch';
     return this.reading?.phase === 'read' && this.dozePose > .1 ? 'Doze' : null;
   }
   private get dozePose() { return this.reading?.dozePose ?? 0; }
@@ -124,14 +119,15 @@ export class Character {
     if (this.kitchen) return `${this.kitchen.kind}/${this.kitchen.phase}`;
     if (this.garden) return `${this.garden.kind}/${this.garden.phase}`;
     if (this.living) return `${this.living.kind}/${this.living.phase}`;
-    if (this.dailyKind) {
-      if (this.dailyPhase === 'carry') return 'Carry broom to rug';
-      if (this.dailyPhase === 'return') return 'Return broom';
-      if (this.dailyPhase === 'approach') return this.dailyKind === 'Clean' ? 'Walk to broom' : 'Walk to play';
-      if (this.dailyPhase === 'finish' && this.dailyKind === 'Clean') return 'Putting broom back';
-      if (this.dailyPhase === 'finish') return this.dailyKind === 'Stretch' ? 'Finishing stretch' : 'Putting activity away';
-      if (this.dailyPhase === 'settle') return this.dailyKind === 'Clean' ? 'Getting broom' : this.dailyKind === 'Play' ? 'Getting yarn' : 'Preparing stretch';
-      return this.dailyKind === 'Clean' ? 'Sweeping' : this.dailyKind === 'Play' ? 'Playing with yarn' : 'Stretching';
+    if (this.daily) {
+      const { kind, phase } = this.daily;
+      if (phase === 'carry') return 'Carry broom to rug';
+      if (phase === 'return') return 'Return broom';
+      if (phase === 'approach') return kind === 'Clean' ? 'Walk to broom' : 'Walk to play';
+      if (phase === 'finish' && kind === 'Clean') return 'Putting broom back';
+      if (phase === 'finish') return kind === 'Stretch' ? 'Finishing stretch' : 'Putting activity away';
+      if (phase === 'settle') return kind === 'Clean' ? 'Getting broom' : kind === 'Play' ? 'Getting yarn' : 'Preparing stretch';
+      return kind === 'Clean' ? 'Sweeping' : kind === 'Play' ? 'Playing with yarn' : 'Stretching';
     }
     if (this.microEvent === 'Doze') return 'Dozing over book';
     if (this.eating?.phase === 'finish') return 'Finishing meal';
@@ -235,7 +231,7 @@ export class Character {
     return true;
   }
   private requestDaily(kind: 'Clean' | 'Play') {
-    if (!this.layout.leisure || this.commandActive || this.dailyKind === kind) return false;
+    if (!this.layout.leisure || this.commandActive || this.daily?.kind === kind) return false;
     if (this.exitFor(kind)) return true;
     this.beginDaily(kind, true);
     return true;
@@ -247,43 +243,28 @@ export class Character {
     this.eating = null;
     this.reading = null;
     this.sleeping = null;
-    this.dailyKind = this.dailyPhase = null;
-    this.dailyPose = this.dailyTime = this.dailyMotionTime = 0;
+    this.daily = null;
   }
   private beginDaily(kind: DailyKind, player: boolean) {
     this.clearDaily();
     this.commandActive = player;
-    this.dailyKind = kind;
+    this.daily = new DailyActivity(kind, this.layout.leisure!);
     this.arrivalSettle = 0;
     if (kind === 'Stretch') {
       this.destination = null;
       this.targetKind = null;
-      this.dailyPhase = 'settle';
       this.currentState = 'Stretch';
     } else {
-      this.destination = (kind === 'Clean' ? this.layout.leisure!.storage.position : this.layout.leisure!.play).clone();
+      this.destination = this.daily.destination!.clone();
       this.targetKind = kind;
-      this.dailyPhase = 'approach';
       this.currentState = 'Walk';
       this.routePastBed();
     }
   }
-  private finishDaily() {
-    if (this.dailyPhase === 'finish') return;
-    if (this.dailyKind === 'Clean' && this.dailyPhase !== 'settle') {
-      if (this.dailyPhase === 'return') return;
-      this.dailyPhase = 'return';
-      this.dailyTime = 0;
-      this.destination = this.layout.leisure!.storage.position.clone();
-      this.currentState = 'Walk';
-      this.arrivalSettle = 0;
-      this.routePastBed();
-      return;
-    }
-    this.dailyFinishFrom = this.dailyPose;
-    this.dailyPhase = 'finish';
-    this.dailyTime = 0;
-    this.currentState = this.dailyKind!;
+  // The broom walks to the rug after pickup and back to its rack when cleaning ends.
+  private followDaily() {
+    this.destination = this.daily!.destination!.clone(); this.arrivalSettle = 0;
+    this.currentState = 'Walk'; this.routePastBed();
   }
   private beginEat(player: boolean) {
     this.clearDaily();
@@ -312,13 +293,14 @@ export class Character {
       return true;
     }
     const sleepPose = this.sleeping?.pose ?? 0, readPose = this.reading?.pose ?? 0, eatPose = this.eating?.pose ?? 0;
-    if (sleepPose <= 0 && readPose <= 0 && eatPose <= 0 && this.dailyPose <= 0) return false;
+    if (sleepPose <= 0 && readPose <= 0 && eatPose <= 0 && (this.daily?.pose ?? 0) <= 0) return false;
     this.commandActive = true;
     this.afterExit = target;
     if (sleepPose > 0) { this.sleeping!.finish(); this.currentState = 'Sleep'; }
     else if (readPose > 0) { this.reading!.finish(); this.currentState = 'Read'; }
     else if (eatPose > 0) { this.eating!.finish(); this.currentState = 'Eat'; }
-    else this.finishDaily();
+    else if (this.daily!.finish() === 'move') this.followDaily();
+    else if (this.daily!.phase === 'finish') this.currentState = this.daily!.kind;
     return true;
   }
   private completeExit() {
@@ -449,31 +431,15 @@ export class Character {
       } else if (result === 'done') {
         this.livingCooldowns.set(this.living.kind, 45); this.completeExit();
       }
-    } else if (this.dailyKind && (this.dailyPhase === 'settle' || this.dailyPhase === 'active' || this.dailyPhase === 'finish')) {
-      this.dailyTime += dt;
-      if (this.dailyPhase === 'settle') {
-        const duration = this.dailyKind === 'Clean' ? DAILY.Clean.settle : DAILY.settle;
-        this.dailyPose = Math.min(1, this.dailyTime / duration);
-        if (this.dailyTime >= duration) {
-          this.dailyTime = 0;
-          if (this.dailyKind === 'Clean') {
-            this.dailyPhase = 'carry'; this.currentState = 'Walk';
-            this.destination = this.layout.leisure!.clean.clone(); this.arrivalSettle = 0;
-            this.routePastBed();
-          } else { this.dailyPhase = 'active'; this.currentState = this.dailyKind; }
-        }
-      } else if (this.dailyPhase === 'active') {
-        this.dailyMotionTime = Math.min(this.dailyTime, DAILY[this.dailyKind].duration);
-        if (this.dailyTime >= DAILY[this.dailyKind].duration) this.finishDaily();
-      } else {
-        const duration = this.dailyKind === 'Clean' ? DAILY.Clean.finish : DAILY.finish;
-        this.dailyPose = this.dailyFinishFrom * (1 - Math.min(1, this.dailyTime / duration));
-        if (this.dailyTime >= duration) {
-          if (this.dailyKind === 'Clean') this.cleanCooldown = DAILY.Clean.cooldown;
-          if (this.dailyKind === 'Play') this.playCooldown = DAILY.Play.cooldown;
-          this.completeExit();
-        }
-      }
+    } else if (this.daily && (this.daily.phase === 'settle' || this.daily.phase === 'active' || this.daily.phase === 'finish')) {
+      // Clean and play settle in their arrival Walk state; a stretch settles as Stretch.
+      const result = this.daily.update(dt);
+      if (result === 'move') this.followDaily();
+      else if (result === 'done') {
+        if (this.daily.kind === 'Clean') this.cleanCooldown = DAILY.Clean.cooldown;
+        if (this.daily.kind === 'Play') this.playCooldown = DAILY.Play.cooldown;
+        this.completeExit();
+      } else if (this.daily.phase !== 'settle') this.currentState = this.daily.kind;
     } else if (this.eating && this.eating.phase !== 'approach') {
       // Settle keeps the arrival Walk state; bites and finish read as Eat.
       if (this.eating.update(dt)) { this.eatCooldown = EAT.cooldown; this.completeExit(); }
@@ -529,8 +495,7 @@ export class Character {
         lookHeading = this.kitchen ? this.kitchen.heading : this.garden ? this.garden.heading : this.living ? this.living.heading : this.sleeping ? this.sleeping.heading
           : this.reading ? this.reading.heading
           : this.eating ? this.eating.heading
-          : this.targetKind === 'Clean' && this.dailyPhase !== 'carry' ? this.layout.leisure!.storage.heading
-          : this.targetKind === 'Clean' || this.targetKind === 'Play' ? this.layout.leisure!.heading
+          : this.daily ? this.daily.heading
           : this.targetKind === 'LivingRoom' ? 0 : this.layout.windowHeading;
         this.speed = 0;
         if (this.corner) this.corner = this.route.shift() ?? null;
@@ -553,11 +518,7 @@ export class Character {
             else if (this.sleeping) this.sleeping.arrive();
             else if (this.reading) this.reading.arrive();
             else if (this.eating) this.eating.arrive();
-            else if (this.targetKind === 'Clean' && this.dailyPhase === 'carry') {
-              this.dailyPhase = 'active'; this.dailyTime = this.dailyMotionTime = 0; this.currentState = 'Clean';
-            } else if (this.targetKind === 'Clean' && this.dailyPhase === 'return') {
-              this.dailyFinishFrom = this.dailyPose; this.dailyPhase = 'finish'; this.dailyTime = 0; this.currentState = 'Clean';
-            } else if (this.targetKind === 'Clean' || this.targetKind === 'Play') { this.dailyPhase = 'settle'; this.dailyTime = 0; }
+            else if (this.daily) { this.daily.arrive(); if (this.daily.phase !== 'settle') this.currentState = this.daily.kind; }
             else { this.currentState = 'Observe'; this.observeTime = 0; }
           }
         }
@@ -589,9 +550,8 @@ export class Character {
       this.observeTime += dt;
       if (this.observeTime >= OBSERVE_SECONDS) this.enterIdle();
     }
-    const cleanMode = this.dailyKind !== 'Clean' ? undefined : this.dailyPhase === 'settle' ? 'pickup' :
-      this.dailyPhase === 'active' ? 'sweep' : this.dailyPhase === 'finish' ? 'stow' : 'carry';
-    const cleanPark = this.dailyKind === 'Clean' ? this.layout.leisure!.storage.tool.clone().sub(this.root.position)
+    const cleanMode = this.daily?.cleanMode;
+    const cleanPark = this.daily?.kind === 'Clean' ? this.layout.leisure!.storage.tool.clone().sub(this.root.position)
       .applyAxisAngle(new THREE.Vector3(0, 1, 0), -this.root.rotation.y).divideScalar(this.visual.root.scale.x) : undefined;
     this.visual.animate({ dt, time: this.elapsed, distance: moved, state: this.currentState,
       variation: this.variation, observeTime: this.observeTime,
@@ -602,7 +562,7 @@ export class Character {
       sleepPose: this.sleeping?.pose ?? 0, sleepPhase: this.sleeping?.phase ?? null, sleepTime: this.sleeping?.elapsed ?? 0,
       readPose: this.reading?.pose ?? 0, readPhase: this.reading?.phase ?? null, readTime: this.reading?.elapsed ?? 0,
       eatPose: this.eating?.pose ?? 0, eatTime: this.eating?.motionTime ?? 0,
-      dailyKind: this.dailyKind, dailyPose: this.dailyPose, dailyTime: this.dailyMotionTime, dozePose: this.dozePose,
+      dailyKind: this.daily?.kind ?? null, dailyPose: this.daily?.pose ?? 0, dailyTime: this.daily?.motionTime ?? 0, dozePose: this.dozePose,
       cleanMode, cleanPark, cleanParkYaw: -this.root.rotation.y, living: this.living, garden: this.garden, kitchen: this.kitchen });
   }
 }
