@@ -1,143 +1,135 @@
 # Fox Life Web — 小狐狸的慢日子
 
-## 廚房與雙人床（2026-10-23，已確認發布）
+一隅小屋，一隻狐狸。以 Three.js 製作的療癒型生活模擬網頁：狐狸在相連的小家裡自己生活，玩家偶爾送一個小邀請。
 
-客廳右側新增廚房與早餐角，狐狸會穿過門口前往料理檯，進行 **切切蔬菜、煮鍋暖湯、烤餅乾**。鏡頭、動作欄、家具點擊、自主生活與日記都已接上；料理結束會放下工具、退一步再轉身。早餐桌、冰箱與水槽先作為環境陳設。
+- 線上版：<https://tivico.github.io/fox-life/>
+- 程式碼：<https://github.com/tivico/fox-life>
+- 過去的里程碑：[變更紀錄](docs/CHANGELOG.md)
 
-臥室改成雙人床與兩顆枕頭，靠牆側向外擴出空間，保留原來走道、睡眠支撐與上下床路線。115 項測試通過，正式建置與桌面／手機預覽已檢查。細節見 [廚房與雙人床](docs/KITCHEN_EXPANSION.md)。使用者已確認並授權連同陽台提交、推送與部署。
+## 目前狀態（2026-10-23）
 
-## 陽台小花園（2026-10-23，已確認發布）
+最新發布為陽台小花園、廚房與雙人床（`310103d`）。
 
-第一階段擴建在臥室右側加入陽台花園，透過玻璃門往返。木地板、花圃、蝴蝶與長椅帶來另一種生活氣氛；新增 **澆澆花、看蝴蝶、坐著吹風** 三個互動，也會自主發生。跨空間會平順聚焦，下方動作欄及數字鍵跟隨狐狸實際位置，生活日記沿用原有紀錄。
+### 小家與生活邀請
 
-澆花會拿起掛架上的水壺、分次澆水再放回；坐長椅時先抬身坐下，尾巴留在身側。新增 9 項測試涵蓋三房路徑、收尾、家具與自身穿模、點擊、鏡頭、暫停及自主生活。實作、預覽與後續擴建方向見 [陽台小花園](docs/GARDEN_EXPANSION.md)。使用者已確認，與廚房及雙人床一起發布。
+四個空間由門口與玻璃門相連，狐狸會自主往返。下方動作欄跟著狐狸**實際所在的房間**切換，數字鍵依序對應；也可以直接點家具、花圃或料理檯邀請牠。
 
-## 手臂接合修正（2026-10-18）
+| 房間 | 邀請 |
+| --- | --- |
+| 臥室 | 看風景、睡個覺、讀本書、吃點心、掃掃地 |
+| 客廳 | 看電視、窩沙發、喝杯茶、做運動、聽音樂、整理沙發 |
+| 陽台花園 | 澆澆花、看蝴蝶、坐著吹風 |
+| 廚房 | 切切蔬菜、煮鍋暖湯、烤餅乾 |
 
-整理沙發與運動改用固定肩膀、連續手臂表面的彎肘動作；整理時單手拍抱枕，另一手留在身側，運動改成側向抬手與彎肘伸展。新增肩膀接合、原手臂長度、動作連續性與拍抱枕接觸檢查。使用者已確認此修正並授權發布。
+除了「看風景」只在邀請時發生，其他動作狐狸都會自己去做。另有閱讀時打瞌睡、睡醒或散步後伸懶腰等小插曲。
 
-本機開發伺服器可開啟 `/tools/living-arm-review.html`，暫停在準備、進行或收尾的指定時間，從正面、側面與上方近距離檢查；此工具不包含在正式網站建置。
+### 介面
 
-## 客廳專屬生活動作（2026-10-18）
+- **鏡頭**：預設跟隨狐狸，也能固定查看全屋或單一房間；拖曳環繞、滾輪縮放、「重設視角」復原。手動選房間只改鏡頭，「邀請牠來」或「去○○ →」才會讓狐狸移動。
+- **近況與日記**：中文近況、生活片段進度，以及收到邀請／忙碌中的回饋。右上「生活日記」保存最近 40 則實際發生的片段，存在此瀏覽器的 localStorage。
+- **靜靜陪伴**：隱藏介面，按 `Esc` 或右下按鈕返回；「？」開啟玩法說明。
+- **小屋聲音**：原創輕鋼琴配樂、環境音與動作音效，三者音量分開調整，預設關閉。
+- **其他**：小螢幕會調整構圖；支援減少動態效果（`prefers-reduced-motion`）；切到背景時暫停，回來不累積離線進度。
 
-客廳現在有 **看電視、窩沙發、喝杯茶、做運動、聽音樂、整理沙發** 六種生活動作；做運動取代主入口的玩毛線。圓茶几已移除，電視與電視櫃移到原茶几位置、正對沙發，茶杯放在電視櫃上。新增小音響與運動墊，可以直接點家具邀請，也會自主發生。
+### 驗證與待辦
 
-下方動作欄與數字快捷鍵跟隨狐狸實際所在房間切換：臥室五個邀請，客廳六個邀請。房間面板另有「去客廳／回臥室」；手動查看房間只改鏡頭。喝茶會從電視櫃拿杯、走到沙發、坐下喝茶，再把杯子送回；看完電視會關掉螢幕後起身。所有新片段都寫入原有日記。
+- 2026-10-23：typecheck、115 項測試與正式建置全部通過。
+- 推送到 `main` 後，GitHub Actions 會先跑測試再部署，測試或建置失敗就不部署。
+- 尚待人工驗收：獨立 Chrome 的背景與效能量測（[V0.1 Chrome 人工補驗](docs/V0_1_CHROME_MANUAL_ACCEPTANCE.md)），以及 V0.2 整體的 PO 驗收（[V0.2 整體驗收](docs/V0_2_OVERALL_ACCEPTANCE.md)）。
+- 尚未實作：需求值（Needs）、存檔／時間／離線模擬、多角色、居家布置。產品方向見 [PRODUCT](docs/PRODUCT.md)。
 
-使用者已確認此版本並授權沿用 GitHub Pages 流程發布。目前合計 100 項測試，正式建置含 TypeScript 檢查。完整流程、驗證與範圍見 [客廳生活動作](docs/LIVING_ROOM_ACTIONS.md)。
+## 怎麼執行
 
-## 臥室與客廳（2026-10-18）
-
-主入口現在是一個由門口相連的兩房小家：原有臥室保留，新增沙發、茶几、綠色地毯、落地燈、邊櫃與植栽的客廳。狐狸會自主往返，玩毛線移至客廳；點沙發、茶几或房間面板的「邀請牠來」可以邀請牠到客廳停留。
-
-鏡頭預設「跟隨狐狸」，跨房間時平順聚焦另一個空間；也能固定查看臥室、客廳或全屋。手動選房間只改視角，邀請按鈕才會影響狐狸。詳見 [房間擴建](docs/ROOM_EXPANSION.md)。
-
-目前測試合計 86 項；包含新增的跨房路徑、家具避讓、邀請切換、房間日記、鏡頭與背景暫停驗證。沒有新增套件。
-
-## 目前可體驗版本（2026-10-17）
-
-主入口 `/` 已在既有 V0.2 自主生活上加入完整的互動介面：
-
-- 下方六個生活邀請，或鍵盤 `1`～`6`：看風景、睡個覺、讀本書、吃點心、掃掃地、玩毛線。也可以直接點家具、掃帚或書架上的毛線球。
-- 自主打掃與玩耍、閱讀時偶爾點頭打瞌睡、睡醒離床後伸懶腰。動作、道具、中文近況與日記會同步更新，見 [更多生活細節](docs/DAILY_LIFE.md)。
-- 中文近況、目前目標、生活片段進度，以及收到邀請／忙碌／重複操作回饋。
-- 右上「生活日記」保存最近 40 則實際發生的片段，使用此瀏覽器的 localStorage。
-- 「靜靜陪伴」隱藏介面，`Esc` 或右下按鈕返回；「？」開啟玩法說明。
-- 小螢幕自動縮小構圖，Debug 收在右上，不再由資訊卡擋住房間。
-- 小屋美術增補：木紋地板、織紋地毯、拼布床單、窗簾與山景、床頭暖燈、盆栽、收藏櫃、鈕扣小盤、藏書與餐桌茶杯。茶杯沿用餐桌的吃點心邀請。
-- 美術與聲音：座鐘、乾燥花、小畫、流蘇與餐巾，窗簾／植物微動及茶杯熱氣；角色關鍵影格表情與毛線球分段動畫。右上「小屋聲音」可啟用風聲、鳥鳴與同步動作音效，分別調整環境音與音效音量，詳見 [美術與聲音](docs/ART_AND_SOUND.md)。
-- 新增原創輕鋼琴配樂〈窗邊慢慢〉，並重做腳步與微風：改用柔化的錄音素材，音樂／環境音／音效各自調整，附音效試聽。詳見 [背景音樂與音效修訂](docs/MUSIC_AND_AUDIO_REFINEMENT.md)。
-
-執行 `npm run dev -- --port 5173 --strictPort`，開啟 <http://127.0.0.1:5173/>。建置後也可用 `npm run preview -- --port 4173 --strictPort`。
-
-目前 `npm run build`（含 typecheck）與 **78/78 tests** 通過。操作步驟、架構邊界與驗證限制見 [互動體驗預覽](docs/INTERACTION_PREVIEW.md)、[更多生活細節](docs/DAILY_LIFE.md)、[美術與聲音](docs/ART_AND_SOUND.md) 與 [背景音樂與音效修訂](docs/MUSIC_AND_AUDIO_REFINEMENT.md)。這是可以逐步體驗產品方向的版本，沒有將既有 V0.2 PO Acceptance 改成 Accepted；目前也沒有 Needs、遊戲存檔或離線模擬。
-
----
-
-## GitHub 與網站部署
-
-程式碼儲存庫：<https://github.com/tivico/fox-life>。
-
-GitHub Pages 部署網址：<https://tivico.github.io/fox-life/>。儲存庫的 Settings → Pages → Source 使用 **GitHub Actions**；推送到 `main` 後，工作流程會先執行測試，再以 `/fox-life/` 資源路徑建置並部署 `dist/`。也能在 Actions 手動執行 **Test and deploy Fox Life**。測試或建置失敗時不部署。
-
-本機開發仍使用 `npm run dev`；需要檢查 Pages 資源路徑時執行 `npm run build -- --base=/fox-life/`。不提交 `node_modules/`、`dist/` 或環境機密檔案。
-
----
-
-以下保留早期 V0.1 與角色造型實驗的歷史紀錄，舊連接埠不代表目前正在執行的服務。
-
-目前實作範圍為自主 Idle／Walk → 點窗 → 走到窗前 → Observe → 返回自主生活。
-產品依據是 `docs/PRODUCT.md`，驗收依 `docs/V0_1_WEB_SPEC.md`。
-技術與瀏覽器驗證不等於 Product Owner Manual Acceptance。
-
-## 執行
-
-上一輪環境：Windows、Node.js 24.19.0、npm 11.17.0。本輪收尾重跑：Node.js 25.9.0、npm 11.12.1（typecheck／9 tests／build 成功）。
+需要 Node.js 24 以上（CI 使用 24）。測試直接用 Node 執行 `.ts` 原始碼，較舊的 Node 版本無法執行。
 
 ```sh
 npm install
 npm run dev -- --port 5173 --strictPort
-npm run typecheck
-npm test
-npm run build
-npm run preview -- --port 4173 --strictPort
 ```
 
-開啟 http://127.0.0.1:5173/；production 預覽為 http://127.0.0.1:4173/。
-伺服器僅監聽 loopback；終端 Ctrl+C 停止。正式輸出在 `dist/`。
+開啟 <http://127.0.0.1:5173/>。伺服器只監聽 127.0.0.1，終端按 Ctrl+C 停止。
 
-## 操作與驗收
-
-1. 開啟後可見程序化狐狸、房間、窗戶及兩側無互動家具。
-2. 不操作，狐狸會自主 Idle／Walk；停留 2.5～5.2 秒，有限隨機目的地，交替兩種 Idle variation。
-3. 滑鼠左鍵拖曳環繞、滾輪縮放；「重設鏡頭」恢復原始構圖。
-4. 點窗戶玻璃或窗框：取代自主目標，走向窗前、完成朝向後 Observe 4 秒，再回 Idle。
-5. 同一指令進行中再次點窗不排隊、不重啟或延長。Window hits 僅為 raycast 計數。
-6. 調整視窗尺寸：Canvas 隨容器更新，Debug 的 Viewport 跟著變化。
-7. Debug 預設隱藏，可切換顯示真實 State／Action／Target／Source；隱藏不影響模擬。
-8. 切到背景暫停模擬；回前景不累積離線進度。
-
-## 最小模組
-
-| 檔案 | 用途 |
+| 指令 | 用途 |
 | --- | --- |
-| `src/main.ts` | Bootstrap、Renderer、OrbitControls、loop、resize、HMR 資源清理 |
-| `src/scene.ts` | Scene、Camera、燈光、低牆房間、窗戶幾何 |
-| `src/Character.ts` | Idle／Walk／Observe、單一 Window command、自主目標、平滑轉向與移動 |
-| `src/createFoxVisual.ts` | 狐狸幾何、吊帶褲、大尾巴、呼吸／重心／視線／耳朵／步態動畫 |
-| `src/WindowInteraction.ts` | 指標座標轉換、拖曳排除、最近表面 Raycaster 命中 |
-| `src/DebugPanel.ts` | State、位置、窗戶計數、viewport、renderer 訊息、重設鏡頭 |
-| `src/styles.css` | 最小 Debug overlay 與響應式 Canvas 版面 |
-| `src/FrameClock.ts` | 前景 delta cap、visibilitychange 後歸零，不累積背景時間 |
-| `src/PerformanceSample.ts` | 只有 `?measure=1` 開啟的單次 5 秒暖機＋60 秒 rAF 取樣 |
-| `tests/behavior.test.mjs` | Node 原生測試，驗證 command／state／計時／路徑空間與 raycast 邊界 |
+| `npm run dev` | 開發伺服器 |
+| `npm run typecheck` | TypeScript 檢查 |
+| `npm test` | Node 內建測試（`tests/*.test.mjs`），約需 1 分鐘 |
+| `npm run build` | typecheck＋正式建置，輸出到 `dist/` |
+| `npm run preview -- --port 4173 --strictPort` | 預覽正式建置，開啟 <http://127.0.0.1:4173/> |
+| `npm run build -- --base=/fox-life/` | 以 GitHub Pages 的資源路徑建置 |
 
-沒有 React、外部模型／貼圖、Backend、通用家具框架或 V0.2 行為。套件版本沿用 Spike。
+### 開發用頁面與參數
 
-## 獨立 Chrome 手動補驗
+| 網址 | 用途 |
+| --- | --- |
+| 右上「顯示 Debug」 | 顯示 State／Action／Target／Source 等即時狀態 |
+| `/?measure=1` | 5 秒暖機＋60 秒 rAF 取樣，結束後右下輸出 JSON |
+| `/tools/living-arm-review.html` | 客廳動作逐格檢查（只在開發伺服器提供） |
+| `/tools/garden-review.html` | 陽台動作逐格檢查（只在開發伺服器提供） |
+| `/tools/kitchen-review.html` | 廚房動作逐格檢查（只在開發伺服器提供） |
+| `/?preview=fox`、`/?preview=fox-v02` | 程序狐狸與 Blender GLB 的造型比較（歷史實驗，目前未採用） |
 
-1. 執行 build 與 preview，在獨立 Chrome 開啟 http://127.0.0.1:4173/。
-2. 依規格 AC-01～AC-09 操作；Console 記錄 error／warning，勿將 In-app Browser 結果當作 Chrome 結果。
-3. AC-10 開啟 http://127.0.0.1:4173/?measure=1，內容 viewport 設為 1920×1080（不是包含瀏覽器工具列的外框尺寸），保持前景至少 65 秒。
-4. 前 5 秒暖機，後 60 秒內需包含自主生活、一次完整 Observe，以及鏡頭旋轉／縮放。取樣後右下角輸出 JSON，複製保存。
-5. 若取樣時切到背景，該次作廢並重新暖機。記錄 CPU／GPU／OS／Chrome 版本；JSON 包含 UA、viewport、DPR、drawing buffer、GPU、平均 FPS、p50／p95／p99／最大 frame time 與慢幀數。
-6. 這是 rAF 間隔量測，不是 GPU profiler。未接近 60 FPS 或持續卡頓須記錄為未達目標。
-7. AC-11／規格 §15 由 Product Owner 在 Debug 隱藏下親自驗收並記錄，不由 Codex 自評通過。
+其他工具：`node tools/render-home-music.mjs` 重新渲染配樂（見 [音訊來源](assets/audio/README.md)）；Blender 狐狸生成腳本見 [tools/blender](tools/blender/README.md)。
 
-V0.1 實測與未驗證項目見 `docs/V0_1_ACCEPTANCE.md`；Spike 歷史紀錄保留於 `docs/TECHNICAL_SPIKE.md`。
+### 目錄
 
-AC-01／09／10／11 的逐步操作與結果回填表見 [Chrome 人工補驗](docs/V0_1_CHROME_MANUAL_ACCEPTANCE.md)。既有 60.40 秒／1.19 FPS 只屬受限 In-app 環境紀錄，不是產品 FPS 結論；正式 Chrome 效能與 PO 接受均待人工驗收。
+| 路徑 | 內容 |
+| --- | --- |
+| `src/entry.ts` | 依 query 分流到主場景或造型預覽 |
+| `src/main.ts` | 啟動、渲染迴圈、事件綁定與資源清理 |
+| `src/Character.ts` | 狐狸的行為狀態機：自主生活、邀請、安全退出與移動 |
+| `src/scene.ts`、`src/*Visual.ts` | 房間、家具與道具幾何 |
+| `src/createFoxVisual.ts` | 程序化狐狸模型與動畫 |
+| `src/life.ts`、`src/LifePanel.ts`、`src/RoomPanel.ts` | 近況、日記、動作欄與房間面板 |
+| `src/HomeAudio.ts` | 配樂、環境音與動作音效 |
+| `tests/` | 行為、路徑、穿模、日記與音訊測試 |
+| `tools/` | 動作檢查頁、配樂渲染與 Blender 腳本 |
+| `assets/` | 音訊與造型實驗用的 GLB |
+| `docs/` | 產品、架構、各輪紀錄與驗證證據 |
 
-## 新狐狸 GLB 靜態預覽
+### 部署
 
-**V0.1 Closeout（2026-09-13）：** PO 已接受程序狐狸的 locomotion／turn／Window Observe 動作體驗，停止 polish；最後 typecheck、15 tests、build 成功。Chrome background／performance 仍待補驗。穩定基準範圍與 Known Limitations 見 [Closeout](docs/V0_1_CLOSEOUT.md)。Blender／GLB 僅保留為歷史實驗，沒有 V0.2 工作。
+GitHub Pages 的 Source 設為 **GitHub Actions**（Settings → Pages）。推送到 `main` 後，工作流程會先執行測試，再以 `/fox-life/` 資源路徑建置並部署 `dist/`；也能在 Actions 手動執行 **Test and deploy Fox Life**。
 
-**目前決策（2026-09-13）：PO 選擇已 polish 的程序狐狸繼續 V0.1。** 正式生活流程使用 `/`，目前本機入口為 <http://127.0.0.1:4182/>。GLB 預覽保留作比較，不是目前採用角色；下一步是 [Chrome／PO 人工補驗](docs/V0_1_CHROME_MANUAL_ACCEPTANCE.md)，角色選定不等於全項驗收通過。
+不提交 `node_modules/`、`dist/` 或環境機密檔案。
 
-新增 `/?preview=fox-v02`：程序模型與 **fox_v02_static** 同步鏡頭並排比較，提供房間／正面／3/4／側面。v02 使用七種明確純色材質與獨立吊帶褲，保留 v01。資產、render、驗證與待 PO 審核項目見 [v02 靜態審核](docs/FOX_V02_STATIC_REVIEW.md)。本機比較頁：<http://127.0.0.1:4182/?preview=fox-v02>。
+## 文件索引
 
-啟動 dev 或 production preview 後，開啟 `/?preview=fox`（本輪本機 production：<http://127.0.0.1:4180/?preview=fox>）。可切換 Blender GLB／目前程序模型，選擇中央、床邊、窗前三個靜態站位，並使用原有 Camera 環繞／縮放／重設。兩模型同站位、同鏡頭、同房間燈光；新模型保留匯出比例 1.30 m，沒有額外縮放。
+### 產品與架構
 
-這是造型 review，不執行角色動畫或窗戶 command。頁面連結可返回 `/` 的既有自主生活與互動。入口按 query 分流，GLB 由 Vite 以帶 hash 的資產打包；無新套件、未改動 Character 或 scene。使用本機 Chrome 也可開啟同一網址。
+- [PRODUCT](docs/PRODUCT.md)：產品方向與核心體驗
+- [ARCHITECTURE](docs/ARCHITECTURE.md)：架構與模組邊界
+- [Project Handoff](Fox_Life_Web_Project_Handoff.md)：最初的專案交接文件
+- [變更紀錄](docs/CHANGELOG.md)：各輪里程碑
 
-2026-09-13：typecheck 成功，11 tests passed／0 failed（386.545 ms），production build 成功。In-app production 實測模型載入、新舊切換、床邊／窗前／中央站位、鏡頭重設與返回原場景。原互動入口顯示正常；本輪未重做全套 AC 或 FPS 驗收。共享 Three.js chunk 626.38 kB，>500 kB 警告仍保留；GLB 253.75 kB。
+### 目前功能（新到舊）
+
+| 文件 | 內容 | 日期 |
+| --- | --- | --- |
+| [廚房與雙人床](docs/KITCHEN_EXPANSION.md) | 廚房三個料理動作、雙人床 | 2026-10-23 |
+| [陽台小花園](docs/GARDEN_EXPANSION.md) | 陽台三個動作、後續擴建方向 | 2026-10-23 |
+| [客廳生活動作](docs/LIVING_ROOM_ACTIONS.md) | 客廳六個動作、手臂接合修正 | 2026-10-18 |
+| [房間擴建](docs/ROOM_EXPANSION.md) | 臥室＋客廳、跨房鏡頭 | 2026-10-18 |
+| [背景音樂與音效修訂](docs/MUSIC_AND_AUDIO_REFINEMENT.md) | 原創配樂、腳步與微風 | 2026-10-17 |
+| [美術與聲音](docs/ART_AND_SOUND.md) | 小屋擺設、角色表演、音效 | 2026-10-17 |
+| [小屋居家細節](docs/ROOM_REFINEMENT.md) | 睡眠角、閱讀角、餐桌與收藏角 | 2026-10-17 |
+| [更多生活細節](docs/DAILY_LIFE.md) | 打掃、玩耍、打瞌睡、伸懶腰 | 2026-10-17 |
+| [互動體驗預覽](docs/INTERACTION_PREVIEW.md) | 動作欄、日記、靜靜陪伴 | 2026-10-17 |
+
+### V0.2 基本生活
+
+- [V0.2 Web Spec](docs/V0_2_WEB_SPEC.md)：規格
+- 驗收紀錄：[Sleep](docs/V0_2_SLEEP_ACCEPTANCE.md)、[Read](docs/V0_2_READ_ACCEPTANCE.md)、[Eat](docs/V0_2_EAT_ACCEPTANCE.md)、[整體驗收](docs/V0_2_OVERALL_ACCEPTANCE.md)
+
+### V0.1 垂直切片與技術驗證
+
+- [V0.1 Web Spec](docs/V0_1_WEB_SPEC.md)、[實作與驗收紀錄](docs/V0_1_ACCEPTANCE.md)、[Chrome 人工補驗](docs/V0_1_CHROME_MANUAL_ACCEPTANCE.md)、[Closeout](docs/V0_1_CLOSEOUT.md)
+- 動作與造型 polish：[Turn Polish](docs/V0_1_TURN_POLISH.md)、[Character Polish](docs/V0_1_CHARACTER_POLISH.md)、[Visual Refinement](docs/V0_1_VISUAL_REFINEMENT.md)
+- [fox_v02_static 視覺審核](docs/FOX_V02_STATIC_REVIEW.md)：GLB 造型實驗
+- [Technical Spike](docs/TECHNICAL_SPIKE.md)：最初的 Three.js 技術驗證
+
+### 資產與證據
+
+- [音訊來源](assets/audio/README.md)：配樂、錄音素材與授權
+- [Blender 狐狸](tools/blender/README.md)：GLB 生成與驗證
+- `docs/evidence/`：各輪驗證的截圖與原始紀錄
