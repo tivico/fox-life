@@ -69,8 +69,11 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
         root.position.y += .505 * blend(pose, 0, .6) + .1 * Math.sin(Math.PI * p);
         root.position.z -= 1.15 * (root.scale.x / .76) * blend(pose, .3, 1);
         body.rotation.x += (-.08 - body.rotation.x) * p;
-        tail.rotation.y += (1.5 - tail.rotation.y) * blend(pose, 0, .45);
+        tail.rotation.y += (1.5 * (activity.tailSide ?? 1) - tail.rotation.y) * blend(pose, 0, .45);
         tail.rotation.x += (-.18 - tail.rotation.x) * p;
+        // At the end cushion, curl the outward tail up over the armrest before sliding back.
+        if (activity.tailSide === -1) tail.quaternion.premultiply(new THREE.Quaternion()
+          .setFromAxisAngle(new THREE.Vector3(0, 0, 1), .55 * blend(pose, 0, .45)));
         // Keep the smaller fox's fuller tail above the cushion, still overlapping its hip socket.
         tail.position.y += Math.max(0, .76 - root.scale.x) * p;
         for (const [i, leg] of legs.entries()) {

@@ -24,6 +24,9 @@ export const PAIR = {
 export const NOSE = new THREE.Vector3(0, -.075, .46);
 /** The middle of the paw in right-arm space (the left arm mirrors x), shared the same way for holding hands. */
 export const PAW = new THREE.Vector3(.05, -.33, 0);
+/** A single quiet lean after the shared glance, back upright before the programme ends. */
+export const tvHeadLean = (time: number) => THREE.MathUtils.smootherstep(time, 9, 11)
+  * (1 - THREE.MathUtils.smootherstep(time, 13, 15));
 export interface Muzzle { reach: number; height: number }
 export interface Shoulder { position: THREE.Vector3; arm: number }
 export type PairPhase = 'approach' | 'wait' | 'settle' | 'active' | 'finish';
@@ -36,6 +39,7 @@ export interface PairSnapshot {
 export interface PairPose {
   kind: PairAction; pose: number; motionTime: number; side: number; reach: number; rise: number; lateral: number;
   hand: THREE.Vector3 | null;
+  headLean?: number;
 }
 
 // A fox's own frame: x to its side, y up, z straight ahead, measured from its feet in world units.
@@ -116,6 +120,7 @@ export class PairActivity {
   readonly plan: PairPlan;
   private readonly index: 0 | 1;
   private finishFrom = 0;
+  private unleanTime = 0;
   private waited = 0;
   constructor(plan: PairPlan, index: 0 | 1) { this.plan = plan; this.index = index; }
   get kind() { return this.plan.kind; }
@@ -138,7 +143,8 @@ export class PairActivity {
   get living(): LivingSnapshot | null {
     if (this.kind !== 'WatchTVTogether') return null;
     return { kind: 'WatchTV', phase: this.phase === 'wait' ? 'approach' : this.phase,
-      elapsed: this.elapsed, motionTime: this.motionTime, pose: this.pose, cupHold: 0, remote: this.index === 0 };
+      elapsed: this.elapsed, motionTime: this.motionTime, pose: this.pose, cupHold: 0, remote: this.index === 0,
+      tailSide: Math.sign(toFrame(this.plan.members[this.index]!, this.partner.root.position).x) || 1 };
   }
   visual(): PairPose {
     const own = this.plan.members[this.index]!, partner = this.partner;
@@ -149,6 +155,8 @@ export class PairActivity {
     const reach = Math.max(0, (ahead - own.muzzle.reach - partner.muzzle.reach) / 2) + .002;
     const rise = (partner.muzzle.height - own.muzzle.height) / 2;
     return { kind: this.kind, pose: this.pose, motionTime: this.motionTime, side, reach, rise, lateral,
+      headLean: this.kind === 'WatchTVTogether' ? tvHeadLean(this.motionTime)
+        * (this.phase === 'finish' ? 1 - THREE.MathUtils.smootherstep(this.elapsed, 0, .75) : 1) : 0,
       hand: this.kind === 'GazeTogether' ? this.hand() : null };
   }
   /** Where the inner paws meet. Two arms of fixed length can only meet on the circle where their reaches overlap;
@@ -180,6 +188,7 @@ export class PairActivity {
   }
   finish() {
     if (this.phase === 'finish') return;
+    this.unleanTime = this.kind === 'WatchTVTogether' && tvHeadLean(this.motionTime) > 0 ? .75 : 0;
     this.finishFrom = this.pose; this.phase = 'finish'; this.elapsed = 0;
     this.plan.over = true;
   }
@@ -205,8 +214,8 @@ export class PairActivity {
       this.motionTime = Math.min(this.elapsed, duration);
       if (this.plan.over || this.elapsed >= duration) this.finish();
     } else {
-      this.pose = this.finishFrom * (1 - Math.min(1, this.elapsed / finish));
-      if (this.elapsed >= finish) return 'done';
+      this.pose = this.finishFrom * (1 - THREE.MathUtils.clamp((this.elapsed - this.unleanTime) / finish, 0, 1));
+      if (this.elapsed >= finish + this.unleanTime) return 'done';
     }
     return null;
   }

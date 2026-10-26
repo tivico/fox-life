@@ -18,6 +18,8 @@ export interface LivingSnapshot {
   kind: LivingAction; phase: LivingPhase; elapsed: number; motionTime: number; pose: number; cupHold: number;
   /** Only the lead fox holds the shared remote during a pair. */
   remote?: boolean;
+  /** Partner-facing side; the paired fox's tail curls to the opposite side. */
+  tailSide?: number;
 }
 
 // Action clocks own props through pickup, carrying and return, including safe interruption.

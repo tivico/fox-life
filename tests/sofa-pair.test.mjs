@@ -39,6 +39,108 @@ function meshHitsBox(mesh, box) {
   return false;
 }
 
+function visibleMeshes(fox) {
+  const result = [];
+  fox.root.updateMatrixWorld(true);
+  fox.root.traverseVisible(mesh => {
+    if (mesh instanceof THREE.Mesh && Math.abs(mesh.matrixWorld.determinant()) > 1e-10)
+      result.push({ mesh, box: new THREE.Box3().setFromObject(mesh, true) });
+  });
+  return result;
+}
+
+function clearPartners(h) {
+  const first = visibleMeshes(h.a), second = visibleMeshes(h.b);
+  for (const a of first) for (const b of second) {
+    // Disjoint bounds prove separation for the whole mesh, including the ears, tail and props.
+    assert.ok(!a.box.intersectsBox(b.box), `${h.a.together?.motionTime}: ${a.mesh.parent.name || a.mesh.geometry.type} overlaps partner ${b.mesh.parent.name || b.mesh.geometry.type}`);
+  }
+}
+
+function sofaSolids() {
+  const { scene } = createScene({ expanded: true, garden: true, kitchen: true });
+  scene.updateMatrixWorld(true);
+  const solids = [];
+  scene.traverse(mesh => {
+    if (mesh instanceof THREE.Mesh && ['SofaBase', 'SofaCushion', 'SofaBack', 'SofaArm', 'SofaThrow'].includes(mesh.name))
+      solids.push({ name: mesh.name, box: new THREE.Box3().setFromObject(mesh, true).expandByScalar(-.008) });
+  });
+  return solids;
+}
+
+function clearSofa(h, solids) {
+  for (const fox of [h.a, h.b]) for (const { mesh, box } of visibleMeshes(fox)) for (const solid of solids) {
+    if (box.intersectsBox(solid.box)) assert.ok(!meshHitsBox(mesh, solid.box),
+      `${fox.name}/${fox.action} ${fox.together?.motionTime}: ${mesh.parent.name || mesh.geometry.type} enters ${solid.name}`);
+  }
+}
+
+test('TV head lean stays close without intersecting either fox, in both seats and with either remote holder', () => {
+  const solids = sofaSolids();
+  for (const reversed of [false, true]) for (const lead of ['a', 'b']) {
+    const h = home();
+    h.a.root.position.set(.6, 0, reversed ? 7 : 5.2);
+    h.b.root.position.set(.6, 0, reversed ? 5.2 : 7);
+    try {
+      assert.equal(h.planner.invite('WatchTVTogether', h[lead]), 'accepted');
+      until(h, () => active(h), 120, () => clearSofa(h, solids));
+      let near = Infinity, initial = 0, last = 0, previous = null, maxStep = 0;
+      until(h, () => finished(h), 30, () => {
+        if (!h.a.together || !h.b.together) return;
+        clearPartners(h);
+        clearSofa(h, solids);
+        const heads = [h.a, h.b].map(fox => new THREE.Box3().setFromObject(fox.root.getObjectByName('FoxHead'), true));
+        const gap = Math.max(heads[0].min.z, heads[1].min.z) - Math.min(heads[0].max.z, heads[1].max.z);
+        const time = h.a.together.motionTime;
+        if (time < 1) initial = gap;
+        if (time >= 11 && time <= 13) near = Math.min(near, gap);
+        if (time > 15 && h.a.together.phase === 'active') last = gap;
+        const centers = [h.a, h.b].map(fox => fox.root.getObjectByName('FoxHead').getWorldPosition(new THREE.Vector3()));
+        if (previous) maxStep = Math.max(maxStep, ...centers.map((point, index) => point.distanceTo(previous[index])));
+        previous = centers;
+        if (h[lead].together.pose === 1) {
+          const hand = h[lead].root.getObjectByName('FoxArmR').localToWorld(new THREE.Vector3(.05, -.34, .07));
+          const remote = h[lead].root.getObjectByName('HeldRemote').getWorldPosition(new THREE.Vector3());
+          assert.ok(hand.distanceTo(remote) < 1e-6, 'the remote stays in the leaning fox’s hand');
+        }
+      });
+      assert.ok(near > .008 && near < .04, `small safe head gap: ${near}`);
+      assert.ok(initial - near > .35 && last - near > .35, 'lean in, hold, and return upright');
+      assert.ok(maxStep < .12, `no frame jump: ${maxStep}`);
+      assert.ok(h.household.owner('living') === null);
+    } finally { h.dispose(); }
+  }
+});
+
+test('interrupting the approach, hold or release of the head lean separates the foxes before standing', () => {
+  const solids = sofaSolids();
+  for (const reversed of [false, true]) for (const time of [9.5, 11.7, 14.4]) for (const caller of ['a', 'b']) {
+    const h = home(() => .45, () => 0);
+    h.a.root.position.set(.6, 0, reversed ? 7 : 5.2);
+    h.b.root.position.set(.6, 0, reversed ? 5.2 : 7);
+    try {
+      h.planner.update(dt);
+      until(h, () => active(h) && h.a.together.motionTime >= time);
+      assert.equal(h[caller].requestRead(), true);
+      let checkedSeatedExit = false;
+      until(h, () => !h.a.together && !h.b.together, 5, () => {
+        if (!h.a.together || !h.b.together) return;
+        clearPartners(h);
+        clearSofa(h, solids);
+        for (const fox of [h.a, h.b]) {
+          if (fox.together.phase === 'finish' && fox.together.elapsed < .75) {
+            assert.equal(fox.together.pose, 1, 'stay seated while unleaning');
+            checkedSeatedExit = true;
+          }
+        }
+      });
+      assert.ok(checkedSeatedExit);
+      assert.ok(h.household.owner('living') === null);
+      until(h, () => h[caller].readPhase === 'read');
+    } finally { h.dispose(); }
+  }
+});
+
 test('two foxes come from different rooms, share two sofa seats and one remote, and record one TV moment', () => {
   for (const leadName of ['a', 'b']) {
     const h = home(), journal = new LifeJournal();

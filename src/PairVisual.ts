@@ -9,15 +9,16 @@ export function createPairVisual(joints: { root: THREE.Group; body: THREE.Group;
   ears: THREE.Group[]; arms: THREE.Group[]; tail: THREE.Group }) {
   const { root, body, head, eyes, ears, arms, tail } = joints;
   const objects = [body, head, eyes, tail, ...ears, ...arms];
-  let saved: Array<{ object: THREE.Object3D; rotation: THREE.Euler; scale: THREE.Vector3 }> = [];
+  let saved: Array<{ object: THREE.Object3D; position: THREE.Vector3; rotation: THREE.Euler; scale: THREE.Vector3 }> = [];
   return {
     restore() {
-      for (const pose of saved) { pose.object.rotation.copy(pose.rotation); pose.object.scale.copy(pose.scale); }
+      for (const pose of saved) { pose.object.position.copy(pose.position); pose.object.rotation.copy(pose.rotation); pose.object.scale.copy(pose.scale); }
       saved = [];
     },
     animate(pair: PairPose | null) {
       if (!pair || pair.pose <= 0) return;
-      saved = objects.map(object => ({ object, rotation: object.rotation.clone(), scale: object.scale.clone() }));
+      const remote = root.getObjectByName('HeldRemote');
+      saved = [...objects, ...(remote ? [remote] : [])].map(object => ({ object, position: object.position.clone(), rotation: object.rotation.clone(), scale: object.scale.clone() }));
       const p = step(pair.pose, 0, 1), t = pair.motionTime;
       if (pair.kind === 'Boop') {
         // Lean in from the ankles and tip the head so the nose meets the other at their shared height,
@@ -57,6 +58,29 @@ export function createPairVisual(joints: { root: THREE.Group; body: THREE.Group;
         head.rotation.y += pair.side * .35 * glance * p;
         head.rotation.z += -pair.side * .035 * glance * p;
         tail.rotation.x += Math.sin(t * 2) * .035 * p;
+        const lean = (pair.headLean ?? 0) * p;
+        if (lean > 0) {
+          body.updateMatrix(); tail.updateMatrix();
+          const before = body.matrix.clone();
+          const tailInRoot = before.clone().multiply(tail.matrix);
+          // Lean the connected torso and head about the hips; the feet and seated tail stay planted.
+          // Keep a small gap between the complete head silhouettes, including the ears.
+          const roll = -pair.side * .33 * lean;
+          body.rotation.z += roll;
+          body.position.x += .35 * Math.sin(roll);
+          body.position.y += .35 * (1 - Math.cos(roll)) + .035 * lean;
+          head.rotation.y *= 1 - lean;
+          head.rotation.z += -pair.side * .08 * lean;
+          ears[pair.side < 0 ? 0 : 1]!.rotation.x -= .35 * lean;
+          eyes.scale.y *= 1 - .6 * lean;
+          body.updateMatrix();
+          body.matrix.clone().invert().multiply(tailInRoot).decompose(tail.position, tail.quaternion, tail.scale);
+          if (remote?.visible) {
+            remote.updateMatrix();
+            body.matrix.clone().multiply(before.invert()).multiply(remote.matrix)
+              .decompose(remote.position, remote.quaternion, remote.scale);
+          }
+        }
       } else {
         // Side by side at the window holding the inner paws, with a small swing; heads lean together, with one shared glance.
         const hold = step(t, 0, .9) * (1 - step(t, 6.1, 6.9));
