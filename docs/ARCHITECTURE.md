@@ -1,6 +1,70 @@
 # Fox Life Web — Architecture
 
-> 最新 review：2026-09-17，見 §23 Pre-Eat Architecture Review。Sleep `fb9ad1f`、Read `2e18ed3` 均已 PO Accepted；目前只有 review 授權，Eat 未開始。下方 §1～20 的 Current / Proposed 與 approval 是 V0.1／規劃時快照，不代表目前僅有 Observe。
+## 現行架構（2026-10-26）
+
+本節描述目前程式。下方折疊區保留 2026-09 的設計與核准紀錄，其中的 Current、Proposed 和授權範圍只代表當時狀態。功能與操作總覽見 [README](../README.md)，歷史里程碑見 [CHANGELOG](CHANGELOG.md)。
+
+目前是純前端、單頁的 Three.js 生活模擬：小橘與小白共住臥室、客廳、陽台與廚房。Sleep、Read、Eat、日常、客廳、花園、料理、摸頭與雙人動作皆已實作。本機新版本加入輕量飢餓／精神需求、偏好與雙人看電視。沒有後端、完整存檔或離線模擬；日記與介面偏好使用 localStorage，需求不持久化。新功能的瀏覽器驗收狀態見 [本輪驗證](NEEDS_AND_SHARED_TV.md)。
+
+### 啟動與更新
+
+```text
+entry.ts → main.ts
+  ├─ scene.ts：房間、家具、光照與活動位置
+  ├─ Household：共用位置的占用與預留
+  ├─ Character × 2：自主行為、邀請、移動與活動切換
+  ├─ PairPlanner：雙人邀請與自主配對
+  ├─ ClickInteraction / LifePanel / RoomPanel：玩家輸入與回饋
+  └─ 每幀：FrameClock → 兩隻 Character → PairPlanner → 鏡頭、道具、介面、音訊 → render
+```
+
+`FrameClock` 只推進前景時間，單幀最多 0.05 秒；背景分頁不累積生活進度。`main.ts` 負責組裝與清理，行為和姿態分別在 Character 與 visual 模組。
+
+### 模組責任
+
+| 模組 | 目前責任 |
+| --- | --- |
+| `Character.ts` | 持有單一 `Activity`、各活動冷卻時間、移動路徑與一個收尾後目的地；選擇自主活動，仲裁玩家邀請 |
+| `Needs.ts` | 前景時間推進飢餓／精神，依正在執行的階段恢復需求；以需求與偏好加權自主選擇，不參與玩家邀請的接受判定 |
+| `sleep.ts`、`read.ts`、`eat.ts`、`daily.ts`、`LivingActivity.ts`、`GardenActivity.ts`、`KitchenActivity.ts` | 各自擁有活動階段、時間、姿勢與安全退出規則；透過共同 Activity 契約由 Character 呼叫 |
+| `Household.ts` | 以活動群組管理共用位置；書架、餐桌、掃帚，以及客廳／花園／廚房活動互斥，雙人床不互斥 |
+| `Pair.ts` | `PairPlanner` 建立共享 `PairPlan`；兩個 `PairActivity` 協調站位、到達、等待、開始與退出；先到者最多等 30 秒 |
+| `HomeNavigation.ts` | 四房間分類與固定門口路徑；沒有通用尋路或完整角色碰撞系統，小白會讓小橘先過 |
+| `createFoxVisual.ts`、`*Visual.ts` | 程序模型、活動姿態與道具；`PetVisual`、`PairVisual` 疊加摸頭與雙人演出，不決定行為目的地 |
+| `ClickInteraction.ts` | 共用點擊／拖曳區分、最近表面 raycast 與事件清理；命中後由 Character 決定是否接受邀請 |
+| `HomeView.ts`、`RoomPanel.ts` | 跟拍目前選中的狐狸，或固定看全屋／房間；房間按鈕只改鏡頭，前往按鈕才發出移動邀請 |
+| `LifePanel.ts`、`life.ts` | 依目前狐狸所在房間顯示動作、邀請結果、進度與最近 40 則日記；日記分別追蹤兩隻，雙人活動記一則 |
+| `HomeAudio.ts` | 配樂、環境音與動作音效；動作音效跟著目前選中的狐狸 |
+
+### 單人邀請與位置預留
+
+1. 已有玩家邀請，或目的地被另一隻占用／預留時，拒絕新邀請；不打斷現有流程。
+2. 接受邀請後，若當前自主活動需要收尾，保留現有位置，並立即預留下一個目的地。例如小橘起床準備讀書時，小白不能先占走書架。
+3. 收尾完成後，在同一次同步呼叫中釋放舊占用並啟動下一個活動；另一隻的更新不會插在兩者之間。
+4. `occupies()` 同時反映占用與預留，讓介面能指出是哪隻狐狸持有位置。活動結束或角色 dispose 時釋放位置。
+
+這仍是一個收尾後目的地，沒有新增邀請佇列。碰碰鼻子與一起看窗外不占單人家具群組；一起看電視以共享 `PairPlan` 預留 `living` 群組，允許計畫中的兩隻使用座位，直到兩隻都退出才釋放。若其中一隻仍在還茶杯，客廳會讀取兩隻的快照，避免複製道具。其他客廳活動暫時維持整組互斥，未建立通用座位系統。
+
+### 需求與偏好的接入
+
+主入口為兩隻 Character 傳入 `life` 選項：小橘 `reader`、小白 `gardener`。Character 每幀用實際活動種類與階段更新 `LifeNeeds`，從原本可用且已過冷卻的候選中加權選擇；原有安全退出、位置占用與最多連續散步次數仍生效。基礎動作與歷史造型工具未傳入 `life` 時保留原有選擇器，需求測試另覆蓋實際雙角色設定。沒有離線補算、存檔、需求拒絕或顯示數值的介面。
+
+### 角色選擇與鏡頭
+
+點名字與直接摸狐狸共用 `main.ts` 的選擇流程，切換動作欄、目前角色與跟拍鏡頭。固定房間／全屋視角下，點目前同一隻狐狸也會恢復跟拍。已在跟拍同一隻時，連續摸頭保留使用者轉過的角度與縮放。
+
+### 驗證邊界
+
+- `npm test`：Node 直接執行 TypeScript 的模擬測試，涵蓋活動中斷、路徑、姿態／家具淨空、點擊、日記、音訊與雙角色協調；`tests/companion.test.mjs` 另檢查收尾期間的預留、競爭拒絕與釋放。
+- `npm run build`：先執行 TypeScript 檢查，再產生 Vite 正式建置。
+- 模擬測試不能代替瀏覽器畫面、真實效能與人工體感驗收；尚待項目見 [Chrome 人工補驗](V0_1_CHROME_MANUAL_ACCEPTANCE.md) 與 [V0.2 整體驗收](V0_2_OVERALL_ACCEPTANCE.md)。
+
+## 歷史設計與核准紀錄（2026-09）
+
+<details>
+<summary>展開 V0.1 與 Sleep → Read → Eat 的歷史架構紀錄</summary>
+
+> 歷史 review：2026-09-17，見 §23 Pre-Eat Architecture Review。當時 Sleep `fb9ad1f`、Read `2e18ed3` 均已 PO Accepted；Eat 尚未開始。其後 Eat 實作記於 §24；下方內容不代表現行程式與工作授權。
 
 > 2026-09-14 implementation update：後續 PO 已授權 Slice A Coding。Sleep 已在 `feature/v0.2-sleep` 延伸既有模組，技術驗證與人工待驗項目見 [Slice A acceptance](V0_2_SLEEP_ACCEPTANCE.md)。以下 2026-09-13 approval 與 Current / Proposed 內容保留為核准時快照；文件核准不等於 Slice A Accepted。
 
@@ -617,3 +681,5 @@ Browser production smoke、獨立 Chrome background／performance 與 Product Ow
 - Chooser 延續 equal eligible slots + Walk 3。沒有加入未被使用的 `EAT.weight`；`SLEEP.weight` / `READ.weight` 既有 observation 不變，本輪不順便重構 chooser。
 - EatInteraction 延續最近命中、drag threshold、dispose 慣例；四份 binder 的重複確實存在，§23.4 的最小 helper 仍可在後續獨立整理時考慮，並非本輪必要修改。
 - 原 33 tests 未改；新增 10 Eat tests，43/43、typecheck、build 通過。Production smoke / 中斷與人工缺口見 [Eat Acceptance](V0_2_EAT_ACCEPTANCE.md)。Eat 等待 PO，未進行 Overall Closeout。
+
+</details>

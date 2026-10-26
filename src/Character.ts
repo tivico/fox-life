@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createFoxVisual, foxLooks, type FoxLook } from './createFoxVisual.ts';
 import { Household, activityGroup } from './Household.ts';
+import { LifeNeeds, type NeedsOptions } from './Needs.ts';
 import { SLEEP, SleepActivity } from './sleep.ts';
 import { ReadActivity } from './read.ts';
 import { EatActivity } from './eat.ts';
@@ -32,6 +33,8 @@ export interface CharacterOptions {
   look?: FoxLook;
   /** Shared by the foxes of one home so they do not use the same spot or prop at once. */
   household?: Household;
+  /** Enable gentle needs in the live home; isolated animation/review fixtures can keep the baseline chooser. */
+  life?: NeedsOptions;
 }
 export const OBSERVE_SECONDS = 4;
 export const ARRIVAL_DISTANCE = 0.035;
@@ -75,7 +78,8 @@ export class Character {
   /** The right shoulder when standing (the left one mirrors x), and how far the paw hangs from it. */
   readonly shoulder: Shoulder;
   private readonly visual: ReturnType<typeof createFoxVisual>;
-  private readonly household: Household | null;
+  readonly household: Household | null;
+  private readonly lifeNeeds: LifeNeeds | null;
   private yielding: Character | null = null;
   private currentState: CharacterState = 'Idle';
   private commandActive = false;
@@ -112,6 +116,7 @@ export class Character {
     this.name = options.name;
     this.coat = (options.look ?? foxLooks.orange).palette.fur;
     this.household = options.household ?? null;
+    this.lifeNeeds = options.life ? new LifeNeeds(options.life) : null;
     this.layout = { ...layout, windowPosition: layout.windowPosition.clone(), bounds: { ...layout.bounds } };
     if (layout.bed) this.layout.bed = { position: layout.bed.position.clone(), heading: layout.bed.heading, corner: layout.bed.corner.clone() };
     if (layout.reading) this.layout.reading = { position: layout.reading.position.clone(), heading: layout.reading.heading };
@@ -129,7 +134,16 @@ export class Character {
     this.shoulder = { position: shoulder, arm: arm.localToWorld(PAW.clone()).distanceTo(shoulder) };
   }
   get state() { return this.currentState; }
-  dispose() { this.visual.dispose(); }
+  get needs() { return this.lifeNeeds?.snapshot ?? null; }
+  get needHint() { return this.lifeNeeds?.hint ?? null; }
+  get livingEnabled() { return this.layout.connectedRooms === true; }
+  dispose() {
+    this.clearActivity();
+    this.pendingJoin?.activity.leave();
+    this.pendingJoin = null;
+    this.afterExit = null;
+    this.visual.dispose();
+  }
   get source() { return this.commandActive ? 'Player Command' : 'Autonomous'; }
   get target() { return this.destination?.clone() ?? null; }
   get idleVariation() { return this.variation; }
@@ -152,7 +166,8 @@ export class Character {
   get activityKind() { return this.daily?.kind ?? null; }
   get activityPhase() { return this.daily?.phase ?? null; }
   get activityElapsed() { return this.daily?.elapsed ?? 0; }
-  get livingActivity() { return this.activity instanceof LivingActivity ? this.activity : null; }
+  get livingActivity() { return this.activity instanceof LivingActivity ? this.activity
+    : this.activity instanceof PairActivity ? this.activity.living : null; }
   get gardenActivity() { return this.activity instanceof GardenActivity ? this.activity : null; }
   get gardenEnabled() { return this.layout.balcony === true; }
   get kitchenActivity() { return this.activity instanceof KitchenActivity ? this.activity : null; }
@@ -188,10 +203,13 @@ export class Character {
   }
   /** This fox waits behind the given housemate instead of walking through it. */
   yieldTo(other: Character | null) { this.yielding = other; }
-  /** Whether this fox is using the spot or prop that the given invitation needs. */
+  /** Whether this fox is using or reserving the spot that the given invitation needs. */
   occupies(kind: ActionTarget) {
     const group = activityGroup(kind);
-    return group !== null && !!this.activity && activityGroup(this.activity.kind) === group;
+    if (group === null) return false;
+    if (!this.household) return !!this.activity && activityGroup(this.activity.kind) === group;
+    const owner = this.household.owner(group);
+    return owner !== null && (owner === this || owner === this.activity?.together || owner === this.pendingJoin?.activity.plan);
   }
   private blockedBy(other: Character) {
     if (other.state !== 'Idle' && other.state !== 'Walk' && other.state !== 'Observe') return false;
@@ -270,7 +288,11 @@ export class Character {
   private requestActivity(kind: Exclude<SoloKind, 'Stretch'>) {
     if (this.commandActive || this.activity?.kind === kind) return false;
     if (this.household && !this.household.free(activityGroup(kind), this)) return false;
-    if (this.exitFor(kind)) return true;
+    if (this.exitFor(kind)) {
+      // Keep the current spot until its safe exit ends, and reserve the accepted destination now.
+      this.household?.claim(activityGroup(kind), this);
+      return true;
+    }
     this.begin(kind, true);
     return true;
   }
@@ -323,8 +345,12 @@ export class Character {
     this.afterExit = null;
     this.pendingJoin = null;
     this.consecutiveWalks = 0;
+    // Release the old claims and start the accepted invitation synchronously, before another fox updates.
     this.enterIdle();
-    if (join) { if (!join.activity.abandoned) this.start(join.activity, join.player); }
+    if (join) {
+      if (!join.activity.abandoned) this.start(join.activity, join.player);
+      else join.activity.leave();
+    }
     else if (isRoomId(next)) this.requestRoomVisit(next);
     else if (next) this.request(next);
   }
@@ -389,6 +415,7 @@ export class Character {
   update(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.05);
+    this.lifeNeeds?.update(dt, this.activity?.kind ?? null, this.activity?.phase ?? null, this.currentState === 'Walk');
     this.elapsed += dt;
     for (const [kind, cooldown] of this.cooldowns) this.cooldowns.set(kind, Math.max(0, cooldown - dt));
     if (this.activity?.abandoned) this.enterIdle();
@@ -422,9 +449,11 @@ export class Character {
         if (this.layout.connectedRooms) eligible.push(...livingActions.filter(ready));
         if (this.layout.balcony) eligible.push(...gardenActions.filter(ready));
         if (this.layout.kitchen) eligible.push(...kitchenActions.filter(ready));
-        // Enabled life actions have weight 1; Walk has weight 3.
-        const choice = eligible.length && !this.stretchAfterWalk ? Math.floor(this.random() * (eligible.length + (this.consecutiveWalks >= 3 ? 0 : SLEEP.walkWeight))) : -1;
-        const kind = eligible[choice];
+        // Baseline activities have weight 1; needs and preferences adjust them in the live home. Walk keeps weight 3.
+        const walkWeight = this.consecutiveWalks >= 3 ? 0 : SLEEP.walkWeight;
+        const roll = eligible.length && !this.stretchAfterWalk ? this.random() : null;
+        const kind = roll === null ? undefined : this.lifeNeeds ? this.lifeNeeds.choose(eligible, walkWeight, roll)
+          : eligible[Math.floor(roll * (eligible.length + walkWeight))];
         if (kind) this.begin(kind, false);
         else {
           this.destination = this.chooseDestination();

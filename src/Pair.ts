@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import type { Character } from './Character.ts';
 import { homeRooms, roomAt } from './HomeNavigation.ts';
+import { SOFA_APPROACH, SOFA_PAIR_GAP, type LivingSnapshot } from './LivingActivity.ts';
 
-export const pairActions = ['Boop', 'GazeTogether'] as const;
+export const pairActions = ['Boop', 'GazeTogether', 'WatchTVTogether'] as const;
 export type PairAction = typeof pairActions[number];
-export const pairLabels: Record<PairAction, string> = { Boop: '碰碰鼻子', GazeTogether: '一起看窗外' };
+export const pairLabels: Record<PairAction, string> = { Boop: '碰碰鼻子', GazeTogether: '一起看窗外', WatchTVTogether: '一起看電視' };
 export function isPairAction(value: unknown): value is PairAction {
   return typeof value === 'string' && (pairActions as readonly string[]).includes(value);
 }
@@ -12,6 +13,7 @@ export function isPairAction(value: unknown): value is PairAction {
 export const PAIR = {
   Boop: { duration: 3.2, gap: .84 },
   GazeTogether: { duration: 7, gap: .7 },
+  WatchTVTogether: { duration: 16, gap: SOFA_PAIR_GAP },
   settle: .5, finish: .6,
   // How long the first fox waits at its spot for the other, including the other's safe exit.
   patience: 30,
@@ -59,6 +61,7 @@ export class PairPlan {
   readonly spots: readonly [THREE.Vector3, THREE.Vector3];
   readonly headings: readonly [number, number];
   readonly arrived = new Set<number>();
+  private readonly departed = new Set<number>();
   go = false;
   over = false;
   constructor(kind: PairAction, lead: Character, partner: Character) {
@@ -70,6 +73,11 @@ export class PairPlan {
       left = window.clone().setX(window.x - PAIR.GazeTogether.gap / 2);
       right = window.clone().setX(window.x + PAIR.GazeTogether.gap / 2);
       headings = [Math.PI, Math.PI];
+    } else if (kind === 'WatchTVTogether') {
+      // Use the first and middle cushions; the third holds the throw and pillow.
+      left = SOFA_APPROACH.clone().setZ(SOFA_APPROACH.z - SOFA_PAIR_GAP);
+      right = SOFA_APPROACH.clone();
+      headings = [Math.PI / 2, Math.PI / 2];
     } else {
       // Nose to nose in the middle of the lead fox's room, where the walking area is free of furniture.
       const area = homeRooms[roomAt(lead.root.position)].walk;
@@ -85,6 +93,18 @@ export class PairPlan {
     this.headings = leadLeft ? headings : [headings[1], headings[0]];
   }
   get who() { return `${this.members[0].name ?? '狐狸'}和${this.members[1].name ?? '狐狸'}`; }
+  reserve() {
+    if (this.kind !== 'WatchTVTogether') return true;
+    const [lead, partner] = this.members;
+    if (!lead.livingEnabled || !partner.livingEnabled || lead.household !== partner.household) return false;
+    return lead.household?.claimTogether('living', this, this.members) ?? true;
+  }
+  leave(index: number) {
+    this.over = true;
+    this.departed.add(index);
+    // Neither a timeout nor the first fox standing up frees the sofa while the other is still sitting there.
+    if (this.departed.size === 2) this.members[0].household?.release(this);
+  }
 }
 
 export class PairActivity {
@@ -104,8 +124,9 @@ export class PairActivity {
   get heading() { return this.plan.headings[this.index]; }
   private get partner() { return this.plan.members[1 - this.index]!; }
   // Waiting and booping read as standing still; gazing together reads as looking out of the window.
-  get state(): 'Walk' | 'Idle' | 'Observe' {
+  get state(): 'Walk' | 'Idle' | 'Observe' | 'Living' {
     if (this.phase === 'approach') return 'Walk';
+    if (this.kind === 'WatchTVTogether' && this.phase !== 'wait') return 'Living';
     return this.kind === 'GazeTogether' && this.phase !== 'wait' ? 'Observe' : 'Idle';
   }
   /** The other fox left before this one arrived: stop walking and carry on alone. */
@@ -113,6 +134,11 @@ export class PairActivity {
   get snapshot(): PairSnapshot {
     return { kind: this.kind, phase: this.phase, elapsed: this.elapsed, motionTime: this.motionTime, pose: this.pose,
       lead: this.index === 0, partner: this.partner.name ?? '狐狸', who: this.plan.who };
+  }
+  get living(): LivingSnapshot | null {
+    if (this.kind !== 'WatchTVTogether') return null;
+    return { kind: 'WatchTV', phase: this.phase === 'wait' ? 'approach' : this.phase,
+      elapsed: this.elapsed, motionTime: this.motionTime, pose: this.pose, cupHold: 0, remote: this.index === 0 };
   }
   visual(): PairPose {
     const own = this.plan.members[this.index]!, partner = this.partner;
@@ -158,33 +184,35 @@ export class PairActivity {
     this.plan.over = true;
   }
   /** Leaving for any reason ends the pair for the other fox too. */
-  leave() { this.plan.over = true; }
+  leave() { this.plan.leave(this.index); }
   update(dt: number): 'done' | null {
     if (!Number.isFinite(dt) || dt <= 0 || this.phase === 'approach') return null;
     dt = Math.min(dt, .05);
     this.elapsed += dt;
     const duration = PAIR[this.kind].duration;
+    const ease = this.kind === 'WatchTVTogether' ? 1.35 : PAIR.settle;
+    const finish = this.kind === 'WatchTVTogether' ? 1.35 : PAIR.finish;
     if (this.phase === 'wait') {
       this.waited += dt;
       if (this.plan.over) return 'done';
       if (this.plan.go) { this.phase = 'settle'; this.elapsed = 0; }
       else if (this.waited >= PAIR.patience) { this.plan.over = true; return 'done'; }
     } else if (this.phase === 'settle') {
-      this.pose = Math.min(1, this.elapsed / PAIR.settle);
+      this.pose = Math.min(1, this.elapsed / ease);
       if (this.plan.over) this.finish();
-      else if (this.elapsed >= PAIR.settle) { this.phase = 'active'; this.elapsed = 0; }
+      else if (this.elapsed >= ease) { this.phase = 'active'; this.elapsed = 0; }
     } else if (this.phase === 'active') {
       this.motionTime = Math.min(this.elapsed, duration);
       if (this.plan.over || this.elapsed >= duration) this.finish();
     } else {
-      this.pose = this.finishFrom * (1 - Math.min(1, this.elapsed / PAIR.finish));
-      if (this.elapsed >= PAIR.finish) return 'done';
+      this.pose = this.finishFrom * (1 - Math.min(1, this.elapsed / finish));
+      if (this.elapsed >= finish) return 'done';
     }
     return null;
   }
 }
 
-export type PairInvite = 'accepted' | 'same' | 'self-busy' | 'partner-busy';
+export type PairInvite = 'accepted' | 'same' | 'self-busy' | 'partner-busy' | 'space-busy';
 
 /** Starts pairs: on your invitation from the fox you are talking to, or now and then on their own. */
 export class PairPlanner {
@@ -199,8 +227,7 @@ export class PairPlanner {
     if (lead.together?.kind === kind) return 'same';
     if (!lead.canJoin) return 'self-busy';
     if (!partner.canJoin) return 'partner-busy';
-    this.start(kind, lead, partner, true);
-    return 'accepted';
+    return this.start(kind, lead, partner, true) ? 'accepted' : 'space-busy';
   }
   update(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
@@ -209,13 +236,17 @@ export class PairPlanner {
     if (this.rest > 0 || !a.free || !b.free || roomAt(a.root.position) !== roomAt(b.root.position)) return;
     if (this.random() >= PAIR.chance * Math.min(dt, .05)) return;
     const lead = this.random() < .5 ? a : b;
-    const kind: PairAction = roomAt(lead.root.position) === 'Bedroom' && this.random() < .4 ? 'GazeTogether' : 'Boop';
+    const room = roomAt(lead.root.position);
+    const kind: PairAction = room === 'Bedroom' && this.random() < .4 ? 'GazeTogether'
+      : room === 'LivingRoom' && this.random() < .5 ? 'WatchTVTogether' : 'Boop';
     this.start(kind, lead, lead === a ? b : a, false);
   }
   private start(kind: PairAction, lead: Character, partner: Character, player: boolean) {
     const plan = new PairPlan(kind, lead, partner);
+    if (!plan.reserve()) return false;
     lead.join(new PairActivity(plan, 0), player);
     partner.join(new PairActivity(plan, 1), player);
     this.rest = PAIR.rest;
+    return true;
   }
 }

@@ -51,8 +51,8 @@ function start() {
   controls.saveState();
   // Two foxes share the home. Choosing a fox, by its chip or by petting it, makes it the one you are talking to.
   const household = new Household();
-  const orange = new Character(kitchenHomeLayout, Math.random, { name: '小橘', household });
-  const white = new Character(companionLayout, Math.random, { name: '小白', look: foxLooks.white, household });
+  const orange = new Character(kitchenHomeLayout, Math.random, { name: '小橘', household, life: { preference: 'reader' } });
+  const white = new Character(companionLayout, Math.random, { name: '小白', look: foxLooks.white, household, life: { preference: 'gardener' } });
   white.root.position.set(-.9, 0, 5.6); white.root.rotation.y = Math.PI / 2;
   white.yieldTo(orange);
   scene.add(orange.root, white.root);
@@ -75,7 +75,7 @@ function start() {
     const accepted = character.requestRoomVisit(room);
     life.visitResult(homeRooms[room].label, accepted);
   };
-  // The room panel's fox chips switch who you are with and bring the camera back to following them.
+  // Fox chips and petting share the same selection and return to the chosen fox's follow view.
   const select = (fox: Character) => {
     character = fox;
     homeView.follow(fox.root.position);
@@ -100,7 +100,7 @@ function start() {
     const parts: THREE.Object3D[] = [];
     fox.root.traverse(object => { if (object instanceof THREE.Mesh) parts.push(object); });
     return bindClickInteraction(renderer.domElement, camera, scene, parts, () => {
-      if (character !== fox) { character = fox; homeView.follow(fox.root.position); rooms.update(); }
+      if (character !== fox || homeView.mode !== 'follow') { select(fox); rooms.update(); }
       life.petResult(fox.pet(), fox);
     });
   });
@@ -175,8 +175,8 @@ function start() {
     frameCamera(dt);
     rooms.update();
     atmosphere.update(dt, reducedMotion.matches);
-    // The household lets only one fox use each room's props at a time, so one snapshot per room suffices.
-    livingRoom!.update(dt, reducedMotion.matches, orange.livingActivity ?? white.livingActivity);
+    // The living room also sees both foxes during the safe handover to a shared sofa activity.
+    livingRoom!.update(dt, reducedMotion.matches, orange.livingActivity, white.livingActivity);
     balcony!.update(dt, reducedMotion.matches, orange.gardenActivity ?? white.gardenActivity);
     kitchen!.update(dt, reducedMotion.matches, orange.kitchenActivity ?? white.kitchenActivity);
     storedBroom.visible = !(orange.cleanToolInUse || white.cleanToolInUse);

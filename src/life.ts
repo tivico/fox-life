@@ -14,7 +14,7 @@ export type MomentKind = LifeAction | 'Doze' | 'Stretch' | 'Pet' | 'PetShy' | Ro
 export type LifeSnapshot = Pick<Character, 'state' | 'action' | 'source' | 'targetLabel' |
   'sleepPhase' | 'sleepElapsed' | 'readPhase' | 'readElapsed' | 'eatPhase' | 'eatElapsed' | 'observeElapsed' |
   'activityKind' | 'activityPhase' | 'activityElapsed' | 'microEvent' | 'livingActivity' | 'gardenActivity' | 'kitchenActivity'>
-  & Partial<Pick<Character, 'petReaction' | 'name' | 'together'>>;
+  & Partial<Pick<Character, 'petReaction' | 'name' | 'together' | 'needHint'>>;
 
 export const actionLabels: Record<LifeAction, string> = {
   Window: '看風景', Bed: '睡個覺', Bookshelf: '讀本書', Food: '吃點心',
@@ -56,6 +56,11 @@ const descriptions: Record<string, string> = {
 // A pair reads the same for both foxes, each naming the other one.
 function pairTitle(pair: NonNullable<LifeSnapshot['together']>) {
   const { kind, phase, partner } = pair;
+  if (kind === 'WatchTVTogether') {
+    return phase === 'approach' ? `和${partner}一起去沙發邊` : phase === 'wait' ? `等${partner}一起坐好`
+      : phase === 'settle' ? `和${partner}慢慢坐上沙發` : phase === 'finish' ? '節目看完了，慢慢站起來'
+      : `和${partner}並肩看著小節目`;
+  }
   if (phase === 'approach') return kind === 'Boop' ? `走向${partner}，打個招呼` : `和${partner}一起去窗邊`;
   if (phase === 'wait') return `等${partner}過來`;
   if (phase === 'finish') return kind === 'Boop' ? '打完招呼，繼續各自的小日常' : '看完風景，慢慢走開';
@@ -108,7 +113,7 @@ export function lifePresentation(fox: LifeSnapshot) {
     : { WatchTV: '拿著遙控器，專心看一段小節目', SofaRest: '靠著沙發，舒服地放空一下', Tea: '吹一吹熱茶，再慢慢喝一口',
       Exercise: '抬抬手、伸展身體，再原地踏踏步', Music: '跟著音樂輕輕搖擺，享受自己的時間', TidySofa: '拍鬆抱枕，把毯子整理好' }[living.kind] : descriptions[fox.action] ?? '在家裡慢慢生活';
   return {
-    title, active,
+    title: fox.source === 'Autonomous' && fox.action === 'Autonomous idle' && fox.needHint ? fox.needHint : title, active,
     source: fox.source === 'Player Command' ? '回應你的邀請' : '自己的小日常',
     locked: fox.source === 'Player Command',
     progress: progress === null ? null : Math.round(Math.max(0, Math.min(1, progress)) * 100),
@@ -131,6 +136,7 @@ export const momentText: Record<MomentKind, string> = {
   Kitchen: '走進廚房，看看今天想做什麼好吃的。', ChopVegetables: '在砧板上慢慢切好蔬菜，準備一頓小料理。',
   CookSoup: '輕輕攪著湯鍋，讓暖暖的香氣飄進小家。', BakeCookies: '轉好烤箱，陪餅乾慢慢烤成金黃色。',
   Boop: '面對面碰了碰鼻子，互相打了聲招呼。', GazeTogether: '並肩站在窗前，一起看了一會風景。',
+  WatchTVTogether: '一起窩在沙發上，看了一段小節目，中途互看了一眼。',
 };
 export const JOURNAL_KEY = 'fox-life.moments.v1';
 export const JOURNAL_LIMIT = 40;

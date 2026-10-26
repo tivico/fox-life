@@ -44,8 +44,8 @@ export class SoundCues {
     if (key === 'Clean/active') for (const start of [.5, 3, 5.7]) if (crossed(start)) cues.push('sweep');
     if (key === 'Play/active') for (const start of YARN_TAPS) if (crossed(start)) cues.push('yarn');
     if (changed && (key === 'sleep/settle' || key === 'sleep/wake' || key === 'Stretch/active')) cues.push('cloth');
-    if (key === 'WatchTV/active' && crossed(.25)) cues.push('remote');
-    if (key === 'WatchTV/finish' && living!.motionTime >= .25 && crossed(.25)) cues.push('remote');
+    if (key === 'WatchTV/active' && living!.remote !== false && crossed(.25)) cues.push('remote');
+    if (key === 'WatchTV/finish' && living!.remote !== false && living!.motionTime >= .25 && crossed(.25)) cues.push('remote');
     if (key === 'Tea/putdown' && crossed(.96)) cues.push('cup');
     if (key === 'Tea/active') for (const time of [1.5, 4.7, 7.5]) if (crossed(time)) cues.push('sip');
     if (key === 'TidySofa/active') for (const time of [.6, 2.2, 3.8, 6.1]) if (crossed(time)) cues.push('cloth');

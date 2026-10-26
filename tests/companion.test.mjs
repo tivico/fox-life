@@ -47,6 +47,67 @@ test('both foxes can sleep on the double bed at once, each on its own pillow', (
   orange.dispose(); white.dispose();
 });
 
+for (const resting of ['sleep', 'meal']) {
+  test(`an accepted reading invitation reserves the shelf while finishing a ${resting}`, () => {
+    const household = new Household();
+    const orange = new Character(homeLayout, lcg(11), { household });
+    const white = new Character(homeLayout, () => .45, { household });
+    try {
+      until(() => resting === 'sleep' ? orange.sleepPhase === 'sleep' : orange.eatPhase === 'eat',
+        () => orange.update(dt), 600);
+      assert.equal(orange.source, 'Autonomous');
+      assert.equal(orange.requestRead(), true);
+      assert.ok(household.owner('reading') === orange, 'reserve the destination as soon as the invitation is accepted');
+      assert.equal(orange.occupies('Bookshelf'), true, 'feedback can identify the fox reserving the shelf');
+      assert.equal(white.requestRead(), false, 'a second invitation cannot take the reserved shelf');
+      assert.equal(orange.requestEat(), false, 'another invitation cannot replace the accepted one');
+      if (resting === 'meal') {
+        assert.ok(household.owner('dining') === orange, 'keep the old spot until its safe exit finishes');
+        assert.equal(white.requestEat(), false);
+      }
+      until(() => orange.readPhase === 'read', () => {
+        orange.update(dt); white.update(dt);
+        assert.ok(household.owner('reading') === orange, 'reservation survives the transition and autonomous choices');
+        assert.equal(orange.source, 'Player Command');
+        assert.equal(white.readPhase, null);
+      });
+      assert.ok(household.owner('dining') !== orange, 'release the previous spot after finishing');
+      until(() => orange.state === 'Idle', () => orange.update(dt));
+      assert.ok(household.owner('reading') === null, 'reading releases the shelf');
+      assert.equal(orange.occupies('Bookshelf'), false);
+      assert.equal(white.requestRead(), true, 'the shelf is available again after the reading ends');
+    } finally { orange.dispose(); white.dispose(); }
+  });
+}
+
+test('an occupied destination rejects the invitation without waking a sleeping fox', () => {
+  const household = new Household();
+  const orange = new Character(homeLayout, () => 0, { household });
+  const white = new Character(homeLayout, () => .45, { household });
+  try {
+    until(() => orange.sleepPhase === 'sleep', () => orange.update(dt));
+    assert.equal(white.requestRead(), true);
+    assert.equal(orange.requestRead(), false);
+    assert.equal(orange.sleepPhase, 'sleep');
+    assert.equal(orange.source, 'Autonomous');
+    assert.ok(household.owner('reading') === white, 'the original reader keeps the shelf');
+  } finally { orange.dispose(); white.dispose(); }
+});
+
+test('disposing a fox releases the destination reserved during its safe exit', () => {
+  const household = new Household();
+  const orange = new Character(homeLayout, () => 0, { household });
+  const white = new Character(homeLayout, () => .45, { household });
+  until(() => orange.sleepPhase === 'sleep', () => orange.update(dt));
+  assert.equal(orange.requestRead(), true);
+  assert.ok(household.owner('reading') === orange, 'the departing fox holds a reservation');
+  orange.dispose();
+  try {
+    assert.ok(household.owner('reading') === null, 'dispose releases the reservation');
+    assert.equal(white.requestRead(), true);
+  } finally { white.dispose(); }
+});
+
 test('a trailing fox waits behind a housemate in its way and carries on once the way is clear', () => {
   const household = new Household();
   const orange = new Character(homeLayout, () => .99, { household });

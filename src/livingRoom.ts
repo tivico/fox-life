@@ -179,13 +179,16 @@ export function createLivingRoom(scene: THREE.Scene, floor: THREE.MeshStandardMa
     TidySofa: [pillow, pillow2, ...collect(throwBlanket)],
   };
   let tidyTime = 0, wasTidying = false, tidyBlend = 0;
-  const update = (dt: number, reducedMotion: boolean, activity: LivingSnapshot | null) => {
-    const tvOn = activity?.kind === 'WatchTV' && (activity.phase === 'active' && activity.elapsed >= .25
-      || activity.phase === 'finish' && activity.motionTime >= .25 && activity.pose > .8);
-    program.visible = tvOn;
-    parkedRemote.visible = !(activity?.kind === 'WatchTV' && activity.pose > .55);
-    parkedCup.visible = !(activity?.kind === 'Tea' && activity.phase !== 'approach');
-    if (tvOn && !reducedMotion) clouds.forEach((cloud, i) => { cloud.position.x = [-.48, .1][i]! + Math.sin(activity.motionTime * .3 + i) * .1; });
+  const update = (dt: number, reducedMotion: boolean, first: LivingSnapshot | null, second: LivingSnapshot | null = null) => {
+    // One fox can still be returning its cup while the other is already approaching their shared seats.
+    const snapshots = [first, second];
+    const activity = snapshots.find(each => each && each.phase !== 'approach') ?? first ?? second;
+    const watching = snapshots.find(each => each?.kind === 'WatchTV' && (each.phase === 'active' && each.elapsed >= .25
+      || each.phase === 'finish' && each.motionTime >= .25 && each.pose > .8));
+    program.visible = !!watching;
+    parkedRemote.visible = !snapshots.some(each => each?.kind === 'WatchTV' && each.remote !== false && each.pose > .55);
+    parkedCup.visible = !snapshots.some(each => each?.kind === 'Tea' && each.phase !== 'approach');
+    if (watching && !reducedMotion) clouds.forEach((cloud, i) => { cloud.position.x = [-.48, .1][i]! + Math.sin(watching.motionTime * .3 + i) * .1; });
     const listening = activity?.kind === 'Music' && activity.phase === 'active';
     notes.visible = listening && !reducedMotion;
     (radioLight.material as THREE.MeshStandardMaterial).emissive.set(listening ? '#ac8c43' : '#000000');

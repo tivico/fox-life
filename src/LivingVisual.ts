@@ -67,10 +67,12 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
       if (seated && p > 0) {
         // Lift and curl the tail first, then slide back onto the existing cushion.
         root.position.y += .505 * blend(pose, 0, .6) + .1 * Math.sin(Math.PI * p);
-        root.position.z -= 1.15 * blend(pose, .3, 1);
+        root.position.z -= 1.15 * (root.scale.x / .76) * blend(pose, .3, 1);
         body.rotation.x += (-.08 - body.rotation.x) * p;
         tail.rotation.y += (1.5 - tail.rotation.y) * blend(pose, 0, .45);
         tail.rotation.x += (-.18 - tail.rotation.x) * p;
+        // Keep the smaller fox's fuller tail above the cushion, still overlapping its hip socket.
+        tail.position.y += Math.max(0, .76 - root.scale.x) * p;
         for (const [i, leg] of legs.entries()) {
           leg.rotation.x -= .85 * p;
           leg.position.y += .167 * p; leg.position.z += (.40 + Math.sin(t * 2.3 + i * Math.PI) * .025) * p;
@@ -80,11 +82,11 @@ export function createLivingVisual(joints: { root: THREE.Group; body: THREE.Grou
       if (kind === 'WatchTV') {
         const clickTime = phase === 'finish' ? activity.elapsed : t;
         const press = blend(clickTime, .1, .35) * (1 - blend(clickTime, .65, .95));
-        arms[1]!.rotation.x += (-1.3 - .2 * press - arms[1]!.rotation.x) * p;
+        if (activity.remote !== false) arms[1]!.rotation.x += (-1.3 - .2 * press - arms[1]!.rotation.x) * p;
         head.rotation.y += (-.04 + Math.sin(t * .65) * .045 - head.rotation.y) * p;
         head.rotation.z += Math.sin(t * .8) * .045 * p;
         eyes.scale.y *= 1 - Math.pow(Math.max(0, Math.sin(t * .9)), 12) * .35 * p;
-        if (pose > .55) hold(remote, REMOTE_PARK, blend(pose, .55, .95), 1 / .76);
+        if (pose > .55 && activity.remote !== false) hold(remote, REMOTE_PARK, blend(pose, .55, .95), 1 / .76);
       } else if (kind === 'SofaRest') {
         body.rotation.z += .1 * p; head.rotation.z += .1 * p;
         head.rotation.x -= .08 * p;

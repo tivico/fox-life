@@ -51,6 +51,12 @@ export function createPairVisual(joints: { root: THREE.Group; body: THREE.Group;
         eyes.scale.y *= 1 - .8 * touch * p;
         ears.forEach(ear => { ear.rotation.x += -.22 * touch * p; });
         tail.rotation.y += Math.sin(t * 8) * .3 * step(t, 1.4, 1.8) * p;
+      } else if (pair.kind === 'WatchTVTogether') {
+        // A brief shared glance and small tail wag, over the existing seated TV pose.
+        const glance = step(t, 5, 6) * (1 - step(t, 7.5, 8.5));
+        head.rotation.y += pair.side * .35 * glance * p;
+        head.rotation.z += -pair.side * .035 * glance * p;
+        tail.rotation.x += Math.sin(t * 2) * .035 * p;
       } else {
         // Side by side at the window holding the inner paws, with a small swing; heads lean together, with one shared glance.
         const hold = step(t, 0, .9) * (1 - step(t, 6.1, 6.9));

@@ -5,6 +5,7 @@ import { petFeedback, type PetReaction } from './pet.ts';
 import { isPairAction, pairActions, pairLabels, type PairAction, type PairInvite } from './Pair.ts';
 
 const drawings = {
+  WatchTVTogether: '<rect x="3" y="2" width="18" height="11" rx="2"/><path d="M9 16h6"/><circle cx="7" cy="20" r="2"/><circle cx="17" cy="20" r="2"/>',
   Kitchen: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5h1m4 0h1m4 0h1M6 11h12v7H6z"/>',
   ChopVegetables: '<path d="M3 20h18M6 17l9-12 5 4-9 8H6Zm9-12 2-3 5 4-2 3M5 11c-4-4-3-7 1-6l3 3"/>',
   CookSoup: '<path d="M4 10h16v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-6ZM1 12h3m16 0h3M7 2c-2 2 2 3 0 5m5-5c-2 2 2 3 0 5m5-5c-2 2 2 3 0 5"/>',
@@ -83,7 +84,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     <dialog class="home-dialog" data-dialog="help" aria-labelledby="help-title">
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
       <p class="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="help-title">歡迎來到牠的小小世界。</h2>
-      <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。</p>
+      <p>不用趕路，也沒有待辦清單。留一點時間，看看小狐狸怎麼過日子。小橘比較愛翻書，小白偏愛花園；餓了會惦記點心，累了會想休息，牠們會自己照顧自己。</p>
       <ol class="help-steps"><li><b>先看一會</b><span>臥室裡可以睡覺、閱讀與吃點心；到了客廳，牠會看電視、窩沙發、喝茶、做運動、聽音樂或整理沙發。${primary.gardenEnabled ? '陽台可以澆花、看蝴蝶，或坐在長椅吹風。' : ''}${primary.kitchenEnabled ? '廚房可以切菜、煮湯和烤餅乾。' : ''}</span></li><li><b>送一個小邀請</b><span>下方依狐狸實際所在房間顯示專屬動作，也能直接點家具${primary.gardenEnabled ? '、花圃或長椅' : ''}。房間面板的前往按鈕可以邀請牠到另一個空間。直接點狐狸，可以摸摸牠的頭；牠會依當下在做的事給你一點回應。${named ? `點房間面板上的${foxes.all.map(label).join('或')}，就換成陪牠，鏡頭也偏向牠；動作欄旁可以邀請兩隻${pairActions.map(kind => `「${pairLabels[kind]}」`).join('或')}。` : ''}</span></li><li><b>留住生活片段</b><span>實際發生的日常會寫進「生活日記」，下次回來還能翻閱。</span></li></ol>
       <p class="help-note">預設鏡頭跟隨狐狸；手動選房間只改視角，動作欄仍跟隨狐狸的位置。<br>拖曳環繞 · 滾輪縮放 · 數字鍵對應當前動作欄<br>一次完成一個邀請；離開分頁時，日常會先暫停。聲音需由你在「小屋聲音」開啟。</p>
       <button class="primary-button" data-dismiss type="button">一起慢慢生活</button>
@@ -222,6 +223,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       const partner = foxes.all.find(each => each !== fox())!;
       notify(result === 'accepted' ? `收到邀請了，${label(fox())}和${label(partner)}要${pairLabels[kind]}了。`
         : result === 'same' ? '牠們已經在做這件事了，陪牠們一會吧。'
+        : result === 'space-busy' ? '沙發現在還不能一起坐，等一下再邀請牠們吧。'
         : `${label(result === 'self-busy' ? fox() : partner)}正在完成你的上一個邀請，等一下再邀請牠們吧。`);
       update();
     },

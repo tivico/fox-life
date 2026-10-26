@@ -198,7 +198,8 @@ test('over a long autonomous run pairs happen, never deadlock in waiting, and th
       assert.ok(waiting[key] <= PAIR.patience + .1, `${key} waited too long`);
     }
     const a = group(h.orange), b = group(h.white);
-    assert.ok(!a || a !== b, `both in ${a}`);
+    const sharedTV = a === 'living' && h.orange.together?.kind === 'WatchTVTogether' && h.white.together?.kind === 'WatchTVTogether';
+    assert.ok(!a || a !== b || sharedTV, `unrelated activities both in ${a}`);
   });
   assert.ok(pairsSeen >= 2, `pairs seen: ${pairsSeen}`);
   h.orange.dispose(); h.white.dispose();

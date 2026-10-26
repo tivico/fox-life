@@ -10,15 +10,19 @@ export const livingDurations: Record<LivingAction, number> = { WatchTV: 14, Sofa
 export const CUP_PARK = new THREE.Vector3(2.68, .83, 7.3);
 export const CUP_APPROACH = new THREE.Vector3(2.0, 0, 7.3);
 export const SOFA_APPROACH = new THREE.Vector3(-1.65, 0, 6.4);
+export const SOFA_PAIR_GAP = 1.2;
 export function isLivingAction(value: unknown): value is LivingAction {
   return typeof value === 'string' && (livingActions as readonly string[]).includes(value);
 }
 export interface LivingSnapshot {
   kind: LivingAction; phase: LivingPhase; elapsed: number; motionTime: number; pose: number; cupHold: number;
+  /** Only the lead fox holds the shared remote during a pair. */
+  remote?: boolean;
 }
 
 // Action clocks own props through pickup, carrying and return, including safe interruption.
 export class LivingActivity implements LivingSnapshot {
+  readonly remote = true;
   phase: LivingPhase = 'approach';
   elapsed = 0;
   motionTime = 0;
