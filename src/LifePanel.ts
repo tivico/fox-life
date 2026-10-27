@@ -3,6 +3,7 @@ import { actionLabels, roomActions, JOURNAL_KEY, LifeJournal, lifePresentation, 
 import { homeRooms, roomAt } from './HomeNavigation.ts';
 import { petFeedback, type PetReaction } from './pet.ts';
 import { isPairAction, pairActions, pairLabels, type PairAction, type PairInvite } from './Pair.ts';
+import { createPanelDisclosure } from './PanelDisclosure.ts';
 
 const drawings = {
   WatchTVTogether: '<rect x="3" y="2" width="18" height="11" rx="2"/><path d="M9 16h6"/><circle cx="7" cy="20" r="2"/><circle cx="17" cy="20" r="2"/>',
@@ -39,6 +40,7 @@ const drawings = {
   journal: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18m4-12h5m-5 4h5"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3h.01"/>',
   close: '<path d="m6 6 12 12M6 18 18 6"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
 };
 function icon(name: keyof typeof drawings) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${drawings[name]}</svg>`;
@@ -71,15 +73,20 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     <div class="room-caption"><span></span> ${primary.kitchenEnabled ? '有花香，也有飯香的小家' : primary.gardenEnabled ? '有花園的小日子' : '兩間房的小日子'} <i>／</i> 自在生活中</div>
     <div class="view-tools"><button type="button" data-tool="reset" aria-label="重設視角" title="重設鏡頭">${icon('reset')}<span>重設視角</span></button><button type="button" data-tool="quiet" aria-label="靜靜陪伴">${icon('leaf')}<span>靜靜陪伴</span></button></div>
     <footer class="life-footer">
+      <div class="footer-summary">
       <section class="fox-status" aria-label="狐狸近況"><span class="status-symbol">${icon('leaf')}</span><div><p class="status-source">自己的小日常</p><p class="status-title" role="status">慢慢呼吸，放空一下</p></div><progress class="action-progress" max="100" value="0" aria-label="目前生活片段進度" hidden></progress></section>
+      <button class="actions-collapse" type="button" aria-controls="life-actions"><span>動作</span>${icon('chevron')}</button>
+      </div>
+      <div class="actions-body" id="life-actions">
       <div class="invitation"><span class="dock-room-label">臥室日常</span>${named
         ? `<div class="pair-actions" role="group" aria-label="兩隻一起"><span class="pair-with"></span>${pairActions.map(kind =>
           `<button type="button" data-pair="${kind}" aria-pressed="false">${icon(kind)}<span>${pairLabels[kind]}</span></button>`).join('')}</div>`
         : '<p>也可以什麼都不做，讓日常自己發生。</p>'}</div>
       <nav class="action-dock" aria-label="邀請狐狸做點什麼"></nav>
       <p class="control-hint">拖曳轉動小屋 <span>·</span> 滾輪拉近 <span>·</span> 點家具邀請牠 <span>·</span> 點狐狸摸摸頭</p>
+      </div>
+      <p class="feedback" role="status" hidden></p>
     </footer>
-    <p class="feedback" role="status" hidden></p>
     <button class="quiet-exit" type="button" hidden>${icon('leaf')} 回到小屋介面 <kbd>Esc</kbd></button>
     <dialog class="home-dialog" data-dialog="help" aria-labelledby="help-title">
       <button class="dialog-close" type="button" aria-label="關閉玩法說明">${icon('close')}</button>
@@ -96,6 +103,8 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
     </dialog>`;
   host.append(ui);
   const find = <T extends HTMLElement>(selector: string) => ui.querySelector<T>(selector)!;
+  const disclosure = createPanelDisclosure(host, find('.life-footer'), find<HTMLButtonElement>('.actions-collapse'),
+    find('.actions-body'), 'actions', { open: '展開動作欄', close: '收合動作欄' });
   const title = find('.status-title');
   const source = find('.status-source');
   const symbol = find('.status-symbol');
@@ -212,6 +221,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
   return {
     update,
     visitResult(room: string, accepted: boolean) {
+      if (accepted) disclosure.closeOnPhone();
       notify(accepted ? `收到邀請了，去${room}待一會。` : '牠正在完成你的上一個邀請，等一下再邀請牠吧。');
       update();
     },
@@ -220,6 +230,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       update();
     },
     pairResult(kind: PairAction, result: PairInvite) {
+      if (result === 'accepted') disclosure.closeOnPhone();
       const partner = foxes.all.find(each => each !== fox())!;
       notify(result === 'accepted' ? `收到邀請了，${label(fox())}和${label(partner)}要${pairLabels[kind]}了。`
         : result === 'same' ? '牠們已經在做這件事了，陪牠們一會吧。'
@@ -228,6 +239,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       update();
     },
     commandResult(action: LifeAction, accepted: boolean) {
+      if (accepted) disclosure.closeOnPhone();
       const other = isPairAction(action) ? undefined : foxes.all.find(each => each !== fox() && each.occupies(action));
       notify(accepted ? `收到邀請了，一起${actionLabels[action]}。` : fox().source === 'Player Command' ?
         '牠正在完成你的上一個邀請，等一下再邀請牠吧。' : other ? `${label(other)}正在那裡，等一下再邀請${label(fox())}吧。`
@@ -235,6 +247,7 @@ export function createLifePanel(host: HTMLElement, foxes: { active: () => Charac
       update();
     },
     dispose() {
+      disclosure.dispose();
       clearTimeout(feedbackTimer);
       ui.removeEventListener('click', click);
       document.removeEventListener('keydown', keydown);

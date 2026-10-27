@@ -1,11 +1,12 @@
 import type { Character } from './Character.ts';
 import type { createHomeView, HomeViewMode } from './HomeView.ts';
 import { homeRooms, roomAt, type RoomId } from './HomeNavigation.ts';
+import { createPanelDisclosure } from './PanelDisclosure.ts';
 
 export const ROOM_PANEL_KEY = 'fox-life.room-panel.v1';
 
 export function createRoomPanel(host: HTMLElement, foxes: { active: () => Character; all: readonly Character[] },
-  view: ReturnType<typeof createHomeView>, visit: (room: RoomId) => void, select: (fox: Character) => void) {
+  view: ReturnType<typeof createHomeView>, visit: (room: RoomId) => boolean, select: (fox: Character) => void) {
   const fox = () => foxes.active();
   const primary = foxes.all[0]!;
   const named = foxes.all.length > 1;
@@ -35,18 +36,8 @@ export function createRoomPanel(host: HTMLElement, foxes: { active: () => Charac
   const buttons = [...panel.querySelectorAll<HTMLButtonElement>('[data-view]')];
   const chips = [...panel.querySelectorAll<HTMLButtonElement>('[data-fox]')];
   const text = (node: HTMLElement, value: string) => { if (node.textContent !== value) node.textContent = value; };
-  // Remember the choice in this browser; phones start folded so the home stays in view.
-  let collapsed = window.matchMedia('(max-width: 650px)').matches;
-  try { const saved = localStorage.getItem(ROOM_PANEL_KEY); if (saved) collapsed = saved === 'collapsed'; } catch { /* Keep the default. */ }
-  // Only a choice you made is remembered, so each screen size keeps its own default until then.
-  function fold(next: boolean, remember = true) {
-    collapsed = next;
-    panel.dataset.collapsed = String(next);
-    collapse.setAttribute('aria-expanded', String(!next));
-    collapse.setAttribute('aria-label', next ? '展開房間面板' : '收合房間面板');
-    collapse.title = next ? '展開' : '收合';
-    if (remember) try { localStorage.setItem(ROOM_PANEL_KEY, next ? 'collapsed' : 'open'); } catch { /* Folding still works for this visit. */ }
-  }
+  const disclosure = createPanelDisclosure(host, panel, collapse, panel.querySelector<HTMLElement>('.room-body')!,
+    'rooms', { open: '展開房間面板', close: '收合房間面板' }, ROOM_PANEL_KEY);
   function update() {
     text(location, `${label()}在${homeRooms[roomAt(fox().root.position)].label}`);
     for (const button of buttons) {
@@ -71,13 +62,12 @@ export function createRoomPanel(host: HTMLElement, foxes: { active: () => Charac
   }
   const click = (event: MouseEvent) => {
     const button = (event.target as Element).closest<HTMLButtonElement>('button');
-    if (button === collapse) fold(!collapsed);
-    else if (button?.dataset.fox) select(foxes.all[Number(button.dataset.fox)]!);
-    else if (button?.dataset.view) view.focus(button.dataset.view as HomeViewMode);
-    else if (button === invite) visit(view.room);
-    else if (button?.dataset.room) visit(button.dataset.room as RoomId);
+    if (button?.dataset.fox) { select(foxes.all[Number(button.dataset.fox)]!); disclosure.closeOnPhone(); }
+    else if (button?.dataset.view) { view.focus(button.dataset.view as HomeViewMode); disclosure.closeOnPhone(); }
+    else if (button === invite) { if (visit(view.room)) disclosure.closeOnPhone(); }
+    else if (button?.dataset.room) { if (visit(button.dataset.room as RoomId)) disclosure.closeOnPhone(); }
     update();
   };
-  panel.addEventListener('click', click); fold(collapsed, false); update();
-  return { update, dispose() { panel.removeEventListener('click', click); panel.remove(); } };
+  panel.addEventListener('click', click); update();
+  return { update, dispose() { disclosure.dispose(); panel.removeEventListener('click', click); panel.remove(); } };
 }

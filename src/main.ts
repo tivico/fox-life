@@ -6,6 +6,7 @@ import { Household } from './Household.ts';
 import { PairPlanner, isPairAction } from './Pair.ts';
 import { createHomeView } from './HomeView.ts';
 import { createRoomPanel } from './RoomPanel.ts';
+import { COMPACT_VIEW } from './PanelDisclosure.ts';
 import { homeRooms, type RoomId } from './HomeNavigation.ts';
 import { isLivingAction } from './LivingActivity.ts';
 import { isGardenAction } from './GardenActivity.ts';
@@ -39,6 +40,7 @@ function start() {
   host.append(renderer.domElement);
   const { scene, camera, windowParts, bedParts, readingParts, foodParts, cleanParts, roomTextures, atmosphere, livingRoom, balcony, kitchen } = createScene({ expanded: true, garden: true, kitchen: true });
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const compactView = window.matchMedia(COMPACT_VIEW);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0.8, 0);
   controls.enableDamping = true;
@@ -74,6 +76,7 @@ function start() {
   const visit = (room: RoomId) => {
     const accepted = character.requestRoomVisit(room);
     life.visitResult(homeRooms[room].label, accepted);
+    return accepted;
   };
   // Fox chips and petting share the same selection and return to the chosen fox's follow view.
   const select = (fox: Character) => {
@@ -131,8 +134,8 @@ function start() {
   const frameCamera = (dt = Infinity) => {
     const phoneGarden = width <= 650 && (homeView.room === 'Balcony' || homeView.room === 'Kitchen') && homeView.mode !== 'overview';
     const zoom = Math.min(1, camera.aspect / (phoneGarden ? .95 : 1.25));
-    // The narrow balcony fits between the mobile room panel and invitation dock.
-    const offsetY = host.classList.contains('quiet-mode') ? 0 : phoneGarden ? -height * .04 : Math.min(100, height * .14);
+    // Compact controls leave the centre clear; keep the scene centred when panels open or close.
+    const offsetY = host.classList.contains('quiet-mode') || compactView.matches ? 0 : Math.min(100, height * .14);
     const alpha = !Number.isFinite(dt) || reducedMotion.matches ? 1 : 1 - Math.exp(-Math.max(0, dt) * 5);
     const nextZoom = THREE.MathUtils.lerp(camera.zoom, zoom, alpha);
     const nextOffsetY = THREE.MathUtils.lerp(frameOffsetY, offsetY, alpha);
